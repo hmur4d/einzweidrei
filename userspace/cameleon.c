@@ -14,21 +14,21 @@ void command_accept(int fd) {
 int main(int argc, char ** argv) {
 	log_info("Starting main program");
 
-	int fd = serversocket_open(40);
-	if (fd < 0) {
+	serversocket_t commandsocket;
+	serversocket_init(&commandsocket, 40, command_accept);
+
+	if (serversocket_open(&commandsocket) < 0) {
 		log_error("Unable to open socket, exiting");
 		return 1;
 	}
 
-	//TODO add a way to create a connection, forcing to init fd & callback correctly
-	connection_t connection;
-	connection.server_fd = fd;
-	connection.callback = command_accept;
-
-	serversocket_accept_thread(&connection);
+	if (serversocket_accept(&commandsocket) < 0) {
+		log_error("Unable to accept on socket, exiting");
+		return 1;		
+	}
 	
-	pthread_join(connection.thread, NULL);
-	serversocket_close(fd);
+	pthread_join(commandsocket.thread, NULL);
+	serversocket_close(&commandsocket);
 
 	return 0;
 }

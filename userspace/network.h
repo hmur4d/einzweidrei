@@ -4,14 +4,16 @@
 typedef void(*accept_callback)(int fd);
 
 typedef struct {
-	int server_fd;
+	int fd;
+	int port;
 	pthread_t thread;
 	accept_callback callback;
-} connection_t;
+} serversocket_t;
 
-int serversocket_open(int port);
-int serversocket_accept_thread(connection_t* connection);
-void serversocket_accept(int fd, accept_callback callback);
-void serversocket_close(int fd);
+void serversocket_init(serversocket_t* serversocket, int port, accept_callback callback);
+
+int serversocket_open(serversocket_t* serversocket);
+int serversocket_accept(serversocket_t* serversocket);
+void serversocket_close(serversocket_t* serversocket);
 
 #endif /* _NETWORK_H_ */
