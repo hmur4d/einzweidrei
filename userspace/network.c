@@ -1,13 +1,15 @@
 #include <sys/socket.h> 
 #include <netinet/in.h> 
 #include <arpa/inet.h>
-
 #include <unistd.h>
 #include <errno.h>
 
+#include <stdbool.h>
+#include <pthread.h>
+
+
 #include "log.h"
 #include "network.h"
-
 
 int serversocket_open(int port) {
 	log_debug("Opening socket on port %d", port);
@@ -39,8 +41,19 @@ int serversocket_open(int port) {
 	return fd;
 }
 
+void* serversocket_accept_thread_handler(void* data) {
+	connection_t* connection = (connection_t*)data;
+	while (true) {
+		serversocket_accept(connection->server_fd, connection->callback);
+	}
+	pthread_exit(0);
+}
+
+int serversocket_accept_thread(connection_t* connection) {
+	return pthread_create(&(connection->thread), NULL, serversocket_accept_thread_handler, connection);
+}
+
 void serversocket_accept(int fd, accept_callback callback) {
-	//TODO: threading...
 	struct sockaddr_in client_addr;
 	socklen_t len = sizeof(client_addr);
 
