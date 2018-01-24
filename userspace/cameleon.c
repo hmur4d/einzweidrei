@@ -2,6 +2,7 @@
 
 #include <pthread.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #include "log.h"
 #include "network.h"
@@ -12,6 +13,11 @@ void command_accept(int fd) {
 }
 
 int main(int argc, char ** argv) {
+	if (log_init() < 0) {
+		printf("Unable to init logging!\n");
+		return 1;
+	}
+
 	log_info("Starting main program");
 
 	serversocket_t commandsocket;
@@ -30,5 +36,6 @@ int main(int argc, char ** argv) {
 	pthread_join(commandsocket.thread, NULL);
 	serversocket_close(&commandsocket);
 
+	log_close();
 	return 0;
 }

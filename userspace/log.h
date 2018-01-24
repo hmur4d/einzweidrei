@@ -9,6 +9,10 @@
 #define LEVEL_OFF 5
 
 #define LOG_LEVEL LEVEL_ALL
+#define LOG_FILE "/tmp/cameleon.log"
+
+int log_init();
+int log_close();
 
 void log_debug(char* format, ...);
 void log_info(char* format, ...);
