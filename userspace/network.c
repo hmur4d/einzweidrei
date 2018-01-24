@@ -1,15 +1,19 @@
 #include <sys/socket.h> 
 #include <netinet/in.h> 
+#include <arpa/inet.h>
+
 #include <unistd.h>
 #include <errno.h>
 
 #include "log.h"
+#include "network.h"
+
 
 int serversocket_open(int port) {
 	log_debug("Opening socket on port %d", port);
 
 	int fd;
-	if ((fd = socket(AF_INET, SOCK_STREAM, PF_INET)) < 0) {
+	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		log_error("Unable to open socket, fd=%d, errno=%d", fd, errno);
 		return -1;
 	}
@@ -33,6 +37,26 @@ int serversocket_open(int port) {
 
 	log_info("Socket opened on port %d, fd=%d", port, fd);
 	return fd;
+}
+
+void serversocket_accept(int fd, accept_callback callback) {
+	//TODO: threading...
+	struct sockaddr_in client_addr;
+	socklen_t len = sizeof(client_addr);
+
+	log_info("Accepting connections on fd: %d", fd);
+	int client_fd = accept(fd, (struct sockaddr *)&client_addr, &len);
+	if (client_fd < 0) {
+		log_error("Error during accept, client_fd=%d, errno=%d", client_fd, errno);
+		return;
+	}
+
+	log_info("Accepted connection request from %s", inet_ntoa(client_addr.sin_addr));
+
+
+	//int optval = 1;
+	//setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, (char *)&optval, sizeof(optval));
+	callback(client_fd);
 }
 
 void serversocket_close(int fd) {

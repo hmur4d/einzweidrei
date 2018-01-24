@@ -24,7 +24,7 @@ void log_info(char* format, ...) {
 	if (LOG_LEVEL <= LEVEL_INFO) {
 		va_list args;
 		va_start(args, format);
-		_log("INFO", format, args);
+		_log("INFO ", format, args);
 		va_end(args);
 	}
 }
@@ -33,7 +33,7 @@ void log_warning(char* format, ...) {
 	if (LOG_LEVEL <= LEVEL_WARNING) {
 		va_list args;
 		va_start(args, format);
-		_log("WARNING", format, args);
+		_log("WARN ", format, args);
 		va_end(args);
 	}
 }
