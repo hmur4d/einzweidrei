@@ -13,7 +13,7 @@ CFLAGS_MODULE += -fno-pic -Wno-declaration-after-statement
 
 obj-m := $(MODULE_NAME).o
 
-build:
+all:
 	$(MAKE) -C $(KDIR) M=`pwd`
 	
 clean:
