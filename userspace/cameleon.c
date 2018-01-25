@@ -13,15 +13,14 @@ void command_accept(int fd) {
 }
 
 int main(int argc, char ** argv) {
-	if (log_init() < 0) {
-		printf("Unable to init logging!\n");
+	if (log_init(LEVEL_ALL, "/tmp/cameleon.log") < 0) {
 		return 1;
 	}
 
 	log_info("Starting main program");
 
 	serversocket_t commandsocket;
-	serversocket_init(&commandsocket, 40, command_accept);
+	serversocket_init(&commandsocket, 4040, command_accept);
 
 	if (serversocket_open(&commandsocket) < 0) {
 		log_error("Unable to open socket, exiting");
