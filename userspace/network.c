@@ -5,8 +5,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <pthread.h>
-
 
 #include "log.h"
 #include "network.h"

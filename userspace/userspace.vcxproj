@@ -84,15 +84,18 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="addresses.h" />
+    <ClInclude Include="config.h" />
     <ClInclude Include="device.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="network.h" />
+    <ClInclude Include="net_io.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cameleon.c" />
     <ClCompile Include="device.c" />
     <ClCompile Include="log.c" />
     <ClCompile Include="network.c" />
+    <ClCompile Include="net_io.c" />
     <ClCompile Include="usersample.c" />
   </ItemGroup>
   <ItemGroup>

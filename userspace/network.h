@@ -1,6 +1,8 @@
 #ifndef _NETWORK_H_
 #define _NETWORK_H_
 
+#include <pthread.h>
+
 typedef struct {
 	int fd;
 	int server_fd;

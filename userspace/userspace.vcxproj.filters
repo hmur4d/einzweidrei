@@ -6,12 +6,15 @@
     <ClCompile Include="network.c" />
     <ClCompile Include="log.c" />
     <ClCompile Include="cameleon.c" />
+    <ClCompile Include="net_io.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="addresses.h" />
     <ClInclude Include="device.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="network.h" />
+    <ClInclude Include="net_io.h" />
+    <ClInclude Include="config.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
