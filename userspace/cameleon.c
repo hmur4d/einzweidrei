@@ -9,63 +9,7 @@
 #include "network.h"
 #include "net_io.h"
 
-typedef void(*command_handler)(clientsocket_t* client, msgheader_t header, void* body);
-
-typedef struct {
-	int code;
-	command_handler handler;
-} command_t;
-
-typedef struct cmdlist {
-	command_t cmd;
-	struct cmdlist* next;
-} commands_t;
-
-static commands_t* definitions;
-
-void register_command(int cmd, command_handler handler) {	
-	commands_t* item = definitions;
-	
-	if (item == NULL) {
-		//first call, create structure
-		item = malloc(sizeof(commands_t));
-		definitions = item;
-	}
-	else {
-		while (item->next != NULL) {
-			item = item->next;
-		}
-
-		commands_t* new = malloc(sizeof(commands_t));
-		item->next = new;
-		item = new;
-	}
-
-	item->cmd.code = cmd;
-	item->cmd.handler = handler;
-}
-
-void process_message(clientsocket_t* client, msg_t* msg) {
-	log_debug("");
-
-	if (definitions == NULL) {
-		log_error("No command registered!");
-		return;
-	}
-
-	commands_t* item = definitions;	
-	while (item != NULL && item->cmd.code != msg->header.cmd) {
-		item = item->next;
-	}
-
-	if (item == NULL) {
-		log_error("Unknown command: 0x%08x", msg->header.cmd);
-		return;
-	}
-
-	log_info("Calling handler for command: 0x%08x", msg->header.cmd);
-	item->cmd.handler(client, msg->header, msg->body);
-}
+static commands_t* commands;
 
 //--
 
@@ -81,9 +25,15 @@ void command_accept(clientsocket_t* client) {
 
 	msg_t msg;
 	read_message(client, &msg);
-	process_message(client, &msg);
 
-	log_info("received msg: %x", msg.header.cmd);
+	command_handler handler = find_command_handler(commands, msg.header.cmd);
+	if (handler == NULL) {
+		log_error("Unknown command: 0x%08x", msg.header.cmd);
+		return;
+	}
+
+	log_info("Calling handler for command: 0x%08x", msg.header.cmd);
+	handler(client, msg.header, msg.body);
 
 	clientsocket_close(client);
 }
@@ -95,7 +45,8 @@ int main(int argc, char ** argv) {
 
 	log_info("Starting main program");
 
-	register_command(0xe, whoareyou);
+
+	register_command(&commands, 0xe, whoareyou);
 
 	serversocket_t commandserver;
 	serversocket_init(&commandserver, COMMAND_PORT, command_accept);
@@ -112,6 +63,8 @@ int main(int argc, char ** argv) {
 	
 	pthread_join(commandserver.thread, NULL);
 	serversocket_close(&commandserver);
+
+	free_commands(commands);
 
 	log_close();
 	return 0;

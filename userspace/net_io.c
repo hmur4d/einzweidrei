@@ -6,6 +6,70 @@
 #include "net_io.h"
 #include "log.h"
 
+//-- commands
+
+void register_command(commands_t** commands, int code, command_handler handler) {
+	log_debug("registering command 0x%08x", code);
+
+	commands_t* node;
+
+	if (*commands == NULL) {
+		//first call, create the linked list
+		log_debug("creating command list");
+		*commands = malloc(sizeof(commands_t));
+		if (*commands == NULL) {
+			log_error("unable to malloc command list, errno=%d", errno);
+			return;
+		}
+		node = *commands;
+	} 
+	else {
+		//lookup the last node, and add a new one
+		while (node->next != NULL) {
+			node = node->next;
+		}
+
+		node->next = malloc(sizeof(commands_t));
+		node = node->next;
+		if (node == NULL) {
+			log_error("unable to malloc command node, errno=%d", errno);
+			return;
+		}
+	}
+
+	node->cmd.code = code;
+	node->cmd.handler = handler;
+}
+
+command_handler find_command_handler(commands_t* commands, int code) {
+	log_debug("code=0x%08x", code);
+
+	commands_t* node = commands;
+	while (node != NULL && node->cmd.code != code) {
+		node = node->next;
+	}
+
+	if (node == NULL) {
+		log_debug("No handler found: 0x%08x", code);
+		return NULL;
+	}
+
+	return node->cmd.handler;
+}
+
+void free_commands(commands_t* commands) {
+	log_debug("");
+	
+	commands_t* node = commands;
+	while (node != NULL) {
+		commands_t* next = node->next;
+		free(node);
+		node = next;
+	}
+}
+
+//-- 
+
 /*
 Send while total sent is less than bytes to send.
 On error, logs and return -1.

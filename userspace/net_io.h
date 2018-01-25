@@ -7,6 +7,8 @@
 #define TAG_MSG_START	0xAAAAAAAA
 #define TAG_MSG_STOP	0xBBBBBBBB
 
+//-- messages
+
 typedef struct {
 	int cmd;
 	int param1;
@@ -22,6 +24,26 @@ typedef struct {
 	msgheader_t header;
 	void* body;
 } msg_t;
+
+//-- commands
+
+typedef void(*command_handler)(clientsocket_t* client, msgheader_t header, void* body);
+
+typedef struct {
+	int code;
+	command_handler handler;
+} command_registration_t;
+
+typedef struct commands_node {	
+	command_registration_t cmd;
+	struct commands_node* next;
+} commands_t;
+
+void register_command(commands_t** commands, int code, command_handler handler);
+command_handler find_command_handler(commands_t* commands, int code);
+void free_commands(commands_t* commands);
+
+//-- functions
 
 bool send_int(clientsocket_t* client, int val);
 bool send_string(clientsocket_t* client, char* str);
