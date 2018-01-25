@@ -10,7 +10,7 @@
 #include "net_io.h"
 
 void command_accept(clientsocket_t* client) {
-	log_info("in command_accept, fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
+	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
 	send_string(client, "Welcome to Cameleon4!\n");
 
 	msg_t msg;

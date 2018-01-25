@@ -51,10 +51,10 @@ int safe_recv(int fd, void* buffer, ssize_t len, int flags) {
 }
 
 bool send_string(clientsocket_t* client, char* str) {
-	log_debug("send_string, fd=%d >>>%s<<<", client->fd, str);
+	log_debug("fd=%d, str=%s", client->fd, str);
 
 	if (safe_send(client->fd, str, strlen(str) + 1, 0) < 0) {
-		log_error("Error while sending string! >>>\n%s<<<", str);
+		log_error("Error while sending string, str=%s", str);
 		return false;
 	}
 
@@ -62,7 +62,7 @@ bool send_string(clientsocket_t* client, char* str) {
 }
 
 bool send_int(clientsocket_t* client, int val) {
-	log_debug("send_int, val=0x%08x fd=%d", val, client->fd);
+	log_debug("val=0x%08x fd=%d", val, client->fd);
 
 	if (safe_send(client->fd, &val, sizeof(val), 0) < 0) {
 		log_error("Error while sending int 0x%08x!", val);
@@ -73,7 +73,7 @@ bool send_int(clientsocket_t* client, int val) {
 }
 
 bool read_tag(clientsocket_t* client, int expected) {
-	log_debug("read_tag, fd=%d, expected=0x%08x", client->fd, expected);
+	log_debug("fd=%d, expected=0x%08x", client->fd, expected);
 
 	int tag = 0;
 	if (safe_recv(client->fd, &tag, sizeof(int), 0) < 0) {
@@ -90,21 +90,21 @@ bool read_tag(clientsocket_t* client, int expected) {
 }
 
 bool read_header(clientsocket_t* client, msgheader_t* header) {
-	log_debug("read_header, fd=%d", client->fd);
+	log_debug("fd=%d", client->fd);
 	
 	if (safe_recv(client->fd, header, sizeof(msgheader_t), 0) < 0) {
 		log_error("Error while reading header");
 		return false;
 	}
 
-	log_debug("read header: cmd=0x%08x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
+	log_debug("cmd=0x%08x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
 		header->cmd, header->param1, header->param2, header->param3, header->param4, header->param5, header->param6, header->body_size);
 
 	return true;
 }
 
 bool read_message(clientsocket_t* client, msg_t* message) {
-	log_debug("read_message, fd=%d", client->fd);
+	log_debug("fd=%d", client->fd);
 	
 	if (!read_tag(client, TAG_MSG_START)) {
 		return false;
@@ -116,7 +116,7 @@ bool read_message(clientsocket_t* client, msg_t* message) {
 
 	message->body = malloc(message->header.body_size);
 	if (message->body == NULL) {
-		log_error("read_message: unable to malloc body, size=%d, errno=%d", message->header.body_size, errno);
+		log_error("unable to malloc body, size=%d, errno=%d", message->header.body_size, errno);
 		return false;
 	}
 
