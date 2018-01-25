@@ -17,14 +17,6 @@
       <Configuration>Release</Configuration>
       <Platform>x86</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{54703a3f-e14c-4eec-8449-c7d887b05d46}</ProjectGuid>
@@ -53,14 +45,6 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <ConfigurationType>Makefile</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <ConfigurationType>Makefile</ConfigurationType>
-  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
@@ -75,22 +59,6 @@
     <NMakePreprocessorDefinitions>INTELLISENSE</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-    <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
-    <RemoteReBuildCommandLine>make clean all</RemoteReBuildCommandLine>
-    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
-    <RemoteBuildOutputs>/home/reflex/projects/kernelspace/modcameleon.ko</RemoteBuildOutputs>
-    <NMakeIncludeSearchPath>..\..\linux\linux-socfpga\include;..\..\linux\usr\include;..\..\linux\usr\include\x86_64-linux-gnu;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>INTELLISENSE</NMakePreprocessorDefinitions>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
-    <RemoteReBuildCommandLine>make clean all</RemoteReBuildCommandLine>
-    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
-    <RemoteBuildOutputs>/home/reflex/projects/kernelspace/modcameleon.ko</RemoteBuildOutputs>
-    <NMakeIncludeSearchPath>..\..\linux\linux-socfpga\include;..\..\linux\usr\include;..\..\linux\usr\include\x86_64-linux-gnu;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakePreprocessorDefinitions>INTELLISENSE</NMakePreprocessorDefinitions>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <RemoteReBuildCommandLine>make clean all</RemoteReBuildCommandLine>
     <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>

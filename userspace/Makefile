@@ -1,9 +1,19 @@
-include ../make-config/cross-compile.mk
+# allows disabling crosscompilation for userspace depending on visual studio active platform
+ifneq '$(VS_PLATFORM)' 'x86'
+	include ../make-config/cross-compile.mk
+	CFLAGS += -std=gnu11
+endif
+
+# allows selecting debug/release from visual studio active configuration
+ifeq '$(VS_CONFIG)' 'Debug'
+	CFLAGS += -g
+	LDFLAGS += -g
+endif
+
 
 TARGET := cameleon
-
-CFLAGS += -static -g -Wall -std=gnu11
-LDFLAGS += -pthread -g -Wall
+CFLAGS += -static -Wall
+LDFLAGS += -pthread -Wall
 
 C_SRCS := $(wildcard *.c)
 C_OBJS := ${C_SRCS:.c=.o}
