@@ -23,18 +23,11 @@ void command_accept(clientsocket_t* client) {
 	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
 	send_string(client, "Welcome to Cameleon4!\n");
 
-	msg_t msg;
-	read_message(client, &msg);
-
-	command_handler handler = find_command_handler(commands, msg.header.cmd);
-	if (handler == NULL) {
-		log_error("Unknown command: 0x%08x", msg.header.cmd);
-		return;
+	bool success = true;
+	while (success) {
+		success = process_message(client, commands);
 	}
-
-	log_info("Calling handler for command: 0x%08x", msg.header.cmd);
-	handler(client, msg.header, msg.body);
-
+	
 	clientsocket_close(client);
 }
 

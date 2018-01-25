@@ -48,7 +48,7 @@ void free_commands(commands_t* commands);
 bool send_int(clientsocket_t* client, int val);
 bool send_string(clientsocket_t* client, char* str);
 
-bool read_message(clientsocket_t* client, msg_t* msg);
+bool process_message(clientsocket_t* client, commands_t* commands);
 
 
 #endif

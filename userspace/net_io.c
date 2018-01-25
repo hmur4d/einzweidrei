@@ -167,36 +167,45 @@ bool read_header(clientsocket_t* client, msgheader_t* header) {
 	return true;
 }
 
-bool read_message(clientsocket_t* client, msg_t* message) {
+bool process_message(clientsocket_t* client, commands_t* commands) {
 	log_debug("fd=%d", client->fd);
 	
 	if (!read_tag(client, TAG_MSG_START)) {
 		return false;
 	}
 
-	if (!read_header(client, &(message->header))) {
+	msg_t message;
+	if (!read_header(client, &(message.header))) {
 		return false;
 	}
 
-	message->body = malloc(message->header.body_size);
-	if (message->body == NULL) {
-		log_error("unable to malloc body, size=%d, errno=%d", message->header.body_size, errno);
+	message.body = malloc(message.header.body_size);
+	if (message.body == NULL) {
+		log_error("unable to malloc body, size=%d, errno=%d", message.header.body_size, errno);
 		return false;
 	}
 
-	if (safe_recv(client->fd, message->body, message->header.body_size, 0) < 0) {
-		log_error("unable to read body, size=%d", message->header.body_size);
-		free(message->body);
+	if (safe_recv(client->fd, message.body, message.header.body_size, 0) < 0) {
+		log_error("unable to read body, size=%d", message.header.body_size);
+		free(message.body);
 		return false;
 	}
 
 	if (!read_tag(client, TAG_MSG_STOP)) {
-		free(message->body);
+		free(message.body);
 		return false;
 	}
 
-	//call handler
-	//XXX need to free body
+	command_handler handler = find_command_handler(commands, message.header.cmd);
+	if (handler == NULL) {
+		free(message.body);
+		log_error("Unknown command: 0x%08x", message.header.cmd);
+		//XXX success even if command not found? there was no network problem here...
+		return true;
+	}
 
+	log_info("Calling handler for command: 0x%08x", message.header.cmd);
+	handler(client, message.header, message.body);
+	free(message.body);
 	return true;
 }
