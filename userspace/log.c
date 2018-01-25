@@ -93,14 +93,26 @@ void _log(char* level, char* format, va_list args) {
 	time(&rawtime);
 	localtime_r(&rawtime, &timeinfo);
 
-	_log_write(stdout, level, &timeinfo, format, args);
-	_log_write(logfile, level, &timeinfo, format, args);
+	//we need to copy the va_list because _log_write is destructive
+	//if we don't, the second call to _log_write may crash
+	va_list args_stdout, args_file;
+	va_copy(args_stdout, args);
+	va_copy(args_file, args);
+
+	_log_write(stdout, level, &timeinfo, format, args_stdout);
+	_log_write(logfile, level, &timeinfo, format, args_file);
+
+	va_end(args_stdout);
+	va_end(args_file);
 }
 
 /*
 Format & write the log message to any file structure.
 */
 void _log_write(FILE* fp, char* level, struct tm* timeinfo, char* format, va_list args) {
+	va_list args_copy;
+	va_copy(args_copy, args);
+
 	sem_wait(&mutex);
 
 	fprintf(fp, "[%s][%02d/%02d/%04d][%02d:%02d:%02d] ",
