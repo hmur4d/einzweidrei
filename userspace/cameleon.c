@@ -7,9 +7,9 @@
 #include "log.h"
 #include "network.h"
 
-void command_accept(int fd) {
-	log_info("in command_accept, fd=%d", fd);
-	close(fd);
+void command_accept(clientsocket_t* client) {
+	log_info("in command_accept, fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
+	clientsocket_close(client);
 }
 
 int main(int argc, char ** argv) {
