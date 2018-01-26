@@ -1,6 +1,8 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+#include <errno.h>
+
 #define LEVEL_ALL 0
 #define LEVEL_DEBUG 1
 #define LEVEL_INFO 2

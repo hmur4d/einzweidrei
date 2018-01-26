@@ -29,8 +29,11 @@ typedef void(*message_consumer_f)(clientsocket_t* client, msg_t* message);
 
 //-- functions
 
+void reset_header(msgheader_t* header);
+
 bool send_int(clientsocket_t* client, int val);
 bool send_string(clientsocket_t* client, char* str);
+bool send_message(clientsocket_t* client, msgheader_t* header, void* body);
 
 bool consume_message(clientsocket_t* client, message_consumer_f consumer);
 

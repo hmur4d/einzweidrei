@@ -1,10 +1,13 @@
-#include <errno.h>
 #include <sys/socket.h> 
 #include <string.h>
 #include <stdlib.h>
 
 #include "net_io.h"
 #include "log.h"
+
+void reset_header(msgheader_t* header) {
+	memset(header, 0, sizeof(header));
+}
 
 bool send_string(clientsocket_t* client, char* str) {
 	log_debug("fd=%d, str=%s", client->fd, str);
@@ -45,15 +48,28 @@ bool read_tag(clientsocket_t* client, int expected) {
 	return true;
 }
 
+bool send_header(clientsocket_t* client, msgheader_t* header) {
+	log_debug("sending header: cmd=0x%08x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
+		header->cmd, header->param1, header->param2, header->param3, header->param4, header->param5, header->param6, header->body_size);
+	
+	if (send_retry(client, header, sizeof(msgheader_t), 0) < 0) {
+		log_error("Error while sending message header, cmd=0x%08x", header->cmd);
+		return false;
+	}
+
+	return true;
+}
+
 bool read_header(clientsocket_t* client, msgheader_t* header) {
 	log_debug("fd=%d", client->fd);
 	
+	reset_header(header);
 	if (recv_retry(client, header, sizeof(msgheader_t), 0) < 0) {
 		log_error("Error while reading header");
 		return false;
 	}
 
-	log_debug("cmd=0x%08x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
+	log_debug("received header: cmd=0x%08x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
 		header->cmd, header->param1, header->param2, header->param3, header->param4, header->param5, header->param6, header->body_size);
 
 	return true;
@@ -92,5 +108,28 @@ bool consume_message(clientsocket_t* client, message_consumer_f consumer) {
 	consumer(client, &message);
 
 	free(message.body);
+	return true;
+}
+
+bool send_message(clientsocket_t* client, msgheader_t* header, void* body) {
+	if (!send_int(client, TAG_MSG_START)) {
+		log_error("unable to send start tag!");
+		return false;
+	}
+
+	if (!send_header(client, header)) {
+		return false;
+	}
+
+	if (send_retry(client, body, header->body_size, 0) < 0) {
+		log_error("unable to send message body, cmd=0x%08x, body size=%d", header->cmd, header->body_size);
+		return false;
+	}
+
+	if (!send_int(client, TAG_MSG_STOP)) {
+		log_error("unable to send stop tag!");
+		return false;
+	}
+
 	return true;
 }

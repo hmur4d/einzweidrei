@@ -9,8 +9,7 @@
 #include "network.h"
 #include "net_io.h"
 #include "command_handlers.h"
-
-
+#include "commands.h"
 
 //--
 

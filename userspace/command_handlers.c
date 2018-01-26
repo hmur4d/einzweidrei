@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <errno.h>
 
 #include "command_handlers.h"
 #include "log.h"
@@ -80,7 +79,7 @@ void call_registered_handler(clientsocket_t* client, msg_t* message) {
 	}
 
 	log_info("Calling handler for command: 0x%08x (%s)", message->header.cmd, node->name);
-	node->handler(client, message->header, message->body);
+	node->handler(client, &message->header, message->body);
 }
 
 void destroy_command_handlers() {
