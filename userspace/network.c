@@ -51,6 +51,7 @@ static void serversocket_accept_blocking(serversocket_t* serversocket) {
 		return;
 	}
 	
+	client->closed = false;
 	client->server_fd = serversocket->fd;
 	client->server_port = serversocket->port;
 	client->fd = accept(serversocket->fd, (struct sockaddr *)&client_addr, &len);

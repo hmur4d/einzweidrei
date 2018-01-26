@@ -12,11 +12,6 @@ void reset_header(msgheader_t* header) {
 bool send_string(clientsocket_t* client, char* str) {
 	log_debug("fd=%d, str=%s", client->fd, str);
 
-	if (client->closed) {
-		log_warning("client closed");
-		return false;
-	}
-
 	if (!send_retry(client, str, strlen(str) + 1, 0)) {
 		log_error("Error while sending string, str=%s", str);
 		return false;
@@ -118,7 +113,7 @@ bool consume_message(clientsocket_t* client, message_consumer_f consumer) {
 	consumer(client, &message);
 
 	free(message.body);
-	return true;
+	return !client->closed;
 }
 
 bool send_message(clientsocket_t* client, msgheader_t* header, void* body) {	
