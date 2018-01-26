@@ -103,7 +103,7 @@ bool consume_message(clientsocket_t* client, message_consumer_f consumer) {
 	else {
 		message.body = malloc(message.header.body_size);
 		if (message.body == NULL) {
-			log_error("unable to malloc body, size=%d, errno=%d", message.header.body_size, errno);
+			log_error_errno("unable to malloc body, size=%d", message.header.body_size);
 			return false;
 		}
 

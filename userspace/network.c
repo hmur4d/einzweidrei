@@ -18,7 +18,7 @@ int serversocket_open(serversocket_t* serversocket) {
 	log_debug("Opening server socket on port %d", serversocket->port);
 
 	if ((serversocket->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		log_error("Unable to open server socket, fd=%d, errno=%d", serversocket->fd, errno);
+		log_error_errno("Unable to open server socket, fd=%d", serversocket->fd);
 		return -1;
 	}
 
@@ -28,13 +28,13 @@ int serversocket_open(serversocket_t* serversocket) {
 	addr.sin_addr.s_addr = INADDR_ANY;
 
 	if ((bind(serversocket->fd, (struct sockaddr*)&addr, sizeof(addr))) < 0) {
-		log_error("Unable to bind server socket to port %d, errno=%d", serversocket->port, errno);
+		log_error_errno("Unable to bind server socket to port %d", serversocket->port);
 		serversocket_close(serversocket);
 		return -1;
 	}
 
 	if ((listen(serversocket->fd, 1)) < 0) {
-		log_error("Unable to listen on port %d, errno=%d", serversocket->port, errno);
+		log_error_errno("Unable to listen on port %d", serversocket->port);
 		serversocket_close(serversocket);
 		return -1;
 	}
@@ -51,7 +51,7 @@ void serversocket_accept_blocking(serversocket_t* serversocket) {
 
 	clientsocket_t* client = malloc(sizeof(clientsocket_t));
 	if (client == NULL) {
-		log_error("Unable to malloc client socket!");
+		log_error_errno("Unable to malloc client socket");
 		return;
 	}
 	
@@ -59,7 +59,7 @@ void serversocket_accept_blocking(serversocket_t* serversocket) {
 	client->server_port = serversocket->port;
 	client->fd = accept(serversocket->fd, (struct sockaddr *)&client_addr, &len);
 	if (client->fd < 0) {
-		log_error("Error during accept, client_fd=%d, errno=%d", client->fd, errno);
+		log_error_errno("Error during accept, client_fd=%d", client->fd);
 		clientsocket_close(client);
 		return;
 	}
@@ -89,7 +89,7 @@ void serversocket_close(serversocket_t* serversocket) {
 		log_info("Server socket closed: port=%d, fd=%d", serversocket->port, serversocket->fd);
 	}
 	else {
-		log_warning("Unable to close server socket: port=%d, fd=%d, errno=%d", serversocket->port, serversocket->fd, errno);
+		log_warning_errno("Unable to close server socket: port=%d, fd=%d", serversocket->port, serversocket->fd);
 	}
 }
 
@@ -103,7 +103,7 @@ void clientsocket_close(clientsocket_t* clientsocket) {
 		log_info("Client socket closed: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);		
 	}
 	else {
-		log_warning("Unable to close client socket: port=%d, fd=%d, errno=%d", clientsocket->server_port, clientsocket->fd);
+		log_warning_errno("Unable to close client socket: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
 	}
 }
 
@@ -128,7 +128,7 @@ int send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
 	do {
 		int nsent = send(client->fd, buffer, remaining, offset + total);
 		if (nsent < 0) {
-			log_error("unable to send full buffer, sent=%d of %d bytes, errno=%d", total, len, errno);
+			log_error_errno("unable to send full buffer, sent %d of %d bytes", total, len);
 			return nsent;
 		}
 
@@ -150,7 +150,7 @@ int recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
 	do {
 		int nread = recv(client->fd, buffer + total, remaining, flags);
 		if (nread < 0) {
-			log_error("unable to recv full buffer, received=%d of %d bytes, errno=%d", total, len, errno);
+			log_error_errno("unable to recv full buffer, received %d of %d bytes", total, len);
 			return nread;
 		}
 

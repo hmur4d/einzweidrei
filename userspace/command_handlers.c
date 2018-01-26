@@ -28,7 +28,7 @@ void _register_command_handler(int cmd, const char* name, command_handler_f hand
 		log_debug("creating command handler list");
 		handlers = malloc(sizeof(command_handler_list_t));
 		if (handlers == NULL) {
-			log_error("unable to malloc command handler list, errno=%d", errno);
+			log_error_errno("unable to malloc command handler list");
 			return;
 		}
 		node = handlers;
@@ -42,7 +42,7 @@ void _register_command_handler(int cmd, const char* name, command_handler_f hand
 		node->next = malloc(sizeof(command_handler_node_t));
 		node = node->next;
 		if (node == NULL) {
-			log_error("unable to malloc command handler node, errno=%d", errno);
+			log_error_errno("unable to malloc command handler node");
 			return;
 		}
 	}

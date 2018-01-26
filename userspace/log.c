@@ -1,12 +1,13 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <semaphore.h> 
 
 #include "log.h"
 
-void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, char* format, va_list args);
-void _log(char* level, const char* srcfile, const char* function, int line, char* format, va_list args);
+void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args);
+void _log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args);
 
 static sem_t mutex;
 static int loglevel = LEVEL_ALL;
@@ -44,49 +45,48 @@ int log_close() {
 	return 0;
 }
 
-void _log_debug(const char* srcfile, const char* function, int line, char* format, ...) {
+void _log_debug(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {
 	if (loglevel <= LEVEL_DEBUG) {
 		va_list args;
 		va_start(args, format);
-		_log("DEBUG", srcfile, function, line, format, args);
+		_log("DEBUG", srcfile, function, line, errcode, format, args);
 		va_end(args);
 	}
 }
 
-void _log_info(const char* srcfile, const char* function, int line, char* format, ...) {
+void _log_info(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {
 	if (loglevel <= LEVEL_INFO) {
 		va_list args;
 		va_start(args, format);
-		_log("INFO ", srcfile, function, line, format, args);
+		_log("INFO ", srcfile, function, line, errcode, format, args);
 		va_end(args);
 	}
 }
 
-void _log_warning(const char* srcfile, const char* function, int line, char* format, ...) {
+void _log_warning(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {
 	if (loglevel <= LEVEL_WARNING) {
 		va_list args;
 		va_start(args, format);
-		_log("WARN ", srcfile, function, line, format, args);
+		_log("WARN ", srcfile, function, line, errcode, format, args);
 		va_end(args);
 	}
 }
 
-void _log_error(const char* srcfile, const char* function, int line, char* format, ...) {
+void _log_error(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {
 	if (loglevel <= LEVEL_ERROR) {
 		va_list args;
 		va_start(args, format);
-		_log("ERROR", srcfile, function, line, format, args);
+		_log("ERROR", srcfile, function, line, errcode, format, args);
 		va_end(args);
 	}
 }
-
 
 //--
 
 /*
 Write the log to stdout and to the log file.
 */
-void _log(char* level, const char* srcfile, const char* function, int line, char* format, va_list args) {
+void _log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args) {
 	time_t rawtime;
 	struct tm timeinfo;
 
@@ -99,8 +99,8 @@ void _log(char* level, const char* srcfile, const char* function, int line, char
 	va_copy(args_stdout, args);
 	va_copy(args_file, args);
 
-	_log_write(stdout, level, srcfile, function, line, &timeinfo, format, args_stdout);
-	_log_write(logfile, level, srcfile, function, line, &timeinfo, format, args_file);
+	_log_write(stdout, level, srcfile, function, line, &timeinfo, errcode, format, args_stdout);
+	_log_write(logfile, level, srcfile, function, line, &timeinfo, errcode, format, args_file);
 
 	va_end(args_stdout);
 	va_end(args_file);
@@ -109,7 +109,7 @@ void _log(char* level, const char* srcfile, const char* function, int line, char
 /*
 Format & write the log message to any file structure.
 */
-void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, char* format, va_list args) {
+void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args) {
 	va_list args_copy;
 	va_copy(args_copy, args);
 
@@ -121,6 +121,12 @@ void _log_write(FILE* fp, char* level, const char* srcfile, const char* function
 		timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec,
 		srcfile, function, line);
 	vfprintf(fp, format, args);
+	
+	//optionnally, add error code and message from errno
+	if (errcode != 0) {
+		fprintf(fp, "\nerrno %d: %s", errcode, strerror(errcode));
+	}
+
 	fprintf(fp, "\n\n");
 	fflush(fp);
 
