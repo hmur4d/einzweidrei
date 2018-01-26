@@ -21,9 +21,8 @@ typedef struct {
 	accept_callback_f callback;
 } serversocket_t;
 
-void serversocket_init(serversocket_t* serversocket, int port, accept_callback_f callback);
-int serversocket_open(serversocket_t* serversocket);
-int serversocket_accept(serversocket_t* serversocket);
+bool serversocket_listen(serversocket_t* serversocket, int port, accept_callback_f callback);
+bool serversocket_wait(serversocket_t* serversocket);
 void serversocket_close(serversocket_t* serversocket);
 
 void clientsocket_close(clientsocket_t* clientsocket);

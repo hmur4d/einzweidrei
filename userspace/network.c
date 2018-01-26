@@ -8,13 +8,9 @@
 #include "log.h"
 #include "network.h"
 
-void serversocket_init(serversocket_t* serversocket, int port, accept_callback_f callback) {
-	serversocket->fd = -1;
-	serversocket->port = port;
-	serversocket->callback = callback;
-}
+//-- server sockets
 
-int serversocket_open(serversocket_t* serversocket) {
+static int serversocket_open(serversocket_t* serversocket) {
 	log_debug("Opening server socket on port %d", serversocket->port);
 
 	if ((serversocket->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -73,11 +69,40 @@ static void* serversocket_accept_thread_handler(void* data) {
 	while (true) {
 		serversocket_accept_blocking(serversocket);
 	}
-	pthread_exit(0);
+	
+	//never called
+	//pthread_exit(0);
+	return NULL;
 }
 
-int serversocket_accept(serversocket_t* serversocket) {
+static int serversocket_accept(serversocket_t* serversocket) {
 	return pthread_create(&(serversocket->thread), NULL, serversocket_accept_thread_handler, serversocket);
+}
+
+bool serversocket_listen(serversocket_t* serversocket, int port, accept_callback_f callback) {
+	serversocket->fd = -1;
+	serversocket->port = port;
+	serversocket->callback = callback;
+
+	if (serversocket_open(serversocket) < 0) {
+		return false;
+	}
+
+	if (serversocket_accept(serversocket) < 0) {
+		return false;
+	}
+
+	return true;
+}
+
+bool serversocket_wait(serversocket_t* serversocket) {
+	if (pthread_join(serversocket->thread, NULL) != 0) {
+		log_error_errno("Error un pthread_join for server socket on port %d", serversocket->port);
+		return false;
+	}
+
+	log_info("Stopped to accept connections on port %d", serversocket->port);
+	return true;
 }
 
 void serversocket_close(serversocket_t* serversocket) {
@@ -92,6 +117,8 @@ void serversocket_close(serversocket_t* serversocket) {
 		log_warning_errno("Unable to close server socket: port=%d, fd=%d", serversocket->port, serversocket->fd);
 	}
 }
+
+//-- client sockets
 
 void clientsocket_close(clientsocket_t* clientsocket) {
 	log_debug("Closing client socket: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
@@ -116,6 +143,8 @@ void clientsocket_destroy(clientsocket_t* clientsocket) {
 
 	free(clientsocket);
 }
+
+//-- basic IO
 
 /*
 Send while total sent is less than bytes to send.
