@@ -12,6 +12,11 @@ void reset_header(msgheader_t* header) {
 bool send_string(clientsocket_t* client, char* str) {
 	log_debug("fd=%d, str=%s", client->fd, str);
 
+	if (client->closed) {
+		log_warning("client closed");
+		return false;
+	}
+
 	if (send_retry(client, str, strlen(str) + 1, 0) < 0) {
 		log_error("Error while sending string, str=%s", str);
 		return false;
@@ -78,6 +83,11 @@ bool read_header(clientsocket_t* client, msgheader_t* header) {
 bool consume_message(clientsocket_t* client, message_consumer_f consumer) {
 	log_debug("fd=%d", client->fd);
 	
+	if (client->closed) {
+		log_warning("client closed");
+		return false;
+	}
+
 	if (!read_tag(client, TAG_MSG_START)) {
 		return false;
 	}
@@ -116,7 +126,12 @@ bool consume_message(clientsocket_t* client, message_consumer_f consumer) {
 	return true;
 }
 
-bool send_message(clientsocket_t* client, msgheader_t* header, void* body) {
+bool send_message(clientsocket_t* client, msgheader_t* header, void* body) {	
+	if (client->closed) {
+		log_warning("client closed");
+		return false;
+	}
+	
 	if (!send_int(client, TAG_MSG_START)) {
 		log_error("unable to send start tag!");
 		return false;

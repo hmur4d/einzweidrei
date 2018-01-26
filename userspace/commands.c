@@ -3,6 +3,11 @@
 #include "command_handlers.h"
 #include "log.h"
 
+void cmd_close(clientsocket_t* client, msgheader_t* header, void* body) {
+	//TODO close all sockets, not only this one
+	clientsocket_close(client);
+}
+
 void who_are_you(clientsocket_t* client, msgheader_t* header, void* body) {
 	reset_header(header);
 
@@ -87,6 +92,7 @@ void read_pio(clientsocket_t* client, msgheader_t* header, void* body) {
 
 void register_all_commands() {
 	log_info("Registering all commands");
+	register_command_handler(CMD_CLOSE, cmd_close);
 	register_command_handler(CMD_WHO_ARE_YOU, who_are_you);
 	register_command_handler(CMD_INIT_STATUS, init_status);
 	register_command_handler(CMD_READ_EEPROM_DATA, read_eeprom_data);

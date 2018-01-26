@@ -3,9 +3,11 @@
 
 #include <sys/types.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 typedef struct {
 	int fd;
+	bool closed;
 	int server_fd;
 	int server_port;
 } clientsocket_t;
@@ -25,6 +27,7 @@ int serversocket_accept(serversocket_t* serversocket);
 void serversocket_close(serversocket_t* serversocket);
 
 void clientsocket_close(clientsocket_t* clientsocket);
+void clientsocket_destroy(clientsocket_t* clientsocket);
 
 int send_retry(clientsocket_t*, void* buffer, ssize_t len, int offset);
 int recv_retry(clientsocket_t*, void* buffer, ssize_t len, int flags);

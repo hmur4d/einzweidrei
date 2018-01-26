@@ -95,13 +95,26 @@ void serversocket_close(serversocket_t* serversocket) {
 
 void clientsocket_close(clientsocket_t* clientsocket) {
 	log_debug("Closing client socket: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
-	if (close(clientsocket->fd) == 0) {
-		log_info("Client socket closed: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
-		free(clientsocket);
+	if (clientsocket->closed) {
+		log_warning("Trying to close an already closed socket, ignoring.");
+	} 
+	else if (close(clientsocket->fd) == 0) {
+		clientsocket->closed = true;
+		log_info("Client socket closed: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);		
 	}
 	else {
 		log_warning("Unable to close client socket: port=%d, fd=%d, errno=%d", clientsocket->server_port, clientsocket->fd);
 	}
+}
+
+void clientsocket_destroy(clientsocket_t* clientsocket) {
+	log_debug("Destroying client socket: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
+	if (!clientsocket->closed) {
+		log_warning("Trying to destroy an opened client socket, closing it first");
+		clientsocket_close(clientsocket);
+	}
+
+	free(clientsocket);
 }
 
 /*

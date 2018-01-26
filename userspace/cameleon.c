@@ -22,7 +22,8 @@ void command_accept(clientsocket_t* client) {
 		success = consume_message(client, call_registered_handler);
 	}
 	
-	clientsocket_close(client);
+	log_info("network error in consume_message, destroying client socket (hopefully already closed)");
+	clientsocket_destroy(client);
 }
 
 int main(int argc, char ** argv) {
