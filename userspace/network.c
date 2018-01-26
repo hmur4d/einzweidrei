@@ -104,3 +104,47 @@ void clientsocket_close(clientsocket_t* clientsocket) {
 		log_warning("Unable to close client socket: port=%d, fd=%d, errno=%d", clientsocket->server_port, clientsocket->fd);
 	}
 }
+
+/*
+Send while total sent is less than bytes to send.
+On error, logs and return -1.
+*/
+int send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
+	int remaining = len;
+	int total = 0;
+
+	do {
+		int nsent = send(client->fd, buffer, remaining, offset + total);
+		if (nsent < 0) {
+			log_error("unable to send full buffer, sent=%d of %d bytes, errno=%d", total, len, errno);
+			return nsent;
+		}
+
+		total += nsent;
+		remaining -= nsent;
+	} while (remaining > 0);
+
+	return total;
+}
+
+/*
+Recv while total received is less than expected.
+On error, logs and return -1;
+*/
+int recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
+	int remaining = len;
+	int total = 0;
+
+	do {
+		int nread = recv(client->fd, buffer + total, remaining, flags);
+		if (nread < 0) {
+			log_error("unable to recv full buffer, received=%d of %d bytes, errno=%d", total, len, errno);
+			return nread;
+		}
+
+		total += nread;
+		remaining -= nread;
+	} while (remaining > 0);
+
+	return total;
+}

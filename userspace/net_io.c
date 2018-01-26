@@ -70,54 +70,10 @@ void free_commands(commands_t* commands) {
 
 //-- 
 
-/*
-Send while total sent is less than bytes to send.
-On error, logs and return -1.
-*/
-int safe_send(int fd, void* buffer, ssize_t len, int offset) {
-	int remaining = len;
-	int total = 0;
-
-	do {
-		int nsent = send(fd, buffer, remaining, offset+total);
-		if (nsent < 0) {
-			log_error("unable to send full buffer, sent=%d of %d bytes, errno=%d", total, len, errno);
-			return nsent;
-		}
-
-		total += nsent;
-		remaining -= nsent;
-	} while (remaining > 0);
-
-	return total;
-}
-
-/*
-Recv while total received is less than expected.
-On error, logs and return -1;
-*/
-int safe_recv(int fd, void* buffer, ssize_t len, int flags) {
-	int remaining = len;
-	int total = 0;
-
-	do {
-		int nread = recv(fd, buffer+total, remaining, flags);
-		if (nread < 0) {
-			log_error("unable to recv full buffer, received=%d of %d bytes, errno=%d", total, len, errno);
-			return nread;
-		}
-
-		total += nread;
-		remaining -= nread;
-	} while (remaining > 0);
-
-	return total;
-}
-
 bool send_string(clientsocket_t* client, char* str) {
 	log_debug("fd=%d, str=%s", client->fd, str);
 
-	if (safe_send(client->fd, str, strlen(str) + 1, 0) < 0) {
+	if (send_retry(client, str, strlen(str) + 1, 0) < 0) {
 		log_error("Error while sending string, str=%s", str);
 		return false;
 	}
@@ -128,7 +84,7 @@ bool send_string(clientsocket_t* client, char* str) {
 bool send_int(clientsocket_t* client, int val) {
 	log_debug("val=0x%08x fd=%d", val, client->fd);
 
-	if (safe_send(client->fd, &val, sizeof(val), 0) < 0) {
+	if (send_retry(client, &val, sizeof(val), 0) < 0) {
 		log_error("Error while sending int 0x%08x!", val);
 		return false;
 	}
@@ -140,7 +96,7 @@ bool read_tag(clientsocket_t* client, int expected) {
 	log_debug("fd=%d, expected=0x%08x", client->fd, expected);
 
 	int tag = 0;
-	if (safe_recv(client->fd, &tag, sizeof(int), 0) < 0) {
+	if (recv_retry(client, &tag, sizeof(int), 0) < 0) {
 		log_error("Error while reading tag, expected=0x%08x", expected);
 		return false;
 	}
@@ -156,7 +112,7 @@ bool read_tag(clientsocket_t* client, int expected) {
 bool read_header(clientsocket_t* client, msgheader_t* header) {
 	log_debug("fd=%d", client->fd);
 	
-	if (safe_recv(client->fd, header, sizeof(msgheader_t), 0) < 0) {
+	if (recv_retry(client, header, sizeof(msgheader_t), 0) < 0) {
 		log_error("Error while reading header");
 		return false;
 	}
@@ -185,7 +141,7 @@ bool process_message(clientsocket_t* client, commands_t* commands) {
 		return false;
 	}
 
-	if (safe_recv(client->fd, message.body, message.header.body_size, 0) < 0) {
+	if (recv_retry(client, message.body, message.header.body_size, 0) < 0) {
 		log_error("unable to read body, size=%d", message.header.body_size);
 		free(message.body);
 		return false;
