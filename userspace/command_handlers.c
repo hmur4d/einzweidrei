@@ -3,21 +3,32 @@
 #include "command_handlers.h"
 #include "log.h"
 
+//-- keep handler list here, do not expose it
 
-void register_command_handler(command_handler_list_t** handlers, int cmd, command_handler_f handler) {
+typedef struct command_handler_node {
+	int cmd;
+	command_handler_f handler;
+	struct command_handler_node* next;
+} command_handler_list_t;
+
+static command_handler_list_t* handlers;
+
+//--
+
+void register_command_handler(int cmd, command_handler_f handler) {
 	log_debug("registering command handler for: 0x%08x", cmd);
 
 	command_handler_list_t* node;
 
-	if (*handlers == NULL) {
+	if (handlers == NULL) {
 		//first call, create the linked list
 		log_debug("creating command handler list");
-		*handlers = malloc(sizeof(command_handler_list_t));
-		if (*handlers == NULL) {
+		handlers = malloc(sizeof(command_handler_list_t));
+		if (handlers == NULL) {
 			log_error("unable to malloc command handler list, errno=%d", errno);
 			return;
 		}
-		node = *handlers;
+		node = handlers;
 	}
 	else {
 		//lookup the last node, and add a new one
@@ -38,7 +49,7 @@ void register_command_handler(command_handler_list_t** handlers, int cmd, comman
 	node->next = NULL;
 }
 
-command_handler_f find_command_handler(command_handler_list_t* handlers, int cmd) {
+command_handler_f find_command_handler(int cmd) {
 	log_debug("searching handler for command: 0x%08x", cmd);
 
 	command_handler_list_t* node = handlers;
@@ -54,7 +65,7 @@ command_handler_f find_command_handler(command_handler_list_t* handlers, int cmd
 	return node->handler;
 }
 
-void free_command_handler_list(command_handler_list_t* handlers) {
+void destroy_command_handlers() {
 	log_debug("");
 
 	command_handler_list_t* node = handlers;
