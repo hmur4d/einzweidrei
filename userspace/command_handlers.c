@@ -18,7 +18,7 @@ static command_handler_list_t* handlers;
 
 //--
 
-void register_command_handler(int cmd, const char* name, command_handler_f handler) {
+void _register_command_handler(int cmd, const char* name, command_handler_f handler) {
 	log_debug("registering command handler for: 0x%08x", cmd);
 
 	command_handler_node_t* node;

@@ -40,5 +40,5 @@ void whoareyou(clientsocket_t* client, msgheader_t* header, void* body) {
 
 void register_all_commands() {
 	log_info("Registering all commands");
-	register_command_handler(CMD_WHO_ARE_YOU, "WHO_ARE_YOU", whoareyou);
+	register_command_handler(CMD_WHO_ARE_YOU, whoareyou);
 }
