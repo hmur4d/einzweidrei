@@ -40,10 +40,10 @@ static int serversocket_open(serversocket_t* serversocket) {
 }
 
 static void serversocket_accept_blocking(serversocket_t* serversocket) {
+	log_info("Accepting connections on port %d, fd=%d", serversocket->port, serversocket->fd);
+
 	struct sockaddr_in client_addr;
 	socklen_t len = sizeof(client_addr);
-
-	log_info("Accepting connections on port %d, fd=%d", serversocket->port, serversocket->fd);
 
 	clientsocket_t* client = malloc(sizeof(clientsocket_t));
 	if (client == NULL) {
@@ -60,7 +60,7 @@ static void serversocket_accept_blocking(serversocket_t* serversocket) {
 		return;
 	}
 
-	log_info("Accepted connection on port %d from %s", serversocket->port, inet_ntoa(client_addr.sin_addr));
+	log_info("Accepted connection on port %d from %s, fd=%d", serversocket->port, inet_ntoa(client_addr.sin_addr), client->fd);
 	serversocket->callback(client);
 }
 
@@ -68,6 +68,7 @@ static void* serversocket_accept_thread_handler(void* data) {
 	serversocket_t* serversocket = (serversocket_t*)data;
 	while (true) {
 		serversocket_accept_blocking(serversocket);
+		log_debug("serversocket_accept_blocking finished, port=%d", serversocket->port);
 	}
 	
 	//never called
@@ -124,14 +125,21 @@ void clientsocket_close(clientsocket_t* clientsocket) {
 	log_debug("Closing client socket: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
 	if (clientsocket->closed) {
 		log_warning("Trying to close an already closed socket, ignoring.");
+		return;
 	} 
-	else if (close(clientsocket->fd) == 0) {
-		clientsocket->closed = true;
-		log_info("Client socket closed: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);		
+
+	if (shutdown(clientsocket->fd, SHUT_RD) != 0) {
+		log_warning_errno("Unable to shutdown client socket: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
+		return;
 	}
-	else {
+
+	if (close(clientsocket->fd) != 0) {
 		log_warning_errno("Unable to close client socket: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
+		return;
 	}
+
+	clientsocket->closed = true;
+	log_info("Client socket closed: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
 }
 
 void clientsocket_destroy(clientsocket_t* clientsocket) {
@@ -148,44 +156,52 @@ void clientsocket_destroy(clientsocket_t* clientsocket) {
 
 /*
 Send while total sent is less than bytes to send.
-On error, logs and return -1.
+On error, logs and return false.
 */
-int send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
+bool send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
 	int remaining = len;
 	int total = 0;
 
 	do {
 		int nsent = send(client->fd, buffer, remaining, offset + total);
 		if (nsent < 0) {
-			log_error_errno("unable to send full buffer, sent %d of %d bytes", total, len);
+			log_error_errno("unable to send full buffer, sent %d of %d bytes, client fd=%d, server port=%d", total, len, client->fd, client->server_port);
 			return nsent;
 		}
 
 		total += nsent;
 		remaining -= nsent;
-	} while (remaining > 0);
+	} while (remaining > 0 && !client->closed);
 
-	return total;
+	if (client->closed) {
+		log_error("unable to send full buffer, client closed! (server port=%d)", client->server_port);
+	}
+
+	return remaining == 0;
 }
 
 /*
 Recv while total received is less than expected.
 On error, logs and return -1;
 */
-int recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
+bool recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
 	int remaining = len;
 	int total = 0;
 
 	do {
 		int nread = recv(client->fd, buffer + total, remaining, flags);
 		if (nread < 0) {
-			log_error_errno("unable to recv full buffer, received %d of %d bytes", total, len);
-			return nread;
+			log_error_errno("unable to recv full buffer, received %d of %d bytes, client fd=%d, server port=%d", total, len, client->fd, client->server_port);
+			return false;
 		}
 
 		total += nread;
 		remaining -= nread;
-	} while (remaining > 0);
+	} while (remaining > 0 && !client->closed);
 
-	return total;
+	if (client->closed) {
+		log_error("unable to recv full buffer, client closed! (server port=%d)", client->server_port);
+	}
+
+	return remaining == 0;
 }

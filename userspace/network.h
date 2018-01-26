@@ -28,7 +28,7 @@ void serversocket_close(serversocket_t* serversocket);
 void clientsocket_close(clientsocket_t* clientsocket);
 void clientsocket_destroy(clientsocket_t* clientsocket);
 
-int send_retry(clientsocket_t*, void* buffer, ssize_t len, int offset);
-int recv_retry(clientsocket_t*, void* buffer, ssize_t len, int flags);
+bool send_retry(clientsocket_t*, void* buffer, ssize_t len, int offset);
+bool recv_retry(clientsocket_t*, void* buffer, ssize_t len, int flags);
 
 #endif /* _NETWORK_H_ */

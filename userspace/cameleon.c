@@ -16,6 +16,10 @@
 static clientsocket_t* sequencer_client = NULL;
 static clientsocket_t* monitoring_client = NULL;
 
+static void noop_message_consumer(clientsocket_t* client, msg_t* message) {
+	log_info("received message from server port %d, cmd=0x%x", client->server_port, message->header.cmd);
+}
+
 static void accept_command_client(clientsocket_t* client) {
 	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
 	send_string(client, "Welcome to Cameleon4 command server!\n");
@@ -29,14 +33,12 @@ static void accept_command_client(clientsocket_t* client) {
 	clientsocket_destroy(client);
 
 	//TODO redo this better
-	log_info("also destroying sequencer & monitoring clients");
+	log_info("also closing sequencer & monitoring clients");
 	if (sequencer_client != NULL) {
-		clientsocket_destroy(sequencer_client);
-		sequencer_client = NULL;
+		clientsocket_close(sequencer_client);
 	}
 	if (monitoring_client != NULL) {
-		clientsocket_destroy(monitoring_client);
-		monitoring_client = NULL;
+		clientsocket_close(monitoring_client);
 	}
 }
 
@@ -46,6 +48,15 @@ static void accept_sequencer_client(clientsocket_t* client) {
 
 	//TODO struct for keeping associated client connections
 	sequencer_client = client;
+
+	bool success = true;
+	while (success) {
+		success = consume_message(client, noop_message_consumer);
+	}
+
+	log_info("network error in consume_message, destroying client socket (hopefully already closed)");
+	clientsocket_destroy(sequencer_client);
+	sequencer_client = NULL;
 }
 
 static void accept_monitoring_client(clientsocket_t* client) {
@@ -54,6 +65,15 @@ static void accept_monitoring_client(clientsocket_t* client) {
 
 	//TODO struct for keeping associated client connections
 	monitoring_client = client;
+
+	bool success = true;
+	while (success) {
+		success = consume_message(client, noop_message_consumer);
+	}
+
+	log_info("network error in consume_message, destroying client socket (hopefully already closed)");
+	clientsocket_destroy(monitoring_client);
+	monitoring_client = NULL;
 }
 
 //--
