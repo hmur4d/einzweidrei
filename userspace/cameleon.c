@@ -9,7 +9,7 @@
 #include "network.h"
 #include "net_io.h"
 
-static commands_t* commands;
+static command_handler_list_t* commands;
 
 //--
 
@@ -39,7 +39,7 @@ int main(int argc, char ** argv) {
 	log_info("Starting main program");
 
 
-	register_command(&commands, 0xe, whoareyou);
+	register_command_handler(&commands, 0xe, whoareyou);
 
 	serversocket_t commandserver;
 	serversocket_init(&commandserver, COMMAND_PORT, command_accept);
@@ -57,7 +57,7 @@ int main(int argc, char ** argv) {
 	pthread_join(commandserver.thread, NULL);
 	serversocket_close(&commandserver);
 
-	free_commands(commands);
+	free_command_handler_list(commands);
 
 	log_close();
 	return 0;

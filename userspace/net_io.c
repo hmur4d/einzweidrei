@@ -8,20 +8,20 @@
 
 //-- commands
 
-void register_command(commands_t** commands, int code, command_handler handler) {
-	log_debug("registering command 0x%08x", code);
+void register_command_handler(command_handler_list_t** handlers, int cmd, command_handler handler) {
+	log_debug("registering command handler for: 0x%08x", cmd);
 
-	commands_t* node;
+	command_handler_list_t* node;
 
-	if (*commands == NULL) {
+	if (*handlers == NULL) {
 		//first call, create the linked list
-		log_debug("creating command list");
-		*commands = malloc(sizeof(commands_t));
-		if (*commands == NULL) {
-			log_error("unable to malloc command list, errno=%d", errno);
+		log_debug("creating command handler list");
+		*handlers = malloc(sizeof(command_handler_list_t));
+		if (*handlers == NULL) {
+			log_error("unable to malloc command handler list, errno=%d", errno);
 			return;
 		}
-		node = *commands;
+		node = *handlers;
 	} 
 	else {
 		//lookup the last node, and add a new one
@@ -29,40 +29,40 @@ void register_command(commands_t** commands, int code, command_handler handler) 
 			node = node->next;
 		}
 
-		node->next = malloc(sizeof(commands_t));
+		node->next = malloc(sizeof(command_handler_list_t));
 		node = node->next;
 		if (node == NULL) {
-			log_error("unable to malloc command node, errno=%d", errno);
+			log_error("unable to malloc command handler node, errno=%d", errno);
 			return;
 		}
 	}
 
-	node->cmd.code = code;
-	node->cmd.handler = handler;
+	node->cmd = cmd;
+	node->handler = handler;
 }
 
-command_handler find_command_handler(commands_t* commands, int code) {
-	log_debug("code=0x%08x", code);
+command_handler find_command_handler(command_handler_list_t* handlers, int cmd) {
+	log_debug("searching handler for command: 0x%08x", cmd);
 
-	commands_t* node = commands;
-	while (node != NULL && node->cmd.code != code) {
+	command_handler_list_t* node = handlers;
+	while (node != NULL && node->cmd != cmd) {
 		node = node->next;
 	}
 
 	if (node == NULL) {
-		log_debug("No handler found: 0x%08x", code);
+		log_debug("No handler found for command: 0x%08x", cmd);
 		return NULL;
 	}
 
-	return node->cmd.handler;
+	return node->handler;
 }
 
-void free_commands(commands_t* commands) {
+void free_command_handler_list(command_handler_list_t* handlers) {
 	log_debug("");
 	
-	commands_t* node = commands;
+	command_handler_list_t* node = handlers;
 	while (node != NULL) {
-		commands_t* next = node->next;
+		command_handler_list_t* next = node->next;
 		free(node);
 		node = next;
 	}
@@ -123,7 +123,7 @@ bool read_header(clientsocket_t* client, msgheader_t* header) {
 	return true;
 }
 
-bool process_message(clientsocket_t* client, commands_t* commands) {
+bool process_message(clientsocket_t* client, command_handler_list_t* handlers) {
 	log_debug("fd=%d", client->fd);
 	
 	if (!read_tag(client, TAG_MSG_START)) {
@@ -152,7 +152,7 @@ bool process_message(clientsocket_t* client, commands_t* commands) {
 		return false;
 	}
 
-	command_handler handler = find_command_handler(commands, message.header.cmd);
+	command_handler handler = find_command_handler(handlers, message.header.cmd);
 	if (handler == NULL) {
 		free(message.body);
 		log_error("Unknown command: 0x%08x", message.header.cmd);
