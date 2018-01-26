@@ -43,7 +43,7 @@ int serversocket_open(serversocket_t* serversocket) {
 	return serversocket->fd;
 }
 
-void serversocket_accept_blocking(serversocket_t* serversocket) {
+static void serversocket_accept_blocking(serversocket_t* serversocket) {
 	struct sockaddr_in client_addr;
 	socklen_t len = sizeof(client_addr);
 
@@ -68,7 +68,7 @@ void serversocket_accept_blocking(serversocket_t* serversocket) {
 	serversocket->callback(client);
 }
 
-void* serversocket_accept_thread_handler(void* data) {
+static void* serversocket_accept_thread_handler(void* data) {
 	serversocket_t* serversocket = (serversocket_t*)data;
 	while (true) {
 		serversocket_accept_blocking(serversocket);

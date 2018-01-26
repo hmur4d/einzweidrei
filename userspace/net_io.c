@@ -25,7 +25,7 @@ bool send_string(clientsocket_t* client, char* str) {
 	return true;
 }
 
-bool send_int(clientsocket_t* client, int val) {
+static bool send_int(clientsocket_t* client, int val) {
 	log_debug("val=0x%x fd=%d", val, client->fd);
 
 	if (send_retry(client, &val, sizeof(val), 0) < 0) {
@@ -36,7 +36,7 @@ bool send_int(clientsocket_t* client, int val) {
 	return true;
 }
 
-bool read_tag(clientsocket_t* client, int expected) {
+static bool read_tag(clientsocket_t* client, int expected) {
 	log_debug("fd=%d, expected=0x%x", client->fd, expected);
 
 	int tag = 0;
@@ -53,7 +53,7 @@ bool read_tag(clientsocket_t* client, int expected) {
 	return true;
 }
 
-bool send_header(clientsocket_t* client, msgheader_t* header) {
+static bool send_header(clientsocket_t* client, msgheader_t* header) {
 	log_debug("sending header: cmd=0x%x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
 		header->cmd, header->param1, header->param2, header->param3, header->param4, header->param5, header->param6, header->body_size);
 	
@@ -65,7 +65,7 @@ bool send_header(clientsocket_t* client, msgheader_t* header) {
 	return true;
 }
 
-bool read_header(clientsocket_t* client, msgheader_t* header) {
+static bool read_header(clientsocket_t* client, msgheader_t* header) {
 	log_debug("fd=%d", client->fd);
 	
 	reset_header(header);

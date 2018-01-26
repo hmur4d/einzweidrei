@@ -6,8 +6,8 @@
 
 #include "log.h"
 
-void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args);
-void _log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args);
+static void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args);
+static void _log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args);
 
 static sem_t mutex;
 static int loglevel = LEVEL_ALL;
@@ -86,7 +86,7 @@ void _log_error(const char* srcfile, const char* function, int line, int errcode
 /*
 Write the log to stdout and to the log file.
 */
-void _log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args) {
+static void _log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args) {
 	time_t rawtime;
 	struct tm timeinfo;
 
@@ -109,7 +109,7 @@ void _log(char* level, const char* srcfile, const char* function, int line, int 
 /*
 Format & write the log message to any file structure.
 */
-void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args) {
+static void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args) {
 	va_list args_copy;
 	va_copy(args_copy, args);
 

@@ -53,7 +53,7 @@ void _register_command_handler(int cmd, const char* name, command_handler_f hand
 	node->next = NULL;
 }
 
-command_handler_node_t* find_command_handler_node(int cmd) {
+static command_handler_node_t* find_command_handler_node(int cmd) {
 	log_debug("searching handler for command: 0x%x", cmd);
 
 	command_handler_node_t* node = handlers;

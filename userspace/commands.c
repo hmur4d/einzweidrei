@@ -3,12 +3,12 @@
 #include "command_handlers.h"
 #include "log.h"
 
-void cmd_close(clientsocket_t* client, msgheader_t* header, void* body) {
+static void cmd_close(clientsocket_t* client, msgheader_t* header, void* body) {
 	//TODO close all sockets, not only this one
 	clientsocket_close(client);
 }
 
-void who_are_you(clientsocket_t* client, msgheader_t* header, void* body) {
+static void who_are_you(clientsocket_t* client, msgheader_t* header, void* body) {
 	reset_header(header);
 
 	//TODO implement this
@@ -43,7 +43,7 @@ void who_are_you(clientsocket_t* client, msgheader_t* header, void* body) {
 	}
 }
 
-void init_status(clientsocket_t* client, msgheader_t* header, void* body) {
+static void init_status(clientsocket_t* client, msgheader_t* header, void* body) {
 	reset_header(header);
 	header->cmd = CMD_INIT_STATUS;
 	
@@ -54,7 +54,7 @@ void init_status(clientsocket_t* client, msgheader_t* header, void* body) {
 	}
 }
 
-void read_eeprom_data(clientsocket_t* client, msgheader_t* header, void* body) {
+static void read_eeprom_data(clientsocket_t* client, msgheader_t* header, void* body) {
 	reset_header(header);
 	header->cmd = CMD_READ_EEPROM_DATA;
 
@@ -65,7 +65,7 @@ void read_eeprom_data(clientsocket_t* client, msgheader_t* header, void* body) {
 	}
 }
 
-void read_pio(clientsocket_t* client, msgheader_t* header, void* body) {
+static void read_pio(clientsocket_t* client, msgheader_t* header, void* body) {
 	int pio_offset = header->param1;
 
 	reset_header(header);

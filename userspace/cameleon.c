@@ -13,7 +13,7 @@
 
 //--
 
-void command_accept(clientsocket_t* client) {
+static void command_accept(clientsocket_t* client) {
 	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
 	send_string(client, "Welcome to Cameleon4!\n");
 
