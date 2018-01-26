@@ -25,26 +25,14 @@ typedef struct {
 	void* body;
 } msg_t;
 
-//-- commands
-
-typedef void(*command_handler)(clientsocket_t* client, msgheader_t header, void* body);
-
-typedef struct command_handler_node {	
-	int cmd;
-	command_handler handler;
-	struct command_handler_node* next;
-} command_handler_list_t;
-
-void register_command_handler(command_handler_list_t** handlers, int cmd, command_handler handler);
-command_handler find_command_handler(command_handler_list_t* handlers, int cmd);
-void free_command_handler_list(command_handler_list_t* handlers);
+typedef void(*message_consumer_f)(clientsocket_t* client, msg_t* message);
 
 //-- functions
 
 bool send_int(clientsocket_t* client, int val);
 bool send_string(clientsocket_t* client, char* str);
 
-bool process_message(clientsocket_t* client, command_handler_list_t* handlers);
+bool consume_message(clientsocket_t* client, message_consumer_f consumer);
 
 
 #endif

@@ -9,7 +9,7 @@
 #include "log.h"
 #include "network.h"
 
-void serversocket_init(serversocket_t* serversocket, int port, accept_callback callback) {
+void serversocket_init(serversocket_t* serversocket, int port, accept_callback_f callback) {
 	serversocket->fd = -1;
 	serversocket->port = port;
 	serversocket->callback = callback;

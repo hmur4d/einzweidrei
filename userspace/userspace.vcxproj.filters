@@ -7,6 +7,7 @@
     <ClCompile Include="log.c" />
     <ClCompile Include="cameleon.c" />
     <ClCompile Include="net_io.c" />
+    <ClCompile Include="command_handlers.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="addresses.h" />
@@ -15,6 +16,7 @@
     <ClInclude Include="network.h" />
     <ClInclude Include="net_io.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="command_handlers.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
