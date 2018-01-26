@@ -21,10 +21,10 @@ bool send_string(clientsocket_t* client, char* str) {
 }
 
 bool send_int(clientsocket_t* client, int val) {
-	log_debug("val=0x%08x fd=%d", val, client->fd);
+	log_debug("val=0x%x fd=%d", val, client->fd);
 
 	if (send_retry(client, &val, sizeof(val), 0) < 0) {
-		log_error("Error while sending int 0x%08x!", val);
+		log_error("Error while sending int 0x%x!", val);
 		return false;
 	}
 
@@ -32,16 +32,16 @@ bool send_int(clientsocket_t* client, int val) {
 }
 
 bool read_tag(clientsocket_t* client, int expected) {
-	log_debug("fd=%d, expected=0x%08x", client->fd, expected);
+	log_debug("fd=%d, expected=0x%x", client->fd, expected);
 
 	int tag = 0;
 	if (recv_retry(client, &tag, sizeof(int), 0) < 0) {
-		log_error("Error while reading tag, expected=0x%08x", expected);
+		log_error("Error while reading tag, expected=0x%x", expected);
 		return false;
 	}
 
 	if (tag != expected) {
-		log_error("Received 0x%08x instead of 0x%08x", tag, expected);
+		log_error("Received 0x%x instead of 0x%x", tag, expected);
 		return false;
 	}
 
@@ -49,11 +49,11 @@ bool read_tag(clientsocket_t* client, int expected) {
 }
 
 bool send_header(clientsocket_t* client, msgheader_t* header) {
-	log_debug("sending header: cmd=0x%08x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
+	log_debug("sending header: cmd=0x%x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
 		header->cmd, header->param1, header->param2, header->param3, header->param4, header->param5, header->param6, header->body_size);
 	
 	if (send_retry(client, header, sizeof(msgheader_t), 0) < 0) {
-		log_error("Error while sending message header, cmd=0x%08x", header->cmd);
+		log_error("Error while sending message header, cmd=0x%x", header->cmd);
 		return false;
 	}
 
@@ -69,7 +69,7 @@ bool read_header(clientsocket_t* client, msgheader_t* header) {
 		return false;
 	}
 
-	log_debug("received header: cmd=0x%08x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
+	log_debug("received header: cmd=0x%x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
 		header->cmd, header->param1, header->param2, header->param3, header->param4, header->param5, header->param6, header->body_size);
 
 	return true;
@@ -128,7 +128,7 @@ bool send_message(clientsocket_t* client, msgheader_t* header, void* body) {
 
 	if (header->body_size > 0) {
 		if (send_retry(client, body, header->body_size, 0) < 0) {
-			log_error("unable to send message body, cmd=0x%08x, body size=%d", header->cmd, header->body_size);
+			log_error("unable to send message body, cmd=0x%x, body size=%d", header->cmd, header->body_size);
 			return false;
 		}
 	}

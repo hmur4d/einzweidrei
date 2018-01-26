@@ -19,7 +19,7 @@ static command_handler_list_t* handlers;
 //--
 
 void _register_command_handler(int cmd, const char* name, command_handler_f handler) {
-	log_debug("registering command handler for: 0x%08x", cmd);
+	log_debug("registering command handler for: 0x%x", cmd);
 
 	command_handler_node_t* node;
 
@@ -54,7 +54,7 @@ void _register_command_handler(int cmd, const char* name, command_handler_f hand
 }
 
 command_handler_node_t* find_command_handler_node(int cmd) {
-	log_debug("searching handler for command: 0x%08x", cmd);
+	log_debug("searching handler for command: 0x%x", cmd);
 
 	command_handler_node_t* node = handlers;
 	while (node != NULL && node->cmd != cmd) {
@@ -62,7 +62,7 @@ command_handler_node_t* find_command_handler_node(int cmd) {
 	}
 
 	if (node == NULL) {
-		log_debug("No handler found for command: 0x%08x", cmd);
+		log_debug("No handler found for command: 0x%x", cmd);
 		return NULL;
 	}
 
@@ -70,15 +70,15 @@ command_handler_node_t* find_command_handler_node(int cmd) {
 }
 
 void call_registered_handler(clientsocket_t* client, msg_t* message) {
-	log_debug("in message consumer for command: 0x%08x", message->header.cmd);
+	log_debug("in message consumer for command: 0x%x", message->header.cmd);
 
 	command_handler_node_t* node = find_command_handler_node(message->header.cmd);
 	if (node == NULL) {
-		log_error("Unknown command: 0x%08x, ignoring", message->header.cmd);
+		log_error("Unknown command: 0x%x, ignoring", message->header.cmd);
 		return;
 	}
 
-	log_info("Calling handler for command: 0x%08x (%s)", message->header.cmd, node->name);
+	log_info("Calling handler for command: 0x%x (%s)", message->header.cmd, node->name);
 	node->handler(client, &message->header, message->body);
 }
 
