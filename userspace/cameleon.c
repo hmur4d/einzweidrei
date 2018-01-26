@@ -10,9 +10,7 @@
 #include "net_io.h"
 #include "command_handlers.h"
 
-void whoareyou(clientsocket_t* client, msgheader_t header, void* body) {
-	log_info("received whoareyou");
-}
+
 
 //--
 
@@ -35,7 +33,7 @@ int main(int argc, char ** argv) {
 
 	log_info("Starting main program");
 
-	register_command_handler(0xe, "WHOAREYOU", whoareyou);
+	register_all_commands();
 
 	serversocket_t commandserver;
 	serversocket_init(&commandserver, COMMAND_PORT, command_accept);
