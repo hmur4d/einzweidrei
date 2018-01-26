@@ -87,16 +87,21 @@ bool consume_message(clientsocket_t* client, message_consumer_f consumer) {
 		return false;
 	}
 
-	message.body = malloc(message.header.body_size);
-	if (message.body == NULL) {
-		log_error("unable to malloc body, size=%d, errno=%d", message.header.body_size, errno);
-		return false;
+	if (message.header.body_size == 0) {
+		message.body = NULL;
 	}
+	else {
+		message.body = malloc(message.header.body_size);
+		if (message.body == NULL) {
+			log_error("unable to malloc body, size=%d, errno=%d", message.header.body_size, errno);
+			return false;
+		}
 
-	if (recv_retry(client, message.body, message.header.body_size, 0) < 0) {
-		log_error("unable to read body, size=%d", message.header.body_size);
-		free(message.body);
-		return false;
+		if (recv_retry(client, message.body, message.header.body_size, 0) < 0) {
+			log_error("unable to read body, size=%d", message.header.body_size);
+			free(message.body);
+			return false;
+		}
 	}
 
 	if (!read_tag(client, TAG_MSG_STOP)) {
@@ -121,9 +126,11 @@ bool send_message(clientsocket_t* client, msgheader_t* header, void* body) {
 		return false;
 	}
 
-	if (send_retry(client, body, header->body_size, 0) < 0) {
-		log_error("unable to send message body, cmd=0x%08x, body size=%d", header->cmd, header->body_size);
-		return false;
+	if (header->body_size > 0) {
+		if (send_retry(client, body, header->body_size, 0) < 0) {
+			log_error("unable to send message body, cmd=0x%08x, body size=%d", header->cmd, header->body_size);
+			return false;
+		}
 	}
 
 	if (!send_int(client, TAG_MSG_STOP)) {
