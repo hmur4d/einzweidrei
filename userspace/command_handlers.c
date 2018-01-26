@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <errno.h>
+
 #include "command_handlers.h"
 #include "log.h"
 
@@ -7,18 +8,21 @@
 
 typedef struct command_handler_node {
 	int cmd;
+	const char* name;
 	command_handler_f handler;
 	struct command_handler_node* next;
-} command_handler_list_t;
+} command_handler_node_t;
+
+typedef command_handler_node_t command_handler_list_t;
 
 static command_handler_list_t* handlers;
 
 //--
 
-void register_command_handler(int cmd, command_handler_f handler) {
+void register_command_handler(int cmd, const char* name, command_handler_f handler) {
 	log_debug("registering command handler for: 0x%08x", cmd);
 
-	command_handler_list_t* node;
+	command_handler_node_t* node;
 
 	if (handlers == NULL) {
 		//first call, create the linked list
@@ -36,7 +40,7 @@ void register_command_handler(int cmd, command_handler_f handler) {
 			node = node->next;
 		}
 
-		node->next = malloc(sizeof(command_handler_list_t));
+		node->next = malloc(sizeof(command_handler_node_t));
 		node = node->next;
 		if (node == NULL) {
 			log_error("unable to malloc command handler node, errno=%d", errno);
@@ -45,14 +49,15 @@ void register_command_handler(int cmd, command_handler_f handler) {
 	}
 
 	node->cmd = cmd;
+	node->name = name;
 	node->handler = handler;
 	node->next = NULL;
 }
 
-command_handler_f find_command_handler(int cmd) {
+command_handler_node_t* find_command_handler_node(int cmd) {
 	log_debug("searching handler for command: 0x%08x", cmd);
 
-	command_handler_list_t* node = handlers;
+	command_handler_node_t* node = handlers;
 	while (node != NULL && node->cmd != cmd) {
 		node = node->next;
 	}
@@ -62,15 +67,28 @@ command_handler_f find_command_handler(int cmd) {
 		return NULL;
 	}
 
-	return node->handler;
+	return node;
+}
+
+void call_registered_handler(clientsocket_t* client, msg_t* message) {
+	log_debug("in message consumer for command: 0x%08x", message->header.cmd);
+
+	command_handler_node_t* node = find_command_handler_node(message->header.cmd);
+	if (node == NULL) {
+		log_error("Unknown command: 0x%08x, ignoring", message->header.cmd);
+		return;
+	}
+
+	log_info("Calling handler for command: 0x%08x (%s)", message->header.cmd, node->name);
+	node->handler(client, message->header, message->body);
 }
 
 void destroy_command_handlers() {
 	log_debug("");
 
-	command_handler_list_t* node = handlers;
+	command_handler_node_t* node = handlers;
 	while (node != NULL) {
-		command_handler_list_t* next = node->next;
+		command_handler_node_t* next = node->next;
 		free(node);
 		node = next;
 	}

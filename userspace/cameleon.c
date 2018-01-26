@@ -16,26 +16,13 @@ void whoareyou(clientsocket_t* client, msgheader_t header, void* body) {
 
 //--
 
-void message_consumer(clientsocket_t* client, msg_t* message) {
-	log_debug("in message consumer for command: 0x%08x", message->header.cmd);
-
-	command_handler_f handler = find_command_handler(message->header.cmd);
-	if (handler == NULL) {
-		log_error("Unknown command: 0x%08x, ignoring", message->header.cmd);
-		return;
-	}
-
-	log_info("Calling handler for command: 0x%08x", message->header.cmd);
-	handler(client, message->header, message->body);
-}
-
 void command_accept(clientsocket_t* client) {
 	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
 	send_string(client, "Welcome to Cameleon4!\n");
 
 	bool success = true;
 	while (success) {
-		success = consume_message(client, message_consumer);
+		success = consume_message(client, call_registered_handler);
 	}
 	
 	clientsocket_close(client);
@@ -48,7 +35,7 @@ int main(int argc, char ** argv) {
 
 	log_info("Starting main program");
 
-	register_command_handler(0xe, whoareyou);
+	register_command_handler(0xe, "WHOAREYOU", whoareyou);
 
 	serversocket_t commandserver;
 	serversocket_init(&commandserver, COMMAND_PORT, command_accept);
