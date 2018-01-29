@@ -70,20 +70,18 @@ static void serversocket_accept_blocking(serversocket_t* serversocket) {
 	serversocket->callback(client);
 }
 
-static void* serversocket_accept_thread_handler(void* data) {
+static void* serversocket_accept_thread_routine(void* data) {
 	serversocket_t* serversocket = (serversocket_t*)data;
 	while (true) {
 		serversocket_accept_blocking(serversocket);
 		log_debug("serversocket_accept_blocking finished, port=%d", serversocket->port);
 	}
 	
-	//never called
-	//pthread_exit(0);
 	return NULL;
 }
 
 static int serversocket_accept(serversocket_t* serversocket) {
-	return pthread_create(&(serversocket->thread), NULL, serversocket_accept_thread_handler, serversocket);
+	return pthread_create(&(serversocket->thread), NULL, serversocket_accept_thread_routine, serversocket);
 }
 
 bool serversocket_listen(serversocket_t* serversocket, int port, accept_callback_f callback) {
@@ -125,6 +123,7 @@ void serversocket_close(serversocket_t* serversocket) {
 	}
 }
 
+
 //-- client sockets
 
 static void clientsocket_init(clientsocket_t* clientsocket, serversocket_t* serversocket) {
@@ -164,12 +163,9 @@ void clientsocket_destroy(clientsocket_t* clientsocket) {
 	free(clientsocket);
 }
 
+
 //-- basic IO
 
-/*
-Send while total sent is less than bytes to send.
-On error, logs and return false.
-*/
 bool send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
 	int remaining = len;
 	int total = 0;
@@ -192,10 +188,6 @@ bool send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
 	return remaining == 0;
 }
 
-/*
-Recv while total received is less than expected.
-On error, logs and return -1;
-*/
 bool recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
 	int remaining = len;
 	int total = 0;
