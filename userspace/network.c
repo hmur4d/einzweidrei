@@ -20,6 +20,11 @@ static int serversocket_open(serversocket_t* serversocket) {
 		return -1;
 	}
 
+	int reuse = 1;
+	if (setsockopt(serversocket->fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(int)) < 0) {
+		log_warning_errno("Unable to set option SO_REUSEADDR, fd=%d", serversocket->fd);
+	}
+
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(serversocket->port);

@@ -69,7 +69,6 @@ static void send_monitoring_message() {
 
 static void* monitoring_thread(void* data) {
 	while (true) {
-		//TODO: check real time used to cadence sleep
 		usleep(MONITORING_SLEEP_TIME);
 		send_monitoring_message();
 	}
