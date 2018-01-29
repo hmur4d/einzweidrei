@@ -6,7 +6,7 @@
 #include "log.h"
 
 void reset_header(msgheader_t* header) {
-	memset(header, 0, sizeof(header));
+	memset(header, 0, sizeof(msgheader_t));
 }
 
 bool send_string(clientsocket_t* client, char* str) {
