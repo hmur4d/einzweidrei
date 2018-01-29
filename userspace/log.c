@@ -15,34 +15,34 @@ static FILE* logfile = NULL;
 
 //--
 
-int log_init(int level, char* logfile_path) {
+bool log_init(int level, char* logfile_path) {
 	loglevel = level;
 
 	if (sem_init(&mutex, 0, 1) < 0) {
 		perror("log_init: unable to init log mutex");
-		return -1;
+		return false;
 	}
 
 	logfile = fopen(logfile_path, "w+");
 	if (logfile == NULL) {
 		perror("log_init: unable to open log file");
-		return -1;
+		return false;
 	}	
 
-	return 0;
+	return true;
 }
 
-int log_close() {
+bool log_close() {
 	if (logfile != NULL && fclose(logfile) != 0) {
 		perror("log_close: nable to close log file");
 	}
 
 	if (sem_destroy(&mutex) < 0) {
 		perror("log_close: unable to destroy log mutex");
-		return -1;
+		return false;
 	}
 
-	return 0;
+	return true;
 }
 
 void _log_debug(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {

@@ -1,6 +1,7 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+#include <stdbool.h>
 #include <errno.h>
 
 #define LEVEL_ALL 0
@@ -10,8 +11,8 @@
 #define LEVEL_ERROR 4
 #define LEVEL_OFF 5
 
-int log_init(int level, char* logfile_path);
-int log_close();
+bool log_init(int level, char* logfile_path);
+bool log_close();
 
 //macros that fill in filename, function and line automatically
 //the _errno variants add the errno value and description to the end of the message

@@ -79,7 +79,7 @@ static void accept_monitoring_client(clientsocket_t* client) {
 //--
 
 int main(int argc, char ** argv) {
-	if (log_init(LEVEL_ALL, LOG_FILE) < 0) {
+	if (!log_init(LEVEL_ALL, LOG_FILE)) {
 		return 1;
 	}
 
