@@ -9,6 +9,7 @@
     <ClCompile Include="net_io.c" />
     <ClCompile Include="command_handlers.c" />
     <ClCompile Include="commands.c" />
+    <ClCompile Include="clientgroup.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="addresses.h" />
@@ -19,6 +20,7 @@
     <ClInclude Include="config.h" />
     <ClInclude Include="command_handlers.h" />
     <ClInclude Include="commands.h" />
+    <ClInclude Include="clientgroup.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

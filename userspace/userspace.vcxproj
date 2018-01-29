@@ -84,6 +84,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="addresses.h" />
+    <ClInclude Include="clientgroup.h" />
     <ClInclude Include="commands.h" />
     <ClInclude Include="command_handlers.h" />
     <ClInclude Include="config.h" />
@@ -94,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cameleon.c" />
+    <ClCompile Include="clientgroup.c" />
     <ClCompile Include="commands.c" />
     <ClCompile Include="command_handlers.c" />
     <ClCompile Include="device.c" />
