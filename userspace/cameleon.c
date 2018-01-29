@@ -8,9 +8,10 @@
 #include "log.h"
 #include "network.h"
 #include "net_io.h"
+#include "clientgroup.h"
 #include "command_handlers.h"
 #include "commands.h"
-#include "clientgroup.h"
+#include "monitoring.h"
 
 //--
 
@@ -52,6 +53,7 @@ static void accept_monitoring_client(clientsocket_t* client) {
 	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
 	clientgroup_set_monitoring(client);
 	send_string(client, "Welcome to Cameleon4 monitoring server!\n");
+	monitoring_set_client(client);
 
 	bool success = true;
 	while (success) {
@@ -60,6 +62,7 @@ static void accept_monitoring_client(clientsocket_t* client) {
 
 	log_info("network error in consume_message, destroying client socket (hopefully already closed)");
 	clientgroup_close_all();
+	monitoring_set_client(NULL);
 	clientsocket_destroy(client);
 }
 
@@ -77,8 +80,13 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 
-	register_all_commands();
-	
+	if(!monitoring_start()) {
+		log_error("Unable to init monitoring, exiting");
+		return 1;
+	}
+
+	register_all_commands();	
+		
 	serversocket_t commandserver;
 	if (!serversocket_listen(&commandserver, COMMAND_PORT, accept_command_client)) {
 		log_error("Unable to init command server, exiting");
@@ -108,6 +116,7 @@ int main(int argc, char ** argv) {
 	serversocket_close(&commandserver);
 
 	destroy_command_handlers();
+	monitoring_stop();
 
 	clientgroup_destroy();
 	log_close();

@@ -90,6 +90,7 @@
     <ClInclude Include="config.h" />
     <ClInclude Include="device.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="monitoring.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="net_io.h" />
   </ItemGroup>
@@ -100,6 +101,7 @@
     <ClCompile Include="command_handlers.c" />
     <ClCompile Include="device.c" />
     <ClCompile Include="log.c" />
+    <ClCompile Include="monitoring.c" />
     <ClCompile Include="network.c" />
     <ClCompile Include="net_io.c" />
     <ClCompile Include="usersample.c" />
