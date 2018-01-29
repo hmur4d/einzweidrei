@@ -46,7 +46,7 @@ static void send_monitoring_message() {
 
 	int config = (volt_count & 0xF) << 12 | (temperature_count & 0xF) << 8 | (pressure_count & 0xF) << 4 | (other_count & 0xF);
 
-	msgheader_t header;
+	header_t header;
 	reset_header(&header);
 	header.cmd = HARDWARE_STATUS;
 	header.param1 = id;

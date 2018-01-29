@@ -5,8 +5,8 @@
 #include "net_io.h"
 #include "log.h"
 
-void reset_header(msgheader_t* header) {
-	memset(header, 0, sizeof(msgheader_t));
+void reset_header(header_t* header) {
+	memset(header, 0, sizeof(header_t));
 }
 
 bool send_string(clientsocket_t* client, char* str) {
@@ -48,11 +48,11 @@ static bool read_tag(clientsocket_t* client, int expected) {
 	return true;
 }
 
-static bool send_header(clientsocket_t* client, msgheader_t* header) {
+static bool send_header(clientsocket_t* client, header_t* header) {
 	log_debug("sending header: cmd=0x%x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
 		header->cmd, header->param1, header->param2, header->param3, header->param4, header->param5, header->param6, header->body_size);
 	
-	if (!send_retry(client, header, sizeof(msgheader_t), 0)) {
+	if (!send_retry(client, header, sizeof(header_t), 0)) {
 		log_error("Error while sending message header, cmd=0x%x", header->cmd);
 		return false;
 	}
@@ -60,11 +60,9 @@ static bool send_header(clientsocket_t* client, msgheader_t* header) {
 	return true;
 }
 
-static bool read_header(clientsocket_t* client, msgheader_t* header) {
-	log_debug("fd=%d", client->fd);
-	
+static bool read_header(clientsocket_t* client, header_t* header) {
 	reset_header(header);
-	if (!recv_retry(client, header, sizeof(msgheader_t), 0)) {
+	if (!recv_retry(client, header, sizeof(header_t), 0)) {
 		log_error("Error while reading header");
 		return false;
 	}
@@ -75,14 +73,42 @@ static bool read_header(clientsocket_t* client, msgheader_t* header) {
 	return true;
 }
 
-bool consume_message(clientsocket_t* client, message_consumer_f consumer) {
-	log_debug("fd=%d", client->fd);
+
+//--
+
+bool send_message(clientsocket_t* client, header_t* header, void* body) {
+	if (!send_int(client, TAG_MSG_START)) {
+		log_error("unable to send start tag!");
+		return false;
+	}
+
+	if (!send_header(client, header)) {
+		return false;
+	}
+
+	if (header->body_size > 0) {
+		if (!send_retry(client, body, header->body_size, 0)) {
+			log_error("unable to send message body, cmd=0x%x, body size=%d", header->cmd, header->body_size);
+			return false;
+		}
+	}
+
+	if (!send_int(client, TAG_MSG_STOP)) {
+		log_error("unable to send stop tag!");
+		return false;
+	}
+
+	return true;
+}
+
+bool consume_one_message(clientsocket_t* client, message_consumer_f consumer) {
+	log_debug("waiting for a new message from client, server port=%d", client->server_port);
 
 	if (!read_tag(client, TAG_MSG_START)) {
 		return false;
 	}
 
-	msg_t message;
+	message_t message;
 	if (!read_header(client, &(message.header))) {
 		return false;
 	}
@@ -111,32 +137,19 @@ bool consume_message(clientsocket_t* client, message_consumer_f consumer) {
 
 	log_debug("Calling consumer...");
 	consumer(client, &message);
+	log_debug("Consumer finished.");
 
 	free(message.body);
 	return !client->closed;
 }
 
-bool send_message(clientsocket_t* client, msgheader_t* header, void* body) {	
-	if (!send_int(client, TAG_MSG_START)) {
-		log_error("unable to send start tag!");
-		return false;
+void consume_all_messages(clientsocket_t* client, message_consumer_f consumer) {
+	log_info("Consuming all messages from client (server port=%d)", client->server_port);
+
+	bool success = true;
+	while (success) {
+		success = consume_one_message(client, consumer);
 	}
 
-	if (!send_header(client, header)) {
-		return false;
-	}
-
-	if (header->body_size > 0) {
-		if (!send_retry(client, body, header->body_size, 0)) {
-			log_error("unable to send message body, cmd=0x%x, body size=%d", header->cmd, header->body_size);
-			return false;
-		}
-	}
-
-	if (!send_int(client, TAG_MSG_STOP)) {
-		log_error("unable to send stop tag!");
-		return false;
-	}
-
-	return true;
+	log_info("Stopped consuming messages from client (server port=%d)", client->server_port);
 }

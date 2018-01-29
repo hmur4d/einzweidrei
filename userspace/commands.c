@@ -3,16 +3,16 @@
 #include "command_handlers.h"
 #include "log.h"
 
-static void cmd_close(clientsocket_t* client, msgheader_t* header, void* body) {
+static void cmd_close(clientsocket_t* client, header_t* header, void* body) {
 	//TODO close all sockets, not only this one
 	clientsocket_close(client);
 }
 
-static void cmd_write(clientsocket_t* client, msgheader_t* header, void* body) {
+static void cmd_write(clientsocket_t* client, header_t* header, void* body) {
 	//TODO implement this
 }
 
-static void cmd_read(clientsocket_t* client, msgheader_t* header, void* body) {
+static void cmd_read(clientsocket_t* client, header_t* header, void* body) {
 	//TODO implement this
 
 	header->body_size = 0;
@@ -22,12 +22,12 @@ static void cmd_read(clientsocket_t* client, msgheader_t* header, void* body) {
 	}
 }
 
-static void cmd_test(clientsocket_t* client, msgheader_t* header, void* body) {
+static void cmd_test(clientsocket_t* client, header_t* header, void* body) {
 	//testing connection, nothing to do
 	log_debug("received test message");
 }
 
-static void who_are_you(clientsocket_t* client, msgheader_t* header, void* body) {
+static void who_are_you(clientsocket_t* client, header_t* header, void* body) {
 	reset_header(header);
 
 	//TODO implement this
@@ -62,7 +62,7 @@ static void who_are_you(clientsocket_t* client, msgheader_t* header, void* body)
 	}
 }
 
-static void init_status(clientsocket_t* client, msgheader_t* header, void* body) {
+static void init_status(clientsocket_t* client, header_t* header, void* body) {
 	reset_header(header);
 	header->cmd = CMD_INIT_STATUS;
 	
@@ -73,7 +73,7 @@ static void init_status(clientsocket_t* client, msgheader_t* header, void* body)
 	}
 }
 
-static void read_eeprom_data(clientsocket_t* client, msgheader_t* header, void* body) {
+static void read_eeprom_data(clientsocket_t* client, header_t* header, void* body) {
 	reset_header(header);
 	header->cmd = CMD_READ_EEPROM_DATA;
 
@@ -84,11 +84,11 @@ static void read_eeprom_data(clientsocket_t* client, msgheader_t* header, void* 
 	}
 }
 
-static void write_irq(clientsocket_t* client, msgheader_t* header, void* body) {
+static void write_irq(clientsocket_t* client, header_t* header, void* body) {
 	//TODO implement this
 }
 
-static void read_pio(clientsocket_t* client, msgheader_t* header, void* body) {
+static void read_pio(clientsocket_t* client, header_t* header, void* body) {
 	int pio_offset = header->param1;
 
 	reset_header(header);

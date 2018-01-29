@@ -69,7 +69,7 @@ static command_handler_node_t* find_command_handler_node(int cmd) {
 	return node;
 }
 
-void call_registered_handler(clientsocket_t* client, msg_t* message) {
+void call_registered_handler(clientsocket_t* client, message_t* message) {
 	log_debug("in message consumer for command: 0x%x", message->header.cmd);
 
 	command_handler_node_t* node = find_command_handler_node(message->header.cmd);

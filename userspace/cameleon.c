@@ -15,7 +15,7 @@
 
 //--
 
-static void noop_message_consumer(clientsocket_t* client, msg_t* message) {
+static void noop_message_consumer(clientsocket_t* client, message_t* message) {
 	log_info("received message from server port %d, cmd=0x%x", client->server_port, message->header.cmd);
 }
 
@@ -24,12 +24,8 @@ static void accept_command_client(clientsocket_t* client) {
 	clientgroup_set_command(client);
 	send_string(client, "Welcome to Cameleon4 command server!\n");
 
-	bool success = true;
-	while (success) {
-		success = consume_message(client, call_registered_handler);
-	}
-	
-	log_info("network error in consume_message, destroying client socket (hopefully already closed)");
+	consume_all_messages(client, call_registered_handler);
+
 	clientgroup_close_all();
 	clientsocket_destroy(client);
 }
@@ -39,12 +35,8 @@ static void accept_sequencer_client(clientsocket_t* client) {
 	clientgroup_set_sequencer(client);
 	send_string(client, "Welcome to Cameleon4 sequencer server!\n");
 	
-	bool success = true;
-	while (success) {
-		success = consume_message(client, noop_message_consumer);
-	}
+	consume_all_messages(client, noop_message_consumer);
 
-	log_info("network error in consume_message, destroying client socket (hopefully already closed)");
 	clientgroup_close_all();
 	clientsocket_destroy(client);
 }
@@ -55,12 +47,8 @@ static void accept_monitoring_client(clientsocket_t* client) {
 	send_string(client, "Welcome to Cameleon4 monitoring server!\n");
 	monitoring_set_client(client);
 
-	bool success = true;
-	while (success) {
-		success = consume_message(client, noop_message_consumer);
-	}
+	consume_all_messages(client, noop_message_consumer);
 
-	log_info("network error in consume_message, destroying client socket (hopefully already closed)");
 	clientgroup_close_all();
 	monitoring_set_client(NULL);
 	clientsocket_destroy(client);
