@@ -6,8 +6,8 @@
 
 #include "log.h"
 
-static void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args);
-static void _log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args);
+static void write_log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args);
+static void write_log_to(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args);
 
 static sem_t mutex;
 static int loglevel = LEVEL_ALL;
@@ -45,38 +45,11 @@ bool log_close() {
 	return true;
 }
 
-void _log_debug(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {
-	if (loglevel <= LEVEL_DEBUG) {
+void _log(const char* srcfile, const char* function, int line, int level, char* levelname, int errcode, char* format, ...) {
+	if (loglevel <= level) {
 		va_list args;
 		va_start(args, format);
-		_log("DEBUG", srcfile, function, line, errcode, format, args);
-		va_end(args);
-	}
-}
-
-void _log_info(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {
-	if (loglevel <= LEVEL_INFO) {
-		va_list args;
-		va_start(args, format);
-		_log("INFO ", srcfile, function, line, errcode, format, args);
-		va_end(args);
-	}
-}
-
-void _log_warning(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {
-	if (loglevel <= LEVEL_WARNING) {
-		va_list args;
-		va_start(args, format);
-		_log("WARN ", srcfile, function, line, errcode, format, args);
-		va_end(args);
-	}
-}
-
-void _log_error(const char* srcfile, const char* function, int line, int errcode, char* format, ...) {
-	if (loglevel <= LEVEL_ERROR) {
-		va_list args;
-		va_start(args, format);
-		_log("ERROR", srcfile, function, line, errcode, format, args);
+		write_log(levelname, srcfile, function, line, errcode, format, args);
 		va_end(args);
 	}
 }
@@ -84,9 +57,9 @@ void _log_error(const char* srcfile, const char* function, int line, int errcode
 //--
 
 /*
-Write the log to stdout and to the log file.
+Write the log to stdout and to the log file. Adds a timestamp.
 */
-static void _log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args) {
+static void write_log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args) {
 	time_t rawtime;
 	struct tm timeinfo;
 
@@ -99,8 +72,8 @@ static void _log(char* level, const char* srcfile, const char* function, int lin
 	va_copy(args_stdout, args);
 	va_copy(args_file, args);
 
-	_log_write(stdout, level, srcfile, function, line, &timeinfo, errcode, format, args_stdout);
-	_log_write(logfile, level, srcfile, function, line, &timeinfo, errcode, format, args_file);
+	write_log_to(stdout, level, srcfile, function, line, &timeinfo, errcode, format, args_stdout);
+	write_log_to(logfile, level, srcfile, function, line, &timeinfo, errcode, format, args_file);
 
 	va_end(args_stdout);
 	va_end(args_file);
@@ -109,14 +82,14 @@ static void _log(char* level, const char* srcfile, const char* function, int lin
 /*
 Format & write the log message to any file structure.
 */
-static void _log_write(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args) {
+static void write_log_to(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args) {
 	va_list args_copy;
 	va_copy(args_copy, args);
 
 	sem_wait(&mutex);
 
 	//[level][day time][file, function():line]
-	fprintf(fp, "[%s][%02d/%02d/%04d %02d:%02d:%02d][%s, %s():%d]\n",
+	fprintf(fp, "[%-5.5s][%02d/%02d/%04d %02d:%02d:%02d][%s, %s():%d]\n",
 		level,
 		timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec,
 		srcfile, function, line);

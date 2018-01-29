@@ -1,6 +1,10 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+/*
+Logging functions.
+*/
+
 #include <stdbool.h>
 #include <errno.h>
 
@@ -11,22 +15,24 @@
 #define LEVEL_ERROR 4
 #define LEVEL_OFF 5
 
+//Initialize the logging system. Must be called before any logging is done.
 bool log_init(int level, char* logfile_path);
+
+//Closes the log file. Should be done at program termination.
 bool log_close();
 
-//macros that fill in filename, function and line automatically
-//the _errno variants add the errno value and description to the end of the message
-#define log_debug(...)			_log_debug(__FILE__, __func__, __LINE__, 0, __VA_ARGS__)
-#define log_info(...)			_log_info(__FILE__, __func__, __LINE__, 0, __VA_ARGS__)
-#define log_warning(...)		_log_warning(__FILE__, __func__, __LINE__, 0, __VA_ARGS__)
-#define log_warning_errno(...)	_log_warning(__FILE__, __func__, __LINE__, errno, __VA_ARGS__)
-#define log_error(...)			_log_error(__FILE__, __func__, __LINE__, 0, __VA_ARGS__)
-#define log_error_errno(...)	_log_error(__FILE__, __func__, __LINE__, errno, __VA_ARGS__)
+//These macros fill in filename, function and line automatically.
+//The program should use these.
+//The _errno variants add the errno value and description to the end of the message
+#define log_debug(...)			_log(__FILE__, __func__, __LINE__, LEVEL_DEBUG, "DEBUG", 0, __VA_ARGS__)
+#define log_info(...)			_log(__FILE__, __func__, __LINE__, LEVEL_INFO, "INFO", 0, __VA_ARGS__)
+#define log_warning(...)		_log(__FILE__, __func__, __LINE__, LEVEL_WARNING, "WARN", 0, __VA_ARGS__)
+#define log_warning_errno(...)	_log(__FILE__, __func__, __LINE__, LEVEL_WARNING, "WARN", errno, __VA_ARGS__)
+#define log_error(...)			_log(__FILE__, __func__, __LINE__, LEVEL_ERROR, "ERROR", 0, __VA_ARGS__)
+#define log_error_errno(...)	_log(__FILE__, __func__, __LINE__, LEVEL_ERROR, "ERROR", errno, __VA_ARGS__)
 
-//functions taking filename, function, and line
-void _log_debug(const char* srcfile, const char* function, int line, int errcode, char* format, ...);
-void _log_info(const char* srcfile, const char* function, int line, int errcode, char* format, ...);
-void _log_warning(const char* srcfile, const char* function, int line, int errcode, char* format, ...);
-void _log_error(const char* srcfile, const char* function, int line, int errcode, char* format, ...);
+//Logs to file and stdout if the level is >= to log level.
+//Used by macros, don't call it directly.
+void _log(const char* srcfile, const char* function, int line, int level, char* levelname, int errcode, char* format, ...);
 
 #endif /* _LOG_H_ */
