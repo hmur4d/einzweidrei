@@ -8,6 +8,8 @@
 #include "log.h"
 #include "network.h"
 
+static void clientsocket_init(clientsocket_t* clientsocket, serversocket_t* serversocket);
+
 //-- server sockets
 
 static int serversocket_open(serversocket_t* serversocket) {
@@ -42,21 +44,19 @@ static int serversocket_open(serversocket_t* serversocket) {
 static void serversocket_accept_blocking(serversocket_t* serversocket) {
 	log_info("Accepting connections on port %d, fd=%d", serversocket->port, serversocket->fd);
 
-	struct sockaddr_in client_addr;
-	socklen_t len = sizeof(client_addr);
-
 	clientsocket_t* client = malloc(sizeof(clientsocket_t));
 	if (client == NULL) {
 		log_error_errno("Unable to malloc client socket");
 		return;
 	}
-	
-	client->closed = false;
-	client->server_fd = serversocket->fd;
-	client->server_port = serversocket->port;
-	client->fd = accept(serversocket->fd, (struct sockaddr *)&client_addr, &len);
+
+	clientsocket_init(client, serversocket);
+
+	struct sockaddr_in client_addr;
+	socklen_t len = sizeof(client_addr);
+	client->fd = accept(client->server_fd, (struct sockaddr *)&client_addr, &len);
 	if (client->fd < 0) {
-		log_error_errno("Error during accept, client_fd=%d", client->fd);
+		log_error_errno("Error during accept, server port=%d, client_fd=%d", client->server_port, client->fd);
 		clientsocket_close(client);
 		return;
 	}
@@ -121,6 +121,12 @@ void serversocket_close(serversocket_t* serversocket) {
 }
 
 //-- client sockets
+
+static void clientsocket_init(clientsocket_t* clientsocket, serversocket_t* serversocket) {
+	clientsocket->closed = false;
+	clientsocket->server_fd = serversocket->fd;
+	clientsocket->server_port = serversocket->port;
+}
 
 void clientsocket_close(clientsocket_t* clientsocket) {
 	log_debug("Closing client socket: port=%d, fd=%d", clientsocket->server_port, clientsocket->fd);
