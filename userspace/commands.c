@@ -8,6 +8,20 @@ static void cmd_close(clientsocket_t* client, msgheader_t* header, void* body) {
 	clientsocket_close(client);
 }
 
+static void cmd_write(clientsocket_t* client, msgheader_t* header, void* body) {
+	//TODO implement this
+}
+
+static void cmd_read(clientsocket_t* client, msgheader_t* header, void* body) {
+	//TODO implement this
+
+	header->body_size = 0;
+
+	if (!send_message(client, header, NULL)) {
+		log_error("unable to send response!");
+	}
+}
+
 static void who_are_you(clientsocket_t* client, msgheader_t* header, void* body) {
 	reset_header(header);
 
@@ -65,6 +79,10 @@ static void read_eeprom_data(clientsocket_t* client, msgheader_t* header, void* 
 	}
 }
 
+static void write_irq(clientsocket_t* client, msgheader_t* header, void* body) {
+	//TODO implement this
+}
+
 static void read_pio(clientsocket_t* client, msgheader_t* header, void* body) {
 	int pio_offset = header->param1;
 
@@ -92,9 +110,14 @@ static void read_pio(clientsocket_t* client, msgheader_t* header, void* body) {
 
 void register_all_commands() {
 	log_info("Registering all commands");
+
 	register_command_handler(CMD_CLOSE, cmd_close);
+	register_command_handler(CMD_WRITE, cmd_write);
+	register_command_handler(CMD_READ, cmd_read);
 	register_command_handler(CMD_WHO_ARE_YOU, who_are_you);
+
 	register_command_handler(CMD_INIT_STATUS, init_status);
 	register_command_handler(CMD_READ_EEPROM_DATA, read_eeprom_data);
-	register_command_handler(CMD_READ_PIO, read_pio);
+	register_command_handler(CMD_WRITE_IRQ, write_irq);
+	register_command_handler(CMD_READ_PIO, read_pio);	
 }
