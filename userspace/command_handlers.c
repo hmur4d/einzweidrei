@@ -18,35 +18,46 @@ static command_handler_list_t* handlers;
 
 //--
 
+static command_handler_node_t* create_first_node() {
+	log_debug("creating command handler list");
+	handlers = malloc(sizeof(command_handler_list_t));
+	if (handlers == NULL) {
+		log_error_errno("unable to malloc command handler list");
+	}
+
+	return handlers;
+}
+
+static command_handler_node_t* new_node() {
+	if (handlers == NULL) {
+		//first call, create the linked list
+		return create_first_node();
+	}
+	
+	//lookup the last node, and add a new one
+	command_handler_node_t* node = handlers;
+	while (node->next != NULL) {
+		node = node->next;
+	}
+
+	node->next = malloc(sizeof(command_handler_node_t));
+	node = node->next;
+	if (node == NULL) {
+		log_error_errno("unable to malloc command handler node");
+	}
+
+	return node;
+}
+
 void _register_command_handler(int cmd, const char* name, command_handler_f handler) {
 	log_debug("registering command handler for: 0x%x (%s)", cmd, name);
 
-	command_handler_node_t* node;
-
-	if (handlers == NULL) {
-		//first call, create the linked list
-		log_debug("creating command handler list");
-		handlers = malloc(sizeof(command_handler_list_t));
-		if (handlers == NULL) {
-			log_error_errno("unable to malloc command handler list");
-			return;
-		}
-		node = handlers;
+	command_handler_node_t* node = new_node();
+	if (node == NULL) {
+		log_error("Error while creating new command handler node!");
+		return;
 	}
-	else {
-		//lookup the last node, and add a new one
-		while (node->next != NULL) {
-			node = node->next;
-		}
-
-		node->next = malloc(sizeof(command_handler_node_t));
-		node = node->next;
-		if (node == NULL) {
-			log_error_errno("unable to malloc command handler node");
-			return;
-		}
-	}
-
+	
 	node->cmd = cmd;
 	node->name = name;
 	node->handler = handler;
@@ -83,7 +94,7 @@ void call_registered_handler(clientsocket_t* client, message_t* message) {
 }
 
 void destroy_command_handlers() {
-	log_debug("");
+	log_debug("Destroying command handlers");
 
 	command_handler_node_t* node = handlers;
 	while (node != NULL) {
