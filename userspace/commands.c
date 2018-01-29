@@ -22,6 +22,11 @@ static void cmd_read(clientsocket_t* client, msgheader_t* header, void* body) {
 	}
 }
 
+static void cmd_test(clientsocket_t* client, msgheader_t* header, void* body) {
+	//testing connection, nothing to do
+	log_debug("received test message");
+}
+
 static void who_are_you(clientsocket_t* client, msgheader_t* header, void* body) {
 	reset_header(header);
 
@@ -114,9 +119,11 @@ void register_all_commands() {
 	register_command_handler(CMD_CLOSE, cmd_close);
 	register_command_handler(CMD_WRITE, cmd_write);
 	register_command_handler(CMD_READ, cmd_read);
-	register_command_handler(CMD_WHO_ARE_YOU, who_are_you);
+	register_command_handler(CMD_TEST, cmd_test);
 
+	register_command_handler(CMD_WHO_ARE_YOU, who_are_you);
 	register_command_handler(CMD_INIT_STATUS, init_status);
+
 	register_command_handler(CMD_READ_EEPROM_DATA, read_eeprom_data);
 	register_command_handler(CMD_WRITE_IRQ, write_irq);
 	register_command_handler(CMD_READ_PIO, read_pio);	
