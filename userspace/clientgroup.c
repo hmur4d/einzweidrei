@@ -3,6 +3,12 @@
 #include "clientgroup.h"
 #include "log.h"
 
+typedef struct {
+	clientsocket_t* command;
+	clientsocket_t* sequencer;
+	clientsocket_t* monitoring;
+	clientsocket_t* lock;
+} clientgroup_t;
 
 static sem_t mutex;
 static clientgroup_t group;
