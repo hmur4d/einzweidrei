@@ -1,6 +1,10 @@
 #ifndef _COMMANDS_H_
 #define _COMMANDS_H_
 
+/*
+Command handlers: command id and implementation.
+*/
+
 //fake implementation
 #define CMD_CLOSE                                   0x01
 #define CMD_WRITE                                   0x02

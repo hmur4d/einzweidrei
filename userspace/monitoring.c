@@ -9,6 +9,7 @@
 #include "net_io.h"
 #include "commands.h"
 
+static bool initialized = false;
 static sem_t mutex;
 static pthread_t thread;
 static clientsocket_t* client = NULL;
@@ -91,10 +92,16 @@ bool monitoring_start() {
 		return false;
 	}
 
+	initialized = true;
 	return true;
 }
 
 void monitoring_set_client(clientsocket_t* clientsocket) {
+	if (!initialized) {
+		log_error("Trying to set a monitoring client, but monitoring isn't initalized!");
+		return;
+	}
+
 	log_debug("setting monitoring client socket");
 	sem_wait(&mutex);
 	client = clientsocket;

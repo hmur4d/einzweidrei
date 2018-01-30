@@ -10,6 +10,7 @@ typedef struct {
 	clientsocket_t* lock;
 } clientgroup_t;
 
+static bool initialized = false;
 static sem_t mutex;
 static clientgroup_t group;
 
@@ -31,6 +32,8 @@ bool clientgroup_init() {
 	sem_wait(&mutex);
 	clientgroup_reset();
 	sem_post(&mutex);
+
+	initialized = true;
 	return true;
 }
 
@@ -41,10 +44,16 @@ bool clientgroup_destroy() {
 		return false;
 	}
 
+	initialized = false;
 	return true;
 }
 
 static bool clientgroup_set_one(clientsocket_t** dest, char* dest_name, clientsocket_t* client) {
+	if (!initialized) {
+		log_error("Trying to set a new %s client, but the clientgroup is not initialized!", dest_name);
+		return false;
+	}
+
 	bool result;
 	sem_wait(&mutex);
 
@@ -85,6 +94,11 @@ static void clientgroup_close_one(clientsocket_t* client) {
 }
 
 void clientgroup_close_all() {
+	if (!initialized) {
+		log_error("Trying to close all clients, but clientgroup not initialized!");
+		return;
+	}
+
 	log_info("closing all client sockets");
 	sem_wait(&mutex);
 	clientgroup_close_one(group.command);

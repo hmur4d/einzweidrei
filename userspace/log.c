@@ -9,6 +9,7 @@
 static void write_log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args);
 static void write_log_to(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args);
 
+static bool initialized = false;
 static sem_t mutex;
 static int loglevel = LEVEL_ALL;
 static FILE* logfile = NULL;
@@ -29,6 +30,7 @@ bool log_init(int level, char* logfile_path) {
 		return false;
 	}	
 
+	initialized = true;
 	return true;
 }
 
@@ -42,10 +44,16 @@ bool log_close() {
 		return false;
 	}
 
+	initialized = false;
 	return true;
 }
 
 void _log(const char* srcfile, const char* function, int line, int level, char* levelname, int errcode, char* format, ...) {
+	if (!initialized) {
+		printf("_log: trying to log a message but the log isn't initialized!\n");
+		return;
+	}
+
 	if (loglevel <= level) {
 		va_list args;
 		va_start(args, format);
