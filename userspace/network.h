@@ -17,6 +17,7 @@ typedef struct {
 	bool closed;
 	int server_fd;
 	int server_port;
+	const char* server_name;
 } clientsocket_t;
 
 typedef void(*accept_callback_f)(clientsocket_t* client);
@@ -24,6 +25,7 @@ typedef void(*accept_callback_f)(clientsocket_t* client);
 typedef struct {
 	int fd;
 	int port;
+	const char* name;
 	pthread_t thread;
 	accept_callback_f callback;
 } serversocket_t;
@@ -33,7 +35,7 @@ typedef struct {
 
 //Binds a port, listen with only one concurrent client, call callback in a thread on accept.
 //Initializes a client socket, that will need to be destroyed by the callback upon disconnection.
-bool serversocket_listen(serversocket_t* serversocket, int port, accept_callback_f callback);
+bool serversocket_listen(serversocket_t* serversocket, int port, const char* name, accept_callback_f callback);
 
 //Waits until the server socket doesn't accept connections anymore.
 bool serversocket_wait(serversocket_t* serversocket);

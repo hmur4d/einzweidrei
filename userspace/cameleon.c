@@ -16,11 +16,11 @@
 //--
 
 static void noop_message_consumer(clientsocket_t* client, message_t* message) {
-	log_info("received message from server port %d, cmd=0x%x", client->server_port, message->header.cmd);
+	log_info("received message for %s:%d, cmd=0x%x", client->server_name, client->server_port, message->header.cmd);
 }
 
 static void accept_command_client(clientsocket_t* client) {
-	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
+	log_info("accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_command(client);
 	send_string(client, "Welcome to Cameleon4 command server!\n");
 
@@ -31,7 +31,7 @@ static void accept_command_client(clientsocket_t* client) {
 }
 
 static void accept_sequencer_client(clientsocket_t* client) {
-	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
+	log_info("accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_sequencer(client);
 	send_string(client, "Welcome to Cameleon4 sequencer server!\n");
 	
@@ -42,7 +42,7 @@ static void accept_sequencer_client(clientsocket_t* client) {
 }
 
 static void accept_monitoring_client(clientsocket_t* client) {
-	log_info("fd=%d, port=%d, serverfd=%d", client->fd, client->server_port, client->server_fd);
+	log_info("accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_monitoring(client);
 	send_string(client, "Welcome to Cameleon4 monitoring server!\n");
 	monitoring_set_client(client);
@@ -76,19 +76,19 @@ int main(int argc, char ** argv) {
 	register_all_commands();	
 		
 	serversocket_t commandserver;
-	if (!serversocket_listen(&commandserver, COMMAND_PORT, accept_command_client)) {
+	if (!serversocket_listen(&commandserver, COMMAND_PORT, "command", accept_command_client)) {
 		log_error("Unable to init command server, exiting");
 		return 1;
 	}
 
 	serversocket_t sequencerserver;
-	if (!serversocket_listen(&sequencerserver, SEQUENCER_PORT, accept_sequencer_client)) {
+	if (!serversocket_listen(&sequencerserver, SEQUENCER_PORT, "sequencer", accept_sequencer_client)) {
 		log_error("Unable to init sequencer server, exiting");
 		return 1;
 	}
 
 	serversocket_t monitoringserver;
-	if (!serversocket_listen(&monitoringserver, MONITORING_PORT, accept_monitoring_client)) {
+	if (!serversocket_listen(&monitoringserver, MONITORING_PORT, "monitoring", accept_monitoring_client)) {
 		log_error("Unable to init monitoring server, exiting");
 		return 1;
 	}

@@ -102,7 +102,7 @@ bool send_message(clientsocket_t* client, header_t* header, void* body) {
 }
 
 bool consume_one_message(clientsocket_t* client, message_consumer_f consumer) {
-	log_debug("waiting for a new message from client, server port=%d", client->server_port);
+	log_debug("waiting for a new message from client, server=%s:%d", client->server_name, client->server_port);
 
 	if (!read_tag(client, TAG_MSG_START)) {
 		return false;
@@ -144,12 +144,12 @@ bool consume_one_message(clientsocket_t* client, message_consumer_f consumer) {
 }
 
 void consume_all_messages(clientsocket_t* client, message_consumer_f consumer) {
-	log_info("Consuming all messages from client (server port=%d)", client->server_port);
+	log_info("Consuming all messages from client (server=%s:%d)", client->server_name, client->server_port);
 
 	bool success = true;
 	while (success) {
 		success = consume_one_message(client, consumer);
 	}
 
-	log_info("Stopped consuming messages from client (server port=%d)", client->server_port);
+	log_info("Stopped consuming messages from client (server=%s:%d)", client->server_name, client->server_port);
 }
