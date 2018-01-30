@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <semaphore.h>
 
 #include "monitoring.h"
 #include "log.h"
@@ -8,8 +9,9 @@
 #include "net_io.h"
 #include "commands.h"
 
+static sem_t mutex;
 static pthread_t thread;
-clientsocket_t* client = NULL;
+static clientsocket_t* client = NULL;
 
 static int copy_to_body(short* body, int offset, short* values, int count) {
 	for (int i = 0; i < count; i++) {
@@ -20,12 +22,10 @@ static int copy_to_body(short* body, int offset, short* values, int count) {
 }
 
 static void send_monitoring_message() {
-	//TODO protect with mutex
 	if (client == NULL || client->closed) {
 		log_debug("not sending monitoring message, no active client.");
 		return;
 	}
-
 
 	short id = 0;
 	
@@ -70,13 +70,21 @@ static void send_monitoring_message() {
 static void* monitoring_thread(void* data) {
 	while (true) {
 		usleep(MONITORING_SLEEP_TIME);
+		sem_wait(&mutex);
 		send_monitoring_message();
+		sem_post(&mutex);
 	}
 
 	return NULL;
 }
 
 bool monitoring_start() {
+	log_debug("creating monitoring semaphore");
+	if (sem_init(&mutex, 0, 1) < 0) {
+		log_error_errno("unable to init mutex");
+		return false;
+	}
+
 	log_debug("creating monitoring thread");
 	if (pthread_create(&thread, NULL, monitoring_thread, NULL) != 0) {
 		log_error("unable to create monitoring thread!");
@@ -87,9 +95,10 @@ bool monitoring_start() {
 }
 
 void monitoring_set_client(clientsocket_t* clientsocket) {
-	//TODO protect with mutex
 	log_debug("setting monitoring client socket");
+	sem_wait(&mutex);
 	client = clientsocket;
+	sem_post(&mutex);
 }
 
 bool monitoring_stop() {
@@ -100,6 +109,11 @@ bool monitoring_stop() {
 
 	if (pthread_join(thread, NULL) != 0) {
 		log_error("unable to join monitoring thread");
+		return false;
+	}
+
+	if (sem_destroy(&mutex) < 0) {
+		log_error_errno("unable to destroy mutex");
 		return false;
 	}
 
