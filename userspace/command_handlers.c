@@ -49,19 +49,20 @@ static command_handler_node_t* new_node() {
 	return node;
 }
 
-void _register_command_handler(int cmd, const char* name, command_handler_f handler) {
+bool _register_command_handler(int cmd, const char* name, command_handler_f handler) {
 	log_debug("registering command handler for: 0x%x (%s)", cmd, name);
 
 	command_handler_node_t* node = new_node();
 	if (node == NULL) {
 		log_error("Error while creating new command handler node!");
-		return;
+		return false;
 	}
 	
 	node->cmd = cmd;
 	node->name = name;
 	node->handler = handler;
 	node->next = NULL;
+	return true;
 }
 
 static command_handler_node_t* find_command_handler_node(int cmd) {
@@ -80,7 +81,7 @@ static command_handler_node_t* find_command_handler_node(int cmd) {
 	return node;
 }
 
-void call_registered_handler(clientsocket_t* client, message_t* message) {
+void call_command_handler(clientsocket_t* client, message_t* message) {
 	log_debug("in message consumer for command: 0x%x", message->header.cmd);
 
 	command_handler_node_t* node = find_command_handler_node(message->header.cmd);

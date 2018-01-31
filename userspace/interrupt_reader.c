@@ -3,53 +3,32 @@
 #include <fcntl.h>
 
 #include "log.h"
-#include "interrupts.h"
-#include "../common/interrupt_codes.h"
+#include "interrupt_reader.h"
 
 static int interrupts_fd;
 static pthread_t thread;
-static interrupt_handlers_t* handlers = NULL;
+static interrupt_consumer_f consumer = NULL;
 
-static interrupt_handler_f find_handler(char code) {
-	if (handlers == NULL) {
-		log_warning("Trying to find an interrupt handler, but interrupts aren't initalized!");
-		return NULL;
-	}
-
-	switch (code) {
-		case INTERRUPT_SCAN_DONE:
-			return handlers->scan_done;
-		case INTERRUPT_SEQUENCE_DONE:
-			return handlers->sequence_done;
-	}
-
-	log_error("Unknown interrupt code: 0x%x", code);
-	return NULL;
-}
-
-static void* interrupts_thread(void* arg) {
+static void* interrupt_reader_thread(void* arg) {
 	log_info("starting reading interrupts");
 
 	char code;
 	while (read(interrupts_fd, &code, 1) == 1) {
 		log_debug("read interrupt: 0x%x", code);
-		if (handlers == NULL) {
-			log_warning("No handlers, ignoring interrupt!");
+		if (consumer == NULL) {
+			log_error("No interrupt consumer defined! ignoring.");
 			continue;
 		}
 
-		interrupt_handler_f handler = find_handler(code);
-		if (handler != NULL) {
-			handler(code);
-		}
+		consumer(code);
 	}
 
 	log_error("stopped reading interrupts, read failed");
 	pthread_exit(0);
 }
 
-bool interrupts_start(interrupt_handlers_t*  interrupt_handlers) {
-	handlers = interrupt_handlers;
+bool interrupt_reader_start(interrupt_consumer_f  interrupt_consumer) {
+	consumer = interrupt_consumer;
 
 	//open device file for interrupts
 	log_info("Opening %s file", INTERRUPTS_FILE);
@@ -60,7 +39,7 @@ bool interrupts_start(interrupt_handlers_t*  interrupt_handlers) {
 	}
 
 	//start interrupt thread
-	if (pthread_create(&thread, NULL, interrupts_thread, NULL) != 0) {
+	if (pthread_create(&thread, NULL, interrupt_reader_thread, NULL) != 0) {
 		log_error("unable to create interrupt reader thread!");
 		return false;
 	}
@@ -68,7 +47,7 @@ bool interrupts_start(interrupt_handlers_t*  interrupt_handlers) {
 	return true;
 }
 
-bool interrupts_stop() {
+bool interrupt_reader_stop() {
 	log_info("Stopping interrupt reader thread");
 
 	if (pthread_cancel(thread) != 0) {
@@ -86,6 +65,6 @@ bool interrupts_stop() {
 		return false;
 	}
 
-	handlers = NULL;
+	consumer = NULL;
 	return true;
 }

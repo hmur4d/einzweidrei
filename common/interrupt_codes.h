@@ -1,7 +1,7 @@
 #ifndef _INTERRUPT_CODES_H_
 #define _INTERRUPT_CODES_H_
 
-#define INTERRUPT_SCAN_DONE                   0x1
+#define INTERRUPT_SCAN_DONE                   0x1	//still used?
 #define INTERRUPT_SEQUENCE_DONE               0x2
 #define INTERRUPT_OVERFLOW                    0x3
 #define INTERRUPT_SETUP                       0x4	//still used?

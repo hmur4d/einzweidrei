@@ -8,21 +8,22 @@
 #include "log.h"
 #include "network.h"
 #include "net_io.h"
-#include "interrupts.h"
+#include "../common/interrupt_codes.h"
+#include "interrupt_reader.h"
+#include "interrupt_handlers.h"
 #include "clientgroup.h"
 #include "command_handlers.h"
 #include "commands.h"
 #include "monitoring.h"
 
 //-- interrupt handlers
+//TODO: move in a separate file
 clientsocket_t* sequencer_client = NULL;
 
 void scan_done(char code) {
 	//XXX this is blocking other interrupts.
 	//use a message queue like in cameleon nios?
 	log_info("received scan_done interrupt, code=0x%x", code);
-
-	static int fake2D = 0;
 
 	header_t header;
 	reset_header(&header);
@@ -33,10 +34,11 @@ void scan_done(char code) {
 	header.param4 = 0; //4D counter
 	header.param5 = 0; //?
 
-	log_info("sending SCAN_DONE message");
-
 	//TODO: mutex around sequencer_client to avoid having it destroyed during send
-	send_message(sequencer_client, &header, NULL);
+	if (sequencer_client != NULL) {
+		log_info("sending SCAN_DONE message");
+		send_message(sequencer_client, &header, NULL);
+	}
 }
 
 void sequence_done(char code) {
@@ -48,10 +50,16 @@ void sequence_done(char code) {
 	reset_header(&header);
 	header.cmd = ACQU_DONE;
 
-	log_info("sending ACQU_DONE message");
-
 	//TODO: mutex around sequencer_client to avoid having it destroyed during send
-	send_message(sequencer_client, &header, NULL);
+	if (sequencer_client != NULL) {
+		log_info("sending ACQU_DONE message");
+		send_message(sequencer_client, &header, NULL);
+	}
+}
+
+void register_all_interrupts() {
+	register_interrupt_handler(INTERRUPT_SCAN_DONE, scan_done);
+	register_interrupt_handler(INTERRUPT_SEQUENCE_DONE, sequence_done);
 }
 
 //-- network handlers
@@ -65,7 +73,7 @@ static void accept_command_client(clientsocket_t* client) {
 	clientgroup_set_command(client);
 	send_string(client, "Welcome to Cameleon4 command server!\n");
 
-	consume_all_messages(client, call_registered_handler);
+	consume_all_messages(client, call_command_handler);
 
 	clientgroup_close_all();
 	clientsocket_destroy(client);
@@ -105,11 +113,11 @@ int main(int argc, char ** argv) {
 	}
 
 	log_info("Starting main program");
+	
+	register_all_commands();
+	register_all_interrupts();
 
-	interrupt_handlers_t interrupts;
-	interrupts.scan_done = scan_done;
-	interrupts.sequence_done = sequence_done;
-	if (!interrupts_start(&interrupts)) {
+	if (!interrupt_reader_start(call_interrupt_handler)) {
 		log_error("Unable to init interruptions, exiting");
 		return 1;
 	}
@@ -123,9 +131,7 @@ int main(int argc, char ** argv) {
 		log_error("Unable to init monitoring, exiting");
 		return 1;
 	}
-
-	register_all_commands();	
-		
+			
 	serversocket_t commandserver;
 	if (!serversocket_listen(&commandserver, COMMAND_PORT, "command", accept_command_client)) {
 		log_error("Unable to init command server, exiting");
@@ -154,11 +160,13 @@ int main(int argc, char ** argv) {
 	serversocket_wait(&commandserver);
 	serversocket_close(&commandserver);
 
-	destroy_command_handlers();
 	monitoring_stop();
-	interrupts_stop();
-
+	interrupt_reader_stop();
 	clientgroup_destroy();
+
+	destroy_command_handlers();
+	destroy_interrupt_handlers();
+
 	log_close();
 	return 0;
 }

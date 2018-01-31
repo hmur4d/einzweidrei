@@ -5,6 +5,7 @@
 Mapping between command id and function to handle it.
 */
 
+#include <stdbool.h>
 #include "network.h"
 #include "net_io.h"
 
@@ -19,12 +20,12 @@ typedef void(*command_handler_f)(clientsocket_t* client, header_t* header, void*
 
 //Registers a new command handler.
 //Don't use directly, define a CMD_xxx constant and use the macro.
-void _register_command_handler(int cmd, const char* name, command_handler_f handler);
+bool _register_command_handler(int cmd, const char* name, command_handler_f handler);
 
 //Finds then calls the handler associated to the message command id.
 //Doesn't return anything, so it can be used directly as a callback to net_io's consume_all_messages(..).
 //Logs unknown commands.
-void call_registered_handler(clientsocket_t* client, message_t* message);
+void call_command_handler(clientsocket_t* client, message_t* message);
 
 //Destroys the command id / callback map.
 //Should only be called on program termination.
