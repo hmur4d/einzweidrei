@@ -87,7 +87,7 @@
     <NMakePreprocessorDefinitions>INTELLISENSE</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <ItemGroup>
-    <ClInclude Include="interrupts.h" />
+    <ClInclude Include="interrupt_codes.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

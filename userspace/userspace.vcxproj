@@ -88,7 +88,7 @@
     <ClInclude Include="commands.h" />
     <ClInclude Include="command_handlers.h" />
     <ClInclude Include="config.h" />
-    <ClInclude Include="device.h" />
+    <ClInclude Include="interrupts.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="monitoring.h" />
     <ClInclude Include="network.h" />
@@ -99,15 +99,17 @@
     <ClCompile Include="clientgroup.c" />
     <ClCompile Include="commands.c" />
     <ClCompile Include="command_handlers.c" />
-    <ClCompile Include="device.c" />
+    <ClCompile Include="interrupts.c" />
     <ClCompile Include="log.c" />
     <ClCompile Include="monitoring.c" />
     <ClCompile Include="network.c" />
     <ClCompile Include="net_io.c" />
-    <ClCompile Include="usersample.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="README.txt" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

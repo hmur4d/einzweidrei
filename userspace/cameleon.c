@@ -8,12 +8,19 @@
 #include "log.h"
 #include "network.h"
 #include "net_io.h"
+#include "interrupts.h"
 #include "clientgroup.h"
 #include "command_handlers.h"
 #include "commands.h"
 #include "monitoring.h"
 
-//--
+//-- interrupt handlers
+
+void scan_done(char code) {
+	log_info("received scan_done interrupt, code=0x%x", code);
+}
+
+//-- network handlers
 
 static void noop_message_consumer(clientsocket_t* client, message_t* message) {
 	log_info("received message for %s:%d, cmd=0x%x", client->server_name, client->server_port, message->header.cmd);
@@ -63,6 +70,13 @@ int main(int argc, char ** argv) {
 
 	log_info("Starting main program");
 
+	interrupt_handlers_t interrupts;
+	interrupts.scan_done = scan_done;
+	if (!interrupts_start(&interrupts)) {
+		log_error("Unable to init interruptions, exiting");
+		return 1;
+	}
+
 	if (!clientgroup_init()) {
 		log_error("Unable to init client group, exiting");
 		return 1;
@@ -105,6 +119,7 @@ int main(int argc, char ** argv) {
 
 	destroy_command_handlers();
 	monitoring_stop();
+	interrupts_stop();
 
 	clientgroup_destroy();
 	log_close();

@@ -23,7 +23,7 @@
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
-#include "../common/interrupts.h"
+#include "../common/interrupt_codes.h"
 
 MODULE_LICENSE("GPL");
 
@@ -121,7 +121,7 @@ ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, l
 	printk(KERN_INFO "%s: time elapsed between interrupt and read: %d ns\n", MODULE_NAME, diff);
 
 	count = 1;
-	int interrupt_value = BUTTON_INTERRUPT;
+	int interrupt_value = INTERRUPT_SCAN_DONE;
 	if (copy_to_user(user_buffer, &interrupt_value, count))
 		return -EFAULT;
 
