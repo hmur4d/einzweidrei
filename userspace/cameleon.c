@@ -68,12 +68,17 @@ int main(int argc, char ** argv) {
 	}
 
 	log_info("Starting main program");
-	
-	register_all_commands();
+
+	if (!interrupts_init()) {
+		log_error("Unable to init interrupts, exiting");
+		return -1;
+	}
+
 	register_all_interrupts();
+	register_all_commands();
 
 	if (!interrupt_reader_start(call_interrupt_handler)) {
-		log_error("Unable to init interruptions, exiting");
+		log_error("Unable to init interrupt reader, exiting");
 		return 1;
 	}
 

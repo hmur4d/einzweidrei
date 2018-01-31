@@ -1,3 +1,4 @@
+#include <semaphore.h>
 #include "../common/interrupt_codes.h"
 #include "interrupts.h"
 #include "interrupt_handlers.h"
@@ -7,7 +8,8 @@
 //each interrupt handler is blocking the interrupt reader thread.
 //use a message queue like in cameleon nios?
 
-//TODO: mutex around client to avoid having it destroyed during send
+static bool initialized = false;
+static sem_t mutex; 
 static clientsocket_t* client = NULL;
 
 static void scan_done(char code) {
@@ -22,10 +24,12 @@ static void scan_done(char code) {
 	header.param4 = 0; //4D counter
 	header.param5 = 0; //?
 
+	sem_wait(&mutex);
 	if (client != NULL) {
 		log_info("sending SCAN_DONE message");
 		send_message(client, &header, NULL);
 	}
+	sem_post(&mutex);
 }
 
 static void sequence_done(char code) {
@@ -35,16 +39,37 @@ static void sequence_done(char code) {
 	reset_header(&header);
 	header.cmd = MSG_ACQU_DONE;
 
+	sem_wait(&mutex);
 	if (client != NULL) {
 		log_info("sending ACQU_DONE message");
 		send_message(client, &header, NULL);
 	}
+	sem_post(&mutex);
 }
 
 //--
 
+bool interrupts_init() {
+	log_debug("creating interrupts mutex");
+	if (sem_init(&mutex, 0, 1) < 0) {
+		log_error_errno("unable to init mutex");
+		return false;
+	}
+
+	initialized = true;
+	return true;
+}
+
 void interrupts_set_client(clientsocket_t* clientsocket) {
+	if (!initialized) {
+		log_error("Trying to set an interrupts client, but interrupts are not initalized!");
+		return;
+	}
+
+	log_debug("setting interrupts client socket");
+	sem_wait(&mutex);
 	client = clientsocket;
+	sem_post(&mutex);
 }
 
 void register_all_interrupts() {

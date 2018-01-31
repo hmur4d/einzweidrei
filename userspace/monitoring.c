@@ -80,7 +80,7 @@ static void* monitoring_thread(void* data) {
 }
 
 bool monitoring_start() {
-	log_debug("creating monitoring semaphore");
+	log_debug("creating monitoring mutex");
 	if (sem_init(&mutex, 0, 1) < 0) {
 		log_error_errno("unable to init mutex");
 		return false;

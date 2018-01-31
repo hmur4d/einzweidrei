@@ -83,7 +83,6 @@
     <RemoteBuildOutputs>/home/reflex/projects/userspace/cameleon</RemoteBuildOutputs>
   </PropertyGroup>
   <ItemGroup>
-    <ClInclude Include="addresses.h" />
     <ClInclude Include="clientgroup.h" />
     <ClInclude Include="commands.h" />
     <ClInclude Include="command_handlers.h" />
