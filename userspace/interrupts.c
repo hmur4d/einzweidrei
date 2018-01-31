@@ -6,7 +6,7 @@
 #include "net_io.h"
 
 //each interrupt handler is blocking the interrupt reader thread.
-//use a message queue like in cameleon nios?
+//use a message queue like in cameleon nios? maybe not, the /dev/interrupts file is already a kind of queue...
 
 static bool initialized = false;
 static sem_t mutex; 
@@ -72,7 +72,9 @@ void interrupts_set_client(clientsocket_t* clientsocket) {
 	sem_post(&mutex);
 }
 
-void register_all_interrupts() {
-	register_interrupt_handler(INTERRUPT_SCAN_DONE, scan_done);
-	register_interrupt_handler(INTERRUPT_SEQUENCE_DONE, sequence_done);
+bool register_all_interrupts() {
+	bool success = true;
+	success &= register_interrupt_handler(INTERRUPT_SCAN_DONE, scan_done);
+	success &= register_interrupt_handler(INTERRUPT_SEQUENCE_DONE, sequence_done);
+	return success;
 }

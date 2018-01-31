@@ -71,11 +71,18 @@ int main(int argc, char ** argv) {
 
 	if (!interrupts_init()) {
 		log_error("Unable to init interrupts, exiting");
-		return -1;
+		return 1;
 	}
 
-	register_all_interrupts();
-	register_all_commands();
+	if (!register_all_interrupts()) {
+		log_error("Error while registering interrupts, exiting");
+		return 1;
+	}
+
+	if (!register_all_commands()) {
+		log_error("Error while registering commands, exiting");
+		return 1;
+	}
 
 	if (!interrupt_reader_start(call_interrupt_handler)) {
 		log_error("Unable to init interrupt reader, exiting");

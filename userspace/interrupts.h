@@ -5,6 +5,7 @@
 Interrupt handlers: interrupt implementations.
 */
 
+#include <stdbool.h>
 #include "network.h"
 
 //notifications from sequencer to software
@@ -30,7 +31,7 @@ bool interrupts_init();
 void interrupts_set_client(clientsocket_t* clientsocket);
 
 //Registers all handlers
-void register_all_interrupts();
+bool register_all_interrupts();
 
 #endif
 

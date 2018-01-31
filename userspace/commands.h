@@ -5,6 +5,8 @@
 Command handlers: command id and implementation.
 */
 
+#include <stdbool.h>
+
 //fake implementation
 #define CMD_CLOSE                                   0x01
 #define CMD_WRITE                                   0x02
@@ -67,6 +69,6 @@ Command handlers: command id and implementation.
 
 //--
 
-void register_all_commands();
+bool register_all_commands();
 
 #endif

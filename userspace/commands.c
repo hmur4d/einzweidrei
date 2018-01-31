@@ -113,18 +113,21 @@ static void read_pio(clientsocket_t* client, header_t* header, void* body) {
 
 //--
 
-void register_all_commands() {
+bool register_all_commands() {
 	log_info("Registering all commands");
+	bool success = true;
 
-	register_command_handler(CMD_CLOSE, cmd_close);
-	register_command_handler(CMD_WRITE, cmd_write);
-	register_command_handler(CMD_READ, cmd_read);
-	register_command_handler(CMD_TEST, cmd_test);
+	success &= register_command_handler(CMD_CLOSE, cmd_close);
+	success &= register_command_handler(CMD_WRITE, cmd_write);
+	success &= register_command_handler(CMD_READ, cmd_read);
+	success &= register_command_handler(CMD_TEST, cmd_test);
 
-	register_command_handler(CMD_WHO_ARE_YOU, who_are_you);
-	register_command_handler(CMD_INIT_STATUS, init_status);
+	success &= register_command_handler(CMD_WHO_ARE_YOU, who_are_you);
+	success &= register_command_handler(CMD_INIT_STATUS, init_status);
 
-	register_command_handler(CMD_READ_EEPROM_DATA, read_eeprom_data);
-	register_command_handler(CMD_WRITE_IRQ, write_irq);
-	register_command_handler(CMD_READ_PIO, read_pio);	
+	success &= register_command_handler(CMD_READ_EEPROM_DATA, read_eeprom_data);
+	success &= register_command_handler(CMD_WRITE_IRQ, write_irq);
+	success &= register_command_handler(CMD_READ_PIO, read_pio);
+
+	return success;
 }
