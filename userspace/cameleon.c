@@ -15,9 +15,43 @@
 #include "monitoring.h"
 
 //-- interrupt handlers
+clientsocket_t* sequencer_client = NULL;
 
 void scan_done(char code) {
+	//XXX this is blocking other interrupts.
+	//use a message queue like in cameleon nios?
 	log_info("received scan_done interrupt, code=0x%x", code);
+
+	static int fake2D = 0;
+
+	header_t header;
+	reset_header(&header);
+	header.cmd = SCAN_DONE;
+	header.param1 = 0; //1D counter
+	header.param2 = 0; //2D counter
+	header.param3 = 0; //3D counter
+	header.param4 = 0; //4D counter
+	header.param5 = 0; //?
+
+	log_info("sending SCAN_DONE message");
+
+	//TODO: mutex around sequencer_client to avoid having it destroyed during send
+	send_message(sequencer_client, &header, NULL);
+}
+
+void sequence_done(char code) {
+	//XXX this is blocking other interrupts.
+	//use a message queue like in cameleon nios?
+	log_info("received scan_done interrupt, code=0x%x", code);
+	
+	header_t header;
+	reset_header(&header);
+	header.cmd = ACQU_DONE;
+
+	log_info("sending ACQU_DONE message");
+
+	//TODO: mutex around sequencer_client to avoid having it destroyed during send
+	send_message(sequencer_client, &header, NULL);
 }
 
 //-- network handlers
@@ -41,10 +75,12 @@ static void accept_sequencer_client(clientsocket_t* client) {
 	log_info("accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_sequencer(client);
 	send_string(client, "Welcome to Cameleon4 sequencer server!\n");
-	
+	sequencer_client = client;
+
 	consume_all_messages(client, noop_message_consumer);
 
 	clientgroup_close_all();
+	sequencer_client = NULL;
 	clientsocket_destroy(client);
 }
 
@@ -72,6 +108,7 @@ int main(int argc, char ** argv) {
 
 	interrupt_handlers_t interrupts;
 	interrupts.scan_done = scan_done;
+	interrupts.sequence_done = sequence_done;
 	if (!interrupts_start(&interrupts)) {
 		log_error("Unable to init interruptions, exiting");
 		return 1;

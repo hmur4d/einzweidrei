@@ -19,6 +19,8 @@ static interrupt_handler_f find_handler(char code) {
 	switch (code) {
 		case INTERRUPT_SCAN_DONE:
 			return handlers->scan_done;
+		case INTERRUPT_SEQUENCE_DONE:
+			return handlers->sequence_done;
 	}
 
 	log_error("Unknown interrupt code: 0x%x", code);

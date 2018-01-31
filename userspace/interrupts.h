@@ -11,6 +11,7 @@ typedef void(*interrupt_handler_f) (char code);
 
 typedef struct {
 	interrupt_handler_f scan_done;
+	interrupt_handler_f sequence_done;
 } interrupt_handlers_t;
 
 //Setups up interrupt handlers and starts reading the device file in a separate thread.
