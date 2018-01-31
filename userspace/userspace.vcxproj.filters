@@ -11,6 +11,7 @@
     <ClCompile Include="monitoring.c" />
     <ClCompile Include="interrupt_handlers.c" />
     <ClCompile Include="interrupt_reader.c" />
+    <ClCompile Include="interrupts.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="addresses.h" />
@@ -24,6 +25,7 @@
     <ClInclude Include="monitoring.h" />
     <ClInclude Include="interrupt_handlers.h" />
     <ClInclude Include="interrupt_reader.h" />
+    <ClInclude Include="interrupts.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

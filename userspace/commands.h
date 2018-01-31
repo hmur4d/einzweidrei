@@ -50,18 +50,6 @@ Command handlers: command id and implementation.
 
 #define CMD_TX_MIXER                                2000 + 0x0		//used by compiler
 
-//not commands, notifications from sequencer to software
-#define SCAN_DONE                                   0x10000 + 0x0
-#define SEQUENCE_DONE                               0x10000 + 0x1
-#define DUMMYSCAN_DONE                              0x10000 + 0x2
-#define OVERFLOW_OCCURED                            0x10000 + 0x3
-#define SETUP_DONE                                  0x10000 + 0x4
-#define PRESCAN_DONE                                0x10000 + 0x5
-#define ACQU_TRANSFER                               0x10000 + 0x6
-#define ACQU_CORRUPTED                              0x10000 + 0x7
-#define ACQU_DONE                                   0x10000 + 0x8
-#define TIME_TO_UPDATE                              0x10000 + 0x9
-
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message
 #define PROBE_CHANGED                               0x20000 + 0x1

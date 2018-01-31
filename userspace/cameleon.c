@@ -11,56 +11,11 @@
 #include "../common/interrupt_codes.h"
 #include "interrupt_reader.h"
 #include "interrupt_handlers.h"
+#include "interrupts.h"
 #include "clientgroup.h"
 #include "command_handlers.h"
 #include "commands.h"
 #include "monitoring.h"
-
-//-- interrupt handlers
-//TODO: move in a separate file
-clientsocket_t* sequencer_client = NULL;
-
-void scan_done(char code) {
-	//XXX this is blocking other interrupts.
-	//use a message queue like in cameleon nios?
-	log_info("received scan_done interrupt, code=0x%x", code);
-
-	header_t header;
-	reset_header(&header);
-	header.cmd = SCAN_DONE;
-	header.param1 = 0; //1D counter
-	header.param2 = 0; //2D counter
-	header.param3 = 0; //3D counter
-	header.param4 = 0; //4D counter
-	header.param5 = 0; //?
-
-	//TODO: mutex around sequencer_client to avoid having it destroyed during send
-	if (sequencer_client != NULL) {
-		log_info("sending SCAN_DONE message");
-		send_message(sequencer_client, &header, NULL);
-	}
-}
-
-void sequence_done(char code) {
-	//XXX this is blocking other interrupts.
-	//use a message queue like in cameleon nios?
-	log_info("received scan_done interrupt, code=0x%x", code);
-	
-	header_t header;
-	reset_header(&header);
-	header.cmd = ACQU_DONE;
-
-	//TODO: mutex around sequencer_client to avoid having it destroyed during send
-	if (sequencer_client != NULL) {
-		log_info("sending ACQU_DONE message");
-		send_message(sequencer_client, &header, NULL);
-	}
-}
-
-void register_all_interrupts() {
-	register_interrupt_handler(INTERRUPT_SCAN_DONE, scan_done);
-	register_interrupt_handler(INTERRUPT_SEQUENCE_DONE, sequence_done);
-}
 
 //-- network handlers
 
@@ -83,12 +38,12 @@ static void accept_sequencer_client(clientsocket_t* client) {
 	log_info("accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_sequencer(client);
 	send_string(client, "Welcome to Cameleon4 sequencer server!\n");
-	sequencer_client = client;
+	interrupts_set_client(client);
 
 	consume_all_messages(client, noop_message_consumer);
 
 	clientgroup_close_all();
-	sequencer_client = NULL;
+	interrupts_set_client(NULL);
 	clientsocket_destroy(client);
 }
 

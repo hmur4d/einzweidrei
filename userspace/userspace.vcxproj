@@ -88,6 +88,7 @@
     <ClInclude Include="commands.h" />
     <ClInclude Include="command_handlers.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="interrupts.h" />
     <ClInclude Include="interrupt_reader.h" />
     <ClInclude Include="interrupt_handlers.h" />
     <ClInclude Include="log.h" />
@@ -100,6 +101,7 @@
     <ClCompile Include="clientgroup.c" />
     <ClCompile Include="commands.c" />
     <ClCompile Include="command_handlers.c" />
+    <ClCompile Include="interrupts.c" />
     <ClCompile Include="interrupt_reader.c" />
     <ClCompile Include="interrupt_handlers.c" />
     <ClCompile Include="log.c" />
