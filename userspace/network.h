@@ -16,7 +16,7 @@ typedef struct {
 	int fd;
 	bool closed;
 	int server_fd;
-	int server_port;
+	ushort server_port;
 	const char* server_name;
 } clientsocket_t;
 
@@ -26,7 +26,7 @@ typedef void(*accept_callback_f)(clientsocket_t* client);
 
 typedef struct {
 	int fd;
-	int port;
+	ushort port;
 	const char* name;
 	pthread_t thread;
 	accept_callback_f callback;
@@ -37,7 +37,7 @@ typedef struct {
 
 //Binds a port, listen with only one concurrent client, call callback in a thread on accept.
 //Initializes a client socket, that will be destroyed once the callback returns.
-bool serversocket_listen(serversocket_t* serversocket, int port, const char* name, accept_callback_f callback);
+bool serversocket_listen(serversocket_t* serversocket, ushort port, const char* name, accept_callback_f callback);
 
 //Waits until the server socket doesn't accept connections anymore.
 bool serversocket_wait(serversocket_t* serversocket);
@@ -55,9 +55,9 @@ void clientsocket_close(clientsocket_t* clientsocket);
 //-- basic IO
 
 //Sends "len" bytes, retrying in a loop until all bytes are sent or the socket fails.
-bool send_retry(clientsocket_t*, void* buffer, ssize_t len, int offset);
+bool send_retry(clientsocket_t*, const void* buffer, size_t len, int flags);
 
 //Receive "len" bytes, retrying in a loop until all bytes are received or the socket fails.
-bool recv_retry(clientsocket_t*, void* buffer, ssize_t len, int flags);
+bool recv_retry(clientsocket_t*, void* buffer, size_t len, int flags);
 
 #endif /* _NETWORK_H_ */

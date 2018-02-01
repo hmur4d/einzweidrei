@@ -21,7 +21,7 @@ static int serversocket_open(serversocket_t* serversocket) {
 	}
 
 	int reuse = 1;
-	if (setsockopt(serversocket->fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(int)) < 0) {
+	if (setsockopt(serversocket->fd, SOL_SOCKET, SO_REUSEADDR, (const void*)&reuse, sizeof(int)) < 0) {
 		log_warning_errno("Unable to set option SO_REUSEADDR on %s:%d", serversocket->name, serversocket->port);
 	}
 
@@ -83,7 +83,7 @@ static int serversocket_accept(serversocket_t* serversocket) {
 	return pthread_create(&(serversocket->thread), NULL, serversocket_accept_thread_routine, serversocket);
 }
 
-bool serversocket_listen(serversocket_t* serversocket, int port, const char* name, accept_callback_f callback) {
+bool serversocket_listen(serversocket_t* serversocket, ushort port, const char* name, accept_callback_f callback) {
 	serversocket->fd = -1;
 	serversocket->port = port;
 	serversocket->name = name;
@@ -167,12 +167,12 @@ void clientsocket_destroy(clientsocket_t* clientsocket) {
 
 //-- basic IO
 
-bool send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
+bool send_retry(clientsocket_t* client, const void* buffer, size_t len, int flags) {
 	int remaining = len;
 	int total = 0;
 
 	do {
-		int nsent = send(client->fd, buffer, remaining, offset + total);
+		int nsent = send(client->fd, buffer + total, remaining, flags);
 		if (nsent < 0) {
 			log_error_errno("Unable to send full buffer, sent %d of %d bytes, client fd=%d, server=%s:%d", total, len, client->fd, client->server_name, client->server_port);
 			return nsent;
@@ -189,7 +189,7 @@ bool send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
 	return remaining == 0;
 }
 
-bool recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
+bool recv_retry(clientsocket_t* client, void* buffer, size_t len, int flags) {
 	int remaining = len;
 	int total = 0;
 
