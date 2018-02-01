@@ -23,7 +23,11 @@
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
+#include <linux/kfifo.h>
 #include "../common/interrupt_codes.h"
+
+//must be power of 2
+#define INTERRUPTS_FIFO_SIZE 16
 
 MODULE_LICENSE("GPL");
 
@@ -31,8 +35,9 @@ const int gpio_number = 480;
 const char* MODULE_NAME = "ModCameleon";
 
 int irq_number = 0;
-int interrupts_count = 0; //should be replaced by a queue
+
 struct semaphore sem;
+DEFINE_KFIFO(interrupts_fifo, int8_t, INTERRUPTS_FIFO_SIZE);
 DECLARE_WAIT_QUEUE_HEAD(interrupts_wait_queue);
 
 void unregister_device(void);
@@ -46,7 +51,9 @@ static long time_get_ns(void) {
 
 irqreturn_t gpio_isr(int irq, void *dev_id) {
 	printk(KERN_INFO "%s: Interrupt happened at gpio:%d, irq=%d\n", MODULE_NAME, gpio_number, irq);
-	interrupts_count++;
+	
+	int8_t code = INTERRUPT_SCAN_DONE;
+	kfifo_in(&interrupts_fifo, &code, 1);
 	last_interrupt_ns = time_get_ns();
 	wake_up_interruptible(&interrupts_wait_queue);
 
@@ -86,7 +93,7 @@ int device_open(struct inode *inode, struct file *filp) {
 
 	printk(KERN_INFO "%s: device_open got semaphore\n", MODULE_NAME);
 
-	interrupts_count = 0;
+	kfifo_reset(&interrupts_fifo);
 	//filp->private_data = ...
 	return 0;
 }
@@ -104,15 +111,16 @@ ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, l
 	printk(KERN_INFO "%s: Device file is read at offset=%i, read bytes count=%u\n",
 		MODULE_NAME, (int)*position, (unsigned int)count);
 
-	if (interrupts_count < 1) {
+	if (kfifo_is_empty(&interrupts_fifo)) {
 		//l'appelant pourrait préciser l'attribut NONBLOCK, on doit le respecter
 		if (filp->f_flags & O_NONBLOCK) {
 			printk(KERN_INFO "%s: read with O_NONBLOCK\n", MODULE_NAME);
 			return -EAGAIN;
 		}
 
-		if (wait_event_interruptible(interrupts_wait_queue, interrupts_count > 0))
+		if (wait_event_interruptible(interrupts_wait_queue, !kfifo_is_empty(&interrupts_fifo))) {
 			return -ERESTARTSYS;
+		}
 	}
 
 	//pas besoin de vérifier si on est les seuls réveillés dans ce cas, car on 
@@ -120,16 +128,17 @@ ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, l
 	int diff = time_get_ns() - last_interrupt_ns;
 	printk(KERN_INFO "%s: time elapsed between interrupt and read: %d ns\n", MODULE_NAME, diff);
 
+	//force interrupts to be read one by one
 	count = 1;
-	int interrupt_value = INTERRUPT_SCAN_DONE;
-	if (copy_to_user(user_buffer, &interrupt_value, count))
+	int8_t interrupt_value;
+	if (kfifo_out(&interrupts_fifo, &interrupt_value, count) != count) {
 		return -EFAULT;
-
-	//possible race condition:
-	//what if -- here goes at the same time than ++ in the isr?
-	//ok for a demo, would need a semaphore in real code or separating interrupt & read counters
-	interrupts_count--;
-
+	}
+	
+	if (copy_to_user(user_buffer, &interrupt_value, count)) {
+		return -EFAULT;
+	}
+	
 	*position += count;
 	return count;
 }
