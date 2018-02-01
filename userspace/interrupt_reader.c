@@ -12,7 +12,7 @@ static interrupt_consumer_f consumer = NULL;
 static void* interrupt_reader_thread(void* arg) {
 	log_info("Starting reading interrupts");
 
-	char code;
+	int8_t code;
 	while (read(interrupts_fd, &code, 1) == 1) {
 		log_debug("Read interrupt: 0x%x", code);
 		if (consumer == NULL) {

@@ -12,7 +12,7 @@ static bool initialized = false;
 static sem_t mutex; 
 static clientsocket_t* client = NULL;
 
-static void scan_done(char code) {
+static void scan_done(int8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
 
 	header_t header;
@@ -32,7 +32,7 @@ static void scan_done(char code) {
 	sem_post(&mutex);
 }
 
-static void sequence_done(char code) {
+static void sequence_done(int8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
 
 	header_t header;

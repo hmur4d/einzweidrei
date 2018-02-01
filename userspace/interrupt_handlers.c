@@ -24,7 +24,7 @@ static void init_handlers() {
 }
 
 
-bool _register_interrupt_handler(char code, char* name, interrupt_handler_f handler) {
+bool _register_interrupt_handler(int8_t code, const char* name, interrupt_handler_f handler) {
 	if (code < 0 || code >= INTERRUPT_JUMPTABLE_SIZE) {
 		log_error("Interrupt code '%d' (%s) outside of range 0-%d", code, name, INTERRUPT_JUMPTABLE_SIZE);
 		return false;
@@ -35,11 +35,11 @@ bool _register_interrupt_handler(char code, char* name, interrupt_handler_f hand
 	}
 
 	log_debug("Registering interrupt handler for: 0x%x (%s)", code, name);
-	handlers[(int)code] = handler;
+	handlers[code] = handler;
 	return true;
 }
 
-void call_interrupt_handler(char code) {
+void call_interrupt_handler(int8_t code) {
 	if (code < 0 || code >= INTERRUPT_JUMPTABLE_SIZE) {
 		log_error("Interrupt code '%d' outside of range 0-%d, ignoring", code, INTERRUPT_JUMPTABLE_SIZE);
 		return;
@@ -49,7 +49,7 @@ void call_interrupt_handler(char code) {
 		init_handlers();
 	}
 
-	interrupt_handler_f handler = handlers[(int)code];
+	interrupt_handler_f handler = handlers[code];
 	if (handler != NULL) {
 		log_debug("Calling interrupt handler for code 0x%x", code);
 		handler(code);
