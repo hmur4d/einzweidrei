@@ -48,7 +48,7 @@ bool clientgroup_destroy() {
 	return true;
 }
 
-static bool clientgroup_set_one(clientsocket_t** dest, char* dest_name, clientsocket_t* client) {
+static bool clientgroup_set_one(clientsocket_t** dest, const char* dest_name, clientsocket_t* client) {
 	if (!initialized) {
 		log_error("Trying to set a new %s client, but the clientgroup is not initialized!", dest_name);
 		return false;
