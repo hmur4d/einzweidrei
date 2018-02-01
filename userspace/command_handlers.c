@@ -6,7 +6,7 @@
 //-- keep handler list here, do not expose it
 
 typedef struct command_handler_node {
-	int cmd;
+	int32_t cmd;
 	const char* name;
 	command_handler_f handler;
 	struct command_handler_node* next;
@@ -31,7 +31,7 @@ static command_handler_node_t* new_node() {
 	return node;
 }
 
-bool _register_command_handler(int cmd, const char* name, command_handler_f handler) {
+bool _register_command_handler(int32_t cmd, const char* name, command_handler_f handler) {
 	log_debug("Registering command handler for: 0x%x (%s)", cmd, name);
 
 	command_handler_node_t* node = new_node();
@@ -46,7 +46,7 @@ bool _register_command_handler(int cmd, const char* name, command_handler_f hand
 	return true;
 }
 
-static command_handler_node_t* find_command_handler_node(int cmd) {
+static command_handler_node_t* find_command_handler_node(int32_t cmd) {
 	log_debug("Searching handler for command: 0x%x", cmd);
 
 	command_handler_node_t* node = handlers;

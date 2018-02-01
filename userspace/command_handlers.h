@@ -11,7 +11,7 @@ Mapping between command id and function to handle it.
 
 //Callback used to to handle a command message
 //The body does not need to be freed here, it will be freed by the caller.
-typedef void(*command_handler_f)(clientsocket_t* client, header_t* header, void* body);
+typedef void(*command_handler_f)(clientsocket_t* client, header_t* header, const void* body);
 
 
 //Registers a new command handler. 
@@ -20,7 +20,7 @@ typedef void(*command_handler_f)(clientsocket_t* client, header_t* header, void*
 
 //Registers a new command handler.
 //Don't use directly, define a CMD_xxx constant and use the macro.
-bool _register_command_handler(int cmd, const char* name, command_handler_f handler);
+bool _register_command_handler(int32_t cmd, const char* name, command_handler_f handler);
 
 //Finds then calls the handler associated to the message command id.
 //Doesn't return anything, so it can be used directly as a callback to net_io's consume_all_messages(..).
