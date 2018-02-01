@@ -16,6 +16,33 @@ static FILE* logfile = NULL;
 
 //--
 
+int log_level_from_name(char* name) {
+	if (name == NULL) {
+		return LEVEL_DEFAULT;
+	} 
+	if (strcasecmp("ALL", name) == 0) {
+		return LEVEL_ALL;
+	}
+	if (strcasecmp("DEBUG", name) == 0) {
+		return LEVEL_DEBUG;
+	}
+	if (strcasecmp("INFO", name) == 0) {
+		return LEVEL_INFO;
+	}
+	if (strcasecmp("WARNING", name) == 0) {
+		return LEVEL_WARNING;
+	}
+	if (strcasecmp("ERROR", name) == 0) {
+		return LEVEL_ERROR;
+	}
+	if (strcasecmp("OFF", name) == 0) {
+		return LEVEL_OFF;
+	}
+
+	printf("log_level_from_name: unknown level %s, using default log level (%d)", name, LEVEL_DEFAULT);
+	return LEVEL_DEFAULT;
+}
+
 bool log_init(int level, char* logfile_path) {
 	loglevel = level;
 

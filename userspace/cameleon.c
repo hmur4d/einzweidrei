@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "config.h"
 #include "log.h"
@@ -60,7 +61,9 @@ static void accept_monitoring_client(clientsocket_t* client) {
 //--
 
 int main(int argc, char ** argv) {
-	if (!log_init(LEVEL_ALL, LOG_FILE)) {
+	char* loglevel_name = getenv("LOGLEVEL");
+	int loglevel = log_level_from_name(loglevel_name);
+	if (!log_init(loglevel, LOG_FILE)) {
 		return 1;
 	}
 

@@ -8,12 +8,15 @@ Logging functions.
 #include <stdbool.h>
 #include <errno.h>
 
-#define LEVEL_ALL 0
-#define LEVEL_DEBUG 1
-#define LEVEL_INFO 2
-#define LEVEL_WARNING 3
-#define LEVEL_ERROR 4
-#define LEVEL_OFF 5
+#define LEVEL_ALL		0
+#define LEVEL_DEBUG		1
+#define LEVEL_INFO		2
+#define LEVEL_WARNING	3
+#define LEVEL_ERROR		4
+#define LEVEL_OFF		5
+#define LEVEL_DEFAULT	LEVEL_INFO
+
+int log_level_from_name(char* name);
 
 //Initialize the logging system. Must be called before any logging is done.
 bool log_init(int level, char* logfile_path);

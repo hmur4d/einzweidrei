@@ -1,5 +1,13 @@
 === 
 
+== Using environnment variables to change userspace behaviour
+
+= setting log level
+
+By default, the userspace program will show logs of level >= INFO.
+It is possible to change this by setting the "LOGLEVEL" environment variable. 
+Possible values are: ALL, DEBUG, INFO, WARNING, ERROR, ALL
+
 == Debugging userspace on an x86 linux system
 
 = sending interruptions

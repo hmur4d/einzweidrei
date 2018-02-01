@@ -205,7 +205,7 @@ bool recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
 	} while (remaining > 0 && !client->closed);
 
 	if (client->closed) {
-		log_error("Unable to recv full buffer, client closed! (server=%d)", client->server_name, client->server_port);
+		log_error("Unable to recv full buffer, client closed! (server=%s:%d)", client->server_name, client->server_port);
 	}
 
 	return remaining == 0;
