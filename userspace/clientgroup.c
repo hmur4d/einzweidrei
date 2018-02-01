@@ -15,7 +15,7 @@ static sem_t mutex;
 static clientgroup_t group;
 
 static void clientgroup_reset() {
-	log_debug("resetting client group");
+	log_debug("Resetting client group");
 	group.command = NULL;
 	group.sequencer = NULL;
 	group.monitoring = NULL;
@@ -23,9 +23,9 @@ static void clientgroup_reset() {
 }
 
 bool clientgroup_init() {
-	log_debug("initializing client group");
+	log_debug("Initializing client group");
 	if (sem_init(&mutex, 0, 1) < 0) {
-		log_error_errno("unable to init mutex");
+		log_error_errno("Unable to init mutex");
 		return false;
 	}
 
@@ -38,9 +38,9 @@ bool clientgroup_init() {
 }
 
 bool clientgroup_destroy() {
-	log_debug("destroy client group");
+	log_debug("Destroying client group");
 	if (sem_destroy(&mutex) < 0) {
-		log_error_errno("unable to destroy mutex");
+		log_error_errno("Unable to destroy mutex");
 		return false;
 	}
 
@@ -58,11 +58,11 @@ static bool clientgroup_set_one(clientsocket_t** dest, char* dest_name, clientso
 	sem_wait(&mutex);
 
 	if (*dest != NULL) {
-		log_warning("trying to set a new %s client while the previous one wasn't destroyed yet!", dest_name);
+		log_warning("Trying to set a new %s client while the previous one wasn't destroyed yet!", dest_name);
 		result = false;
 	}
 	else {
-		log_debug("setting new %s client", dest_name);
+		log_debug("Setting new %s client", dest_name);
 		*dest = client;
 		result = true;
 	}
@@ -99,7 +99,7 @@ void clientgroup_close_all() {
 		return;
 	}
 
-	log_info("closing all client sockets");
+	log_info("Closing all client sockets");
 	sem_wait(&mutex);
 	clientgroup_close_one(group.command);
 	clientgroup_close_one(group.sequencer);

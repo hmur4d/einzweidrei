@@ -24,7 +24,7 @@ static int copy_to_body(short* body, int offset, short* values, int count) {
 
 static void send_monitoring_message() {
 	if (client == NULL || client->closed) {
-		log_debug("not sending monitoring message, no active client.");
+		log_debug("Skipping monitoring message, no active client.");
 		return;
 	}
 
@@ -64,7 +64,7 @@ static void send_monitoring_message() {
 	offset = copy_to_body(body, offset, temperature, temperature_count);
 	//TODO pressure & other?
 
-	log_info("sending monitoring message");
+	log_info("Sending monitoring message");
 	send_message(client, &header, body);
 }
 
@@ -80,15 +80,15 @@ static void* monitoring_thread(void* data) {
 }
 
 bool monitoring_start() {
-	log_debug("creating monitoring mutex");
+	log_debug("Creating monitoring mutex");
 	if (sem_init(&mutex, 0, 1) < 0) {
-		log_error_errno("unable to init mutex");
+		log_error_errno("Unable to init mutex");
 		return false;
 	}
 
-	log_debug("creating monitoring thread");
+	log_debug("Creating monitoring thread");
 	if (pthread_create(&thread, NULL, monitoring_thread, NULL) != 0) {
-		log_error("unable to create monitoring thread!");
+		log_error("Unable to create monitoring thread!");
 		return false;
 	}
 
@@ -110,17 +110,17 @@ void monitoring_set_client(clientsocket_t* clientsocket) {
 
 bool monitoring_stop() {
 	if (pthread_cancel(thread) != 0) {
-		log_error("unable to cancel monitoring thread");
+		log_error("Unable to cancel monitoring thread");
 		return false;
 	}
 
 	if (pthread_join(thread, NULL) != 0) {
-		log_error("unable to join monitoring thread");
+		log_error("Unable to join monitoring thread");
 		return false;
 	}
 
 	if (sem_destroy(&mutex) < 0) {
-		log_error_errno("unable to destroy mutex");
+		log_error_errno("Unable to destroy mutex");
 		return false;
 	}
 

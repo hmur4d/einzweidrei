@@ -19,10 +19,10 @@ static command_handler_list_t* handlers;
 //--
 
 static command_handler_node_t* create_first_node() {
-	log_debug("creating command handler list");
+	log_debug("Creating command handler list");
 	handlers = malloc(sizeof(command_handler_list_t));
 	if (handlers == NULL) {
-		log_error_errno("unable to malloc command handler list");
+		log_error_errno("Unable to malloc command handler list");
 	}
 
 	return handlers;
@@ -43,14 +43,14 @@ static command_handler_node_t* new_node() {
 	node->next = malloc(sizeof(command_handler_node_t));
 	node = node->next;
 	if (node == NULL) {
-		log_error_errno("unable to malloc command handler node");
+		log_error_errno("Unable to malloc command handler node");
 	}
 
 	return node;
 }
 
 bool _register_command_handler(int cmd, const char* name, command_handler_f handler) {
-	log_debug("registering command handler for: 0x%x (%s)", cmd, name);
+	log_debug("Registering command handler for: 0x%x (%s)", cmd, name);
 
 	command_handler_node_t* node = new_node();
 	if (node == NULL) {
@@ -66,7 +66,7 @@ bool _register_command_handler(int cmd, const char* name, command_handler_f hand
 }
 
 static command_handler_node_t* find_command_handler_node(int cmd) {
-	log_debug("searching handler for command: 0x%x", cmd);
+	log_debug("Searching handler for command: 0x%x", cmd);
 
 	command_handler_node_t* node = handlers;
 	while (node != NULL && node->cmd != cmd) {
@@ -82,7 +82,7 @@ static command_handler_node_t* find_command_handler_node(int cmd) {
 }
 
 void call_command_handler(clientsocket_t* client, message_t* message) {
-	log_debug("in message consumer for command: 0x%x", message->header.cmd);
+	log_debug("In message consumer for command: 0x%x", message->header.cmd);
 
 	command_handler_node_t* node = find_command_handler_node(message->header.cmd);
 	if (node == NULL) {

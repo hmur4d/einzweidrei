@@ -13,7 +13,7 @@ static sem_t mutex;
 static clientsocket_t* client = NULL;
 
 static void scan_done(char code) {
-	log_info("received scan_done interrupt, code=0x%x", code);
+	log_info("Received scan_done interrupt, code=0x%x", code);
 
 	header_t header;
 	reset_header(&header);
@@ -26,14 +26,14 @@ static void scan_done(char code) {
 
 	sem_wait(&mutex);
 	if (client != NULL) {
-		log_info("sending SCAN_DONE message");
+		log_info("Sending SCAN_DONE message");
 		send_message(client, &header, NULL);
 	}
 	sem_post(&mutex);
 }
 
 static void sequence_done(char code) {
-	log_info("received scan_done interrupt, code=0x%x", code);
+	log_info("Received scan_done interrupt, code=0x%x", code);
 
 	header_t header;
 	reset_header(&header);
@@ -41,7 +41,7 @@ static void sequence_done(char code) {
 
 	sem_wait(&mutex);
 	if (client != NULL) {
-		log_info("sending ACQU_DONE message");
+		log_info("Sending ACQU_DONE message");
 		send_message(client, &header, NULL);
 	}
 	sem_post(&mutex);
@@ -50,9 +50,9 @@ static void sequence_done(char code) {
 //--
 
 bool interrupts_init() {
-	log_debug("creating interrupts mutex");
+	log_debug("Creating interrupts mutex");
 	if (sem_init(&mutex, 0, 1) < 0) {
-		log_error_errno("unable to init mutex");
+		log_error_errno("Unable to init mutex");
 		return false;
 	}
 
@@ -66,7 +66,7 @@ void interrupts_set_client(clientsocket_t* clientsocket) {
 		return;
 	}
 
-	log_debug("setting interrupts client socket");
+	log_debug("Setting interrupts client socket");
 	sem_wait(&mutex);
 	client = clientsocket;
 	sem_post(&mutex);

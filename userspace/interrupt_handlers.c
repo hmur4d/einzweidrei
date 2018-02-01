@@ -12,7 +12,7 @@ static interrupt_handler_f handlers[INTERRUPT_JUMPTABLE_SIZE];
 static bool initialized = false;
 
 static void reset_handlers() {
-	log_debug("resetting handlers jump table");
+	log_debug("Resetting handlers jump table");
 	for (int i = 0; i < INTERRUPT_JUMPTABLE_SIZE; i++) {
 		handlers[i] = NULL;
 	}
@@ -34,7 +34,7 @@ bool _register_interrupt_handler(char code, char* name, interrupt_handler_f hand
 		init_handlers();
 	}
 
-	log_debug("registering interrupt handler for: 0x%x (%s)", code, name);
+	log_debug("Registering interrupt handler for: 0x%x (%s)", code, name);
 	handlers[(int)code] = handler;
 	return true;
 }
@@ -51,11 +51,11 @@ void call_interrupt_handler(char code) {
 
 	interrupt_handler_f handler = handlers[(int)code];
 	if (handler != NULL) {
-		log_debug("calling interrupt handler for code 0x%x", code);
+		log_debug("Calling interrupt handler for code 0x%x", code);
 		handler(code);
 	}
 	else {
-		log_warning("no handler found for interrupt code 0x%x, ignoring", code);
+		log_warning("No handler found for interrupt code 0x%x, ignoring", code);
 	}
 }
 

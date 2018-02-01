@@ -20,11 +20,11 @@
 //-- network handlers
 
 static void noop_message_consumer(clientsocket_t* client, message_t* message) {
-	log_info("received message for %s:%d, cmd=0x%x", client->server_name, client->server_port, message->header.cmd);
+	log_info("Received message for %s:%d, cmd=0x%x", client->server_name, client->server_port, message->header.cmd);
 }
 
 static void accept_command_client(clientsocket_t* client) {
-	log_info("accepted client on %s:%d", client->server_name, client->server_port);
+	log_info("Accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_command(client);
 	send_string(client, "Welcome to Cameleon4 command server!\n");
 
@@ -34,7 +34,7 @@ static void accept_command_client(clientsocket_t* client) {
 }
 
 static void accept_sequencer_client(clientsocket_t* client) {
-	log_info("accepted client on %s:%d", client->server_name, client->server_port);
+	log_info("Accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_sequencer(client);
 	send_string(client, "Welcome to Cameleon4 sequencer server!\n");
 	interrupts_set_client(client);
@@ -46,7 +46,7 @@ static void accept_sequencer_client(clientsocket_t* client) {
 }
 
 static void accept_monitoring_client(clientsocket_t* client) {
-	log_info("accepted client on %s:%d", client->server_name, client->server_port);
+	log_info("Accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_monitoring(client);
 	send_string(client, "Welcome to Cameleon4 monitoring server!\n");
 	monitoring_set_client(client);

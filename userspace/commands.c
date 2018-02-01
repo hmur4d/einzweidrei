@@ -18,13 +18,13 @@ static void cmd_read(clientsocket_t* client, header_t* header, void* body) {
 	header->body_size = 0;
 
 	if (!send_message(client, header, NULL)) {
-		log_error("unable to send response!");
+		log_error("Unable to send response!");
 	}
 }
 
 static void cmd_test(clientsocket_t* client, header_t* header, void* body) {
 	//testing connection, nothing to do
-	log_debug("received test message");
+	log_debug("Received test message");
 }
 
 static void who_are_you(clientsocket_t* client, header_t* header, void* body) {
@@ -58,7 +58,7 @@ static void who_are_you(clientsocket_t* client, header_t* header, void* body) {
 	data[8] = 0;
 
 	if (!send_message(client, header, data)) {
-		log_error("unable to send response!");
+		log_error("Unable to send response!");
 	}
 }
 
@@ -69,7 +69,7 @@ static void init_status(clientsocket_t* client, header_t* header, void* body) {
 	//TODO implement this
 
 	if (!send_message(client, header, NULL)) {
-		log_error("unable to send response!");
+		log_error("Unable to send response!");
 	}
 }
 
@@ -80,7 +80,7 @@ static void read_eeprom_data(clientsocket_t* client, header_t* header, void* bod
 	//TODO implement this
 
 	if (!send_message(client, header, NULL)) {
-		log_error("unable to send response!");
+		log_error("Unable to send response!");
 	}
 }
 
@@ -107,7 +107,7 @@ static void read_pio(clientsocket_t* client, header_t* header, void* body) {
 	}
 
 	if (!send_message(client, header, NULL)) {
-		log_error("unable to send response!");
+		log_error("Unable to send response!");
 	}
 }
 
