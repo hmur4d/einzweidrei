@@ -20,6 +20,8 @@ typedef struct {
 	const char* server_name;
 } clientsocket_t;
 
+//Callback called when a client connects successfully.
+//The callback must be blocking, the clientsocket will be freed as soon as the callback returns.
 typedef void(*accept_callback_f)(clientsocket_t* client);
 
 typedef struct {
@@ -34,7 +36,7 @@ typedef struct {
 //-- server sockets
 
 //Binds a port, listen with only one concurrent client, call callback in a thread on accept.
-//Initializes a client socket, that will need to be destroyed by the callback upon disconnection.
+//Initializes a client socket, that will be destroyed once the callback returns.
 bool serversocket_listen(serversocket_t* serversocket, int port, const char* name, accept_callback_f callback);
 
 //Waits until the server socket doesn't accept connections anymore.
@@ -46,13 +48,9 @@ void serversocket_close(serversocket_t* serversocket);
 
 //-- client sockets
 
-//Closes a client socket. The socket will be flagged, but its memory will not be reclaimed yet.
+//Closes a client socket. The socket will be flagged, but its structure will still be available.
 //This is needed because a socket could be closed while trying to receive data in a loop. 
 void clientsocket_close(clientsocket_t* clientsocket);
-
-//Destroys a client socket. Closes it if needed first. Frees its memory.
-void clientsocket_destroy(clientsocket_t* clientsocket);
-
 
 //-- basic IO
 

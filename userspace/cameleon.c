@@ -31,7 +31,6 @@ static void accept_command_client(clientsocket_t* client) {
 	consume_all_messages(client, call_command_handler);
 
 	clientgroup_close_all();
-	clientsocket_destroy(client);
 }
 
 static void accept_sequencer_client(clientsocket_t* client) {
@@ -44,7 +43,6 @@ static void accept_sequencer_client(clientsocket_t* client) {
 
 	clientgroup_close_all();
 	interrupts_set_client(NULL);
-	clientsocket_destroy(client);
 }
 
 static void accept_monitoring_client(clientsocket_t* client) {
@@ -57,7 +55,6 @@ static void accept_monitoring_client(clientsocket_t* client) {
 
 	clientgroup_close_all();
 	monitoring_set_client(NULL);
-	clientsocket_destroy(client);
 }
 
 //--

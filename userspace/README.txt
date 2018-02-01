@@ -15,4 +15,4 @@ options:
   -n to skip the newline
   -e to accept hex bytes
 
-# echo -n -e \\x7B > /dev/interrupts
+# echo -n -e \\x02 > /dev/interrupts

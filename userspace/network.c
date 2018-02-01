@@ -49,25 +49,24 @@ static int serversocket_open(serversocket_t* serversocket) {
 static void serversocket_accept_blocking(serversocket_t* serversocket) {
 	log_info("Accepting connections for '%s' on port %d", serversocket->name, serversocket->port);
 
-	clientsocket_t* client = malloc(sizeof(clientsocket_t));
-	if (client == NULL) {
-		log_error_errno("Unable to malloc client socket");
-		return;
-	}
-
-	clientsocket_init(client, serversocket);
+	clientsocket_t client;
+	clientsocket_init(&client, serversocket);
 
 	struct sockaddr_in client_addr;
 	socklen_t len = sizeof(client_addr);
-	client->fd = accept(client->server_fd, (struct sockaddr *)&client_addr, &len);
-	if (client->fd < 0) {
-		log_error_errno("Error during accept, server=%s:%d", client->server_name, client->server_port);
-		clientsocket_close(client);
+	client.fd = accept(client.server_fd, (struct sockaddr *)&client_addr, &len);
+	if (client.fd < 0) {
+		log_error_errno("Error during accept, server=%s:%d", client.server_name, client.server_port);
 		return;
 	}
 
-	log_info("Accepted connection on %s:%d from %s", client->server_name, client->server_port, inet_ntoa(client_addr.sin_addr));
-	serversocket->callback(client);
+	log_info("Accepted connection on %s:%d from %s", client.server_name, client.server_port, inet_ntoa(client_addr.sin_addr));
+	serversocket->callback(&client);
+
+	if (!client.closed) {
+		log_info("Accept callback ended, letting the client socket opened on %s:%d, closing it.", client.server_name, client.server_port);
+		clientsocket_close(&client);
+	}
 }
 
 static void* serversocket_accept_thread_routine(void* data) {
@@ -175,7 +174,7 @@ bool send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
 	do {
 		int nsent = send(client->fd, buffer, remaining, offset + total);
 		if (nsent < 0) {
-			log_error_errno("unable to send full buffer, sent %d of %d bytes, client fd=%d, server=%s:%d", total, len, client->fd, client->server_name, client->server_port);
+			log_error_errno("Unable to send full buffer, sent %d of %d bytes, client fd=%d, server=%s:%d", total, len, client->fd, client->server_name, client->server_port);
 			return nsent;
 		}
 
@@ -184,7 +183,7 @@ bool send_retry(clientsocket_t* client, void* buffer, ssize_t len, int offset) {
 	} while (remaining > 0 && !client->closed);
 
 	if (client->closed) {
-		log_error("unable to send full buffer, client closed! (server=%s:%d)", client->server_name, client->server_port);
+		log_error("Unable to send full buffer, client closed! (server=%s:%d)", client->server_name, client->server_port);
 	}
 
 	return remaining == 0;
@@ -197,7 +196,7 @@ bool recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
 	do {
 		int nread = recv(client->fd, buffer + total, remaining, flags);
 		if (nread < 0) {
-			log_error_errno("unable to recv full buffer, received %d of %d bytes, client fd=%d, server=%s:%d", total, len, client->fd, client->server_name, client->server_port);
+			log_error_errno("Unable to recv full buffer, received %d of %d bytes, client fd=%d, server=%s:%d", total, len, client->fd, client->server_name, client->server_port);
 			return false;
 		}
 
@@ -206,7 +205,7 @@ bool recv_retry(clientsocket_t* client, void* buffer, ssize_t len, int flags) {
 	} while (remaining > 0 && !client->closed);
 
 	if (client->closed) {
-		log_error("unable to recv full buffer, client closed! (server=%d)", client->server_name, client->server_port);
+		log_error("Unable to recv full buffer, client closed! (server=%d)", client->server_name, client->server_port);
 	}
 
 	return remaining == 0;
