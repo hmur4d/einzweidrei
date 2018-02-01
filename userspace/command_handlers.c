@@ -18,34 +18,16 @@ static command_handler_list_t* handlers;
 
 //--
 
-static command_handler_node_t* create_first_node() {
-	log_debug("Creating command handler list");
-	handlers = malloc(sizeof(command_handler_list_t));
-	if (handlers == NULL) {
-		log_error_errno("Unable to malloc command handler list");
-	}
-
-	return handlers;
-}
-
 static command_handler_node_t* new_node() {
-	if (handlers == NULL) {
-		//first call, create the linked list
-		return create_first_node();
-	}
-	
-	//lookup the last node, and add a new one
-	command_handler_node_t* node = handlers;
-	while (node->next != NULL) {
-		node = node->next;
-	}
-
-	node->next = malloc(sizeof(command_handler_node_t));
-	node = node->next;
+	command_handler_node_t* node = malloc(sizeof(command_handler_node_t));
 	if (node == NULL) {
 		log_error_errno("Unable to malloc command handler node");
+		return NULL;
 	}
 
+	//always insert at the head of the list
+	node->next = handlers;
+	handlers = node;
 	return node;
 }
 
@@ -61,7 +43,6 @@ bool _register_command_handler(int cmd, const char* name, command_handler_f hand
 	node->cmd = cmd;
 	node->name = name;
 	node->handler = handler;
-	node->next = NULL;
 	return true;
 }
 
@@ -103,4 +84,6 @@ void destroy_command_handlers() {
 		free(node);
 		node = next;
 	}
+
+	handlers = NULL;
 }
