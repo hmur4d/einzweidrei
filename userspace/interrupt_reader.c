@@ -1,9 +1,5 @@
-#include <unistd.h>
-#include <pthread.h>
-#include <fcntl.h>
-
-#include "log.h"
 #include "interrupt_reader.h"
+#include "log.h"
 
 static int interrupts_fd;
 static pthread_t thread;

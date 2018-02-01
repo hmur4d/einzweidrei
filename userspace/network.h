@@ -8,9 +8,7 @@ server & client socket structures.
 Initialize and binds server sockets, threaded accept, basic IO.
 */
 
-#include <sys/types.h>
-#include <pthread.h>
-#include <stdbool.h>
+#include "std_includes.h"
 
 typedef struct {
 	int fd;

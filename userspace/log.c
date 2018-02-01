@@ -1,9 +1,3 @@
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <semaphore.h> 
-
 #include "log.h"
 
 static void write_log(const char* level, const char* srcfile, const char* function, int line, int errcode, const char* format, va_list args);

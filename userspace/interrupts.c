@@ -1,8 +1,7 @@
-#include <semaphore.h>
-#include "../common/interrupt_codes.h"
 #include "interrupts.h"
-#include "interrupt_handlers.h"
 #include "log.h"
+#include "../common/interrupt_codes.h"
+#include "interrupt_handlers.h"
 #include "net_io.h"
 
 //each interrupt handler is blocking the interrupt reader thread.

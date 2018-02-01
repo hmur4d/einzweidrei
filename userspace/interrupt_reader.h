@@ -5,7 +5,7 @@
 Pass interrupts from kernel to userspace with a device file.
 */
 
-#include <stdint.h>
+#include "std_includes.h"
 
 #define INTERRUPTS_FILE "/dev/interrupts"
 

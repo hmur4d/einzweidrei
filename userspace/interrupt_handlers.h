@@ -5,7 +5,7 @@
 Association between interrupt codes and callback functions
 */
 
-#include <stdbool.h>
+#include "std_includes.h"
 
 //Callback used to to handle an interrupt
 typedef void(*interrupt_handler_f) (int8_t code);

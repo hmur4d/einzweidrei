@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "command_handlers.h"
 #include "log.h"
 

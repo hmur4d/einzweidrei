@@ -1,15 +1,9 @@
 /* main program */
 
-#include <pthread.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include "std_includes.h"
 #include "config.h"
 #include "log.h"
-#include "network.h"
 #include "net_io.h"
-#include "../common/interrupt_codes.h"
 #include "interrupt_reader.h"
 #include "interrupt_handlers.h"
 #include "interrupts.h"

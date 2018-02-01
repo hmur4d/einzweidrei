@@ -1,6 +1,5 @@
-#include <stdlib.h>
-#include "log.h"
 #include "interrupt_handlers.h"
+#include "log.h"
 
 #define INTERRUPT_JUMPTABLE_SIZE 20
 

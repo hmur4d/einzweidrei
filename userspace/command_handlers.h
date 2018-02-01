@@ -5,8 +5,7 @@
 Mapping between command id and function to handle it.
 */
 
-#include <stdbool.h>
-#include "network.h"
+#include "std_includes.h"
 #include "net_io.h"
 
 //Callback used to to handle a command message

@@ -9,6 +9,7 @@ in a status message to the client if one is connected.
 Runs in a separate thread.
 */
 
+#include "std_includes.h"
 #include "network.h"
 
 //in µs

@@ -94,6 +94,7 @@
     <ClInclude Include="monitoring.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="net_io.h" />
+    <ClInclude Include="std_includes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cameleon.c" />

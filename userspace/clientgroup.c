@@ -1,5 +1,3 @@
-#include <semaphore.h> 
-
 #include "clientgroup.h"
 #include "log.h"
 

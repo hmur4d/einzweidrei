@@ -5,7 +5,7 @@
 Interrupt handlers: interrupt implementations.
 */
 
-#include <stdbool.h>
+#include "std_includes.h"
 #include "network.h"
 
 //notifications from sequencer to software

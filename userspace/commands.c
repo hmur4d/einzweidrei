@@ -1,7 +1,7 @@
 #include "commands.h"
+#include "log.h"
 #include "net_io.h"
 #include "command_handlers.h"
-#include "log.h"
 
 static void cmd_close(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO close all sockets, not only this one

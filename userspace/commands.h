@@ -5,7 +5,7 @@
 Command handlers: command id and implementation.
 */
 
-#include <stdbool.h>
+#include "std_includes.h"
 
 //fake implementation
 #define CMD_CLOSE                                   0x01

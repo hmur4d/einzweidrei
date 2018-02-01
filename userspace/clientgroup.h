@@ -5,6 +5,7 @@
 Groups all client sockets in one struct, to be able to close them all when one fails or is closed.
 */
 
+#include "std_includes.h"
 #include "network.h"
 
 //--

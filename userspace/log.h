@@ -5,8 +5,7 @@
 Logging functions.
 */
 
-#include <stdbool.h>
-#include <errno.h>
+#include "std_includes.h"
 
 #define LEVEL_ALL		0
 #define LEVEL_DEBUG		1

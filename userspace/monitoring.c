@@ -1,13 +1,5 @@
-#include <stdbool.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <semaphore.h>
-#include <string.h>
-#include <stdint.h>
-
 #include "monitoring.h"
 #include "log.h"
-#include "network.h"
 #include "net_io.h"
 #include "commands.h"
 

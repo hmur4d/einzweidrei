@@ -6,13 +6,11 @@ Cameleon specific network IO.
 Messages structures, message based send / receive.
 */
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "std_includes.h"
 #include "network.h"
 
 #define TAG_MSG_START	0xAAAAAAAA
 #define TAG_MSG_STOP	0xBBBBBBBB
-
 
 //-- 
 

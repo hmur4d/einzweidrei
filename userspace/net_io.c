@@ -1,7 +1,3 @@
-#include <sys/socket.h> 
-#include <string.h>
-#include <stdlib.h>
-
 #include "net_io.h"
 #include "log.h"
 

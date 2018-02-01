@@ -25,6 +25,7 @@
     <ClInclude Include="interrupt_handlers.h" />
     <ClInclude Include="interrupt_reader.h" />
     <ClInclude Include="interrupts.h" />
+    <ClInclude Include="std_includes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

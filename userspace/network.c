@@ -1,12 +1,5 @@
-#include <sys/socket.h> 
-#include <netinet/in.h> 
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdbool.h>
-
-#include "log.h"
 #include "network.h"
+#include "log.h"
 
 static void clientsocket_init(clientsocket_t* clientsocket, serversocket_t* serversocket);
 
