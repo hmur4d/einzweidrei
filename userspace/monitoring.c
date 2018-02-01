@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include <string.h>
 
 #include "monitoring.h"
 #include "log.h"
@@ -14,11 +15,8 @@ static sem_t mutex;
 static pthread_t thread;
 static clientsocket_t* client = NULL;
 
-static int copy_to_body(short* body, int offset, short* values, int count) {
-	for (int i = 0; i < count; i++) {
-		body[i + offset] = values[i];
-	}
-
+static int copy_to_body(int16_t* body, int offset, int16_t* values, int count) {
+	memcpy(body + offset, values, count * sizeof(short));
 	return offset + count;
 }
 
@@ -28,24 +26,24 @@ static void send_monitoring_message() {
 		return;
 	}
 
-	short id = 0;
+	int32_t id = 0;
 	
 	//TODO find real values
-	short volt_status = 0; 
-	int volt_count = 1;
-	short volt[] = { 12*100 };
+	int32_t volt_status = 0;
+	u_int8_t volt_count = 1;
+	int16_t volt[] = { 12*100 };
 	
-	short temperature_status = 0; 
-	int temperature_count = 2;
-	short temperature[] = { (273 + 75)*100, (273 + 45)*100 };
+	int32_t temperature_status = 0;
+	u_int8_t temperature_count = 2;
+	int16_t temperature[] = { (273 + 75)*100, (273 + 45)*100 };
 
-	short pressure_status = 0;
-	int pressure_count = 0;
+	int32_t pressure_status = 0;
+	u_int8_t pressure_count = 0;
 
-	short other_status = 0;
-	int other_count = 0;
+	int32_t other_status = 0;
+	u_int8_t other_count = 0;
 
-	int config = (volt_count & 0xF) << 12 | (temperature_count & 0xF) << 8 | (pressure_count & 0xF) << 4 | (other_count & 0xF);
+	int32_t config = (volt_count & 0xF) << 12 | (temperature_count & 0xF) << 8 | (pressure_count & 0xF) << 4 | (other_count & 0xF);
 
 	header_t header;
 	reset_header(&header);
@@ -58,8 +56,8 @@ static void send_monitoring_message() {
 	header.param6 = other_status;
 	header.body_size = (volt_count + temperature_count + pressure_count + other_count)*2;
 	
-	short body[header.body_size / 2];
-	int offset = 0;
+	int16_t body[header.body_size / 2];
+	uint offset = 0;
 	offset = copy_to_body(body, offset, volt, volt_count);
 	offset = copy_to_body(body, offset, temperature, temperature_count);
 	//TODO pressure & other?
