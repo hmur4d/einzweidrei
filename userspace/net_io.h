@@ -16,14 +16,14 @@ Messages structures, message based send / receive.
 //-- 
 
 typedef struct {
-	int cmd;
-	int param1;
-	int param2;
-	int param3;
-	int param4;
-	int param5;
-	int param6;
-	int body_size;
+	int32_t cmd;
+	int32_t param1;
+	int32_t param2;
+	int32_t param3;
+	int32_t param4;
+	int32_t param5;
+	int32_t param6;
+	u_int32_t body_size;
 } header_t;
 
 typedef struct {
@@ -42,10 +42,10 @@ void reset_header(header_t* header);
 
 //Sends a string without using the message structure.
 //Only used to send "welcome" messages when the client opens the connection.
-bool send_string(clientsocket_t* client, char* str);
+bool send_string(clientsocket_t* client, const char* str);
 
 //Sends a message. Header's body size attribute must match the "body" buffer!
-bool send_message(clientsocket_t* client, header_t* header, void* body);
+bool send_message(clientsocket_t* client, const header_t* header, const void* body);
 
 //Reads a message, blocking until a complete message is received.
 //Once the message has been read, it is passed to the "consumer" callback.

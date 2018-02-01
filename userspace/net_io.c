@@ -9,7 +9,7 @@ void reset_header(header_t* header) {
 	memset(header, 0, sizeof(header_t));
 }
 
-bool send_string(clientsocket_t* client, char* str) {
+bool send_string(clientsocket_t* client, const char* str) {
 	log_debug("Sending string to %s:%d, str=%s", client->server_name, client->server_port, str);
 
 	if (!send_retry(client, str, strlen(str) + 1, 0)) {
@@ -46,7 +46,7 @@ static bool read_tag(clientsocket_t* client, int expected) {
 	return true;
 }
 
-static bool send_header(clientsocket_t* client, header_t* header) {
+static bool send_header(clientsocket_t* client, const header_t* header) {
 	log_debug("Sending header to %s:%d: cmd=0x%x, p1=0x%x, p2=0x%x, p3=0x%x, p4=0x%x, p5=0x%x, p6=0x%x, body size=%d",
 		client->server_name, client->server_port,
 		header->cmd, header->param1, header->param2, header->param3, header->param4, header->param5, header->param6, header->body_size);
@@ -76,7 +76,7 @@ static bool read_header(clientsocket_t* client, header_t* header) {
 
 //--
 
-bool send_message(clientsocket_t* client, header_t* header, void* body) {
+bool send_message(clientsocket_t* client, const header_t* header, const void* body) {
 	if (!send_int(client, TAG_MSG_START)) {
 		log_error("Unable to send start tag!");
 		return false;
