@@ -25,8 +25,12 @@ typedef struct {
 //Opens and mmap shared memory
 bool shared_memory_init(const char* memory_file);
 
-//Access the shared memory
-shared_memory_t* shared_memory_get();
+//Access the shared memory, with a lock. 
+//Calling shared_memory_release() afterwards is mandatory!
+shared_memory_t* shared_memory_acquire();
+
+//Releases the shared memory, unlocking it.
+bool shared_memory_release(shared_memory_t* mem);
 
 //Closes shared memory
 bool shared_memory_close();
