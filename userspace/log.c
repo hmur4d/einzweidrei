@@ -6,8 +6,8 @@
 
 #include "log.h"
 
-static void write_log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args);
-static void write_log_to(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args);
+static void write_log(const char* level, const char* srcfile, const char* function, int line, int errcode, const char* format, va_list args);
+static void write_log_to(FILE* fp, const char* level, const char* srcfile, const char* function, int line, const struct tm* timeinfo, int errcode, const char* format, va_list args);
 
 static bool initialized = false;
 static sem_t mutex;
@@ -16,7 +16,7 @@ static FILE* logfile = NULL;
 
 //--
 
-int log_level_from_name(char* name) {
+int log_level_from_name(const char* name) {
 	if (name == NULL) {
 		return LEVEL_DEFAULT;
 	} 
@@ -43,7 +43,7 @@ int log_level_from_name(char* name) {
 	return LEVEL_DEFAULT;
 }
 
-bool log_init(int level, char* logfile_path) {
+bool log_init(int level, const char* logfile_path) {
 	loglevel = level;
 
 	if (sem_init(&mutex, 0, 1) < 0) {
@@ -75,7 +75,7 @@ bool log_close() {
 	return true;
 }
 
-void _log(const char* srcfile, const char* function, int line, int level, char* levelname, int errcode, char* format, ...) {
+void _log(const char* srcfile, const char* function, int line, int level, const char* levelname, int errcode, const char* format, ...) {
 	if (!initialized) {
 		printf("_log: trying to log a message but the log isn't initialized!\n");
 		return;
@@ -94,7 +94,7 @@ void _log(const char* srcfile, const char* function, int line, int level, char* 
 /*
 Write the log to stdout and to the log file. Adds a timestamp.
 */
-static void write_log(char* level, const char* srcfile, const char* function, int line, int errcode, char* format, va_list args) {
+static void write_log(const char* level, const char* srcfile, const char* function, int line, int errcode, const char* format, va_list args) {
 	time_t rawtime;
 	struct tm timeinfo;
 
@@ -117,7 +117,7 @@ static void write_log(char* level, const char* srcfile, const char* function, in
 /*
 Format & write the log message to any file structure.
 */
-static void write_log_to(FILE* fp, char* level, const char* srcfile, const char* function, int line, struct tm* timeinfo, int errcode, char* format, va_list args) {
+static void write_log_to(FILE* fp, const char* level, const char* srcfile, const char* function, int line, const struct tm* timeinfo, int errcode, const char* format, va_list args) {
 	va_list args_copy;
 	va_copy(args_copy, args);
 

@@ -16,10 +16,10 @@ Logging functions.
 #define LEVEL_OFF		5
 #define LEVEL_DEFAULT	LEVEL_INFO
 
-int log_level_from_name(char* name);
+int log_level_from_name(const char* name);
 
 //Initialize the logging system. Must be called before any logging is done.
-bool log_init(int level, char* logfile_path);
+bool log_init(int level, const char* logfile_path);
 
 //Closes the log file. Should be done at program termination.
 bool log_close();
@@ -36,6 +36,6 @@ bool log_close();
 
 //Logs to file and stdout if the level is >= to log level.
 //Used by macros, don't call it directly.
-void _log(const char* srcfile, const char* function, int line, int level, char* levelname, int errcode, char* format, ...);
+void _log(const char* srcfile, const char* function, int line, int level, const char* levelname, int errcode, const char* format, ...);
 
 #endif /* _LOG_H_ */
