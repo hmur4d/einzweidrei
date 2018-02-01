@@ -94,6 +94,7 @@
     <ClInclude Include="monitoring.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="net_io.h" />
+    <ClInclude Include="shared_memory.h" />
     <ClInclude Include="std_includes.h" />
   </ItemGroup>
   <ItemGroup>
@@ -108,6 +109,7 @@
     <ClCompile Include="monitoring.c" />
     <ClCompile Include="network.c" />
     <ClCompile Include="net_io.c" />
+    <ClCompile Include="shared_memory.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

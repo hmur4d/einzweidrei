@@ -13,9 +13,8 @@ Logging functions.
 #define LEVEL_WARNING	3
 #define LEVEL_ERROR		4
 #define LEVEL_OFF		5
-#define LEVEL_DEFAULT	LEVEL_INFO
 
-int log_level_from_name(const char* name);
+int log_level_from_name(const char* name, int default_level);
 
 //Initialize the logging system. Must be called before any logging is done.
 bool log_init(int level, const char* logfile_path);

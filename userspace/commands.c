@@ -2,6 +2,7 @@
 #include "log.h"
 #include "net_io.h"
 #include "command_handlers.h"
+#include "shared_memory.h"
 
 static void cmd_close(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO close all sockets, not only this one
@@ -10,10 +11,20 @@ static void cmd_close(clientsocket_t* client, header_t* header, const void* body
 
 static void cmd_write(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO implement this
+
+	shared_memory_t* mem = shared_memory_get();
+
+	log_info("writing test value to shared memory: 0x%x <- %d", mem->sample, header->param1);
+	*mem->sample = header->param1;
 }
 
 static void cmd_read(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO implement this
+
+	shared_memory_t* mem = shared_memory_get();
+	log_info("reading test value from shared memory: 0x%x", mem->sample);
+	log_info("shared memory value=%d", *mem->sample);
+
 
 	header->body_size = 0;
 

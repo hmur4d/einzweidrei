@@ -4,6 +4,7 @@
 #include "config.h"
 #include "log.h"
 #include "net_io.h"
+#include "shared_memory.h"
 #include "interrupt_reader.h"
 #include "interrupt_handlers.h"
 #include "interrupts.h"
@@ -52,16 +53,33 @@ static void accept_monitoring_client(clientsocket_t* client) {
 	monitoring_set_client(NULL);
 }
 
+//-- config from environment
+
+static int get_log_level() {
+	char* loglevel_name = getenv("LOG_LEVEL");
+	return log_level_from_name(loglevel_name, DEFAULT_LOG_LEVEL);
+}
+
+static char* get_memory_file() {
+	char* filename = getenv("DEV_MEM");
+	return filename == NULL ? DEFAULT_DEV_MEM : filename;
+}
+
 //--
 
 int main(int argc, char ** argv) {
-	char* loglevel_name = getenv("LOGLEVEL");
-	int loglevel = log_level_from_name(loglevel_name);
+	int loglevel = get_log_level();
 	if (!log_init(loglevel, LOG_FILE)) {
 		return 1;
 	}
 
 	log_info("Starting main program");
+
+	char* memory_file = get_memory_file();
+	if (!shared_memory_init(memory_file)) {
+		log_error("Unable to open shared memory (%s), exiting", memory_file);
+		return 1;
+	}
 
 	if (!interrupts_init()) {
 		log_error("Unable to init interrupts, exiting");
@@ -111,6 +129,7 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 
+	log_info("Cameleon is ready!");
 
 	serversocket_wait(&monitoringserver);
 	serversocket_close(&monitoringserver);
@@ -127,6 +146,8 @@ int main(int argc, char ** argv) {
 
 	destroy_command_handlers();
 	destroy_interrupt_handlers();
+
+	shared_memory_close();
 
 	log_close();
 	return 0;

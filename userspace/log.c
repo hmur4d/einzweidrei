@@ -10,9 +10,9 @@ static FILE* logfile = NULL;
 
 //--
 
-int log_level_from_name(const char* name) {
+int log_level_from_name(const char* name, int default_level) {
 	if (name == NULL) {
-		return LEVEL_DEFAULT;
+		return default_level;
 	} 
 	if (strcasecmp("ALL", name) == 0) {
 		return LEVEL_ALL;
@@ -33,8 +33,8 @@ int log_level_from_name(const char* name) {
 		return LEVEL_OFF;
 	}
 
-	printf("log_level_from_name: unknown level %s, using default log level (%d)", name, LEVEL_DEFAULT);
-	return LEVEL_DEFAULT;
+	printf("log_level_from_name: unknown level %s, using default log level (%d)", name, default_level);
+	return default_level;
 }
 
 bool log_init(int level, const char* logfile_path) {
