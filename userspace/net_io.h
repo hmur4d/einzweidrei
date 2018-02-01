@@ -7,6 +7,7 @@ Messages structures, message based send / receive.
 */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "network.h"
 
 #define TAG_MSG_START	0xAAAAAAAA
@@ -23,7 +24,7 @@ typedef struct {
 	int32_t param4;
 	int32_t param5;
 	int32_t param6;
-	u_int32_t body_size;
+	uint32_t body_size;
 } header_t;
 
 typedef struct {

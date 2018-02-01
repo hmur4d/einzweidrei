@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "monitoring.h"
 #include "log.h"
@@ -30,18 +31,18 @@ static void send_monitoring_message() {
 	
 	//TODO find real values
 	int32_t volt_status = 0;
-	u_int8_t volt_count = 1;
+	uint8_t volt_count = 1;
 	int16_t volt[] = { 12*100 };
 	
 	int32_t temperature_status = 0;
-	u_int8_t temperature_count = 2;
+	uint8_t temperature_count = 2;
 	int16_t temperature[] = { (273 + 75)*100, (273 + 45)*100 };
 
 	int32_t pressure_status = 0;
-	u_int8_t pressure_count = 0;
+	uint8_t pressure_count = 0;
 
 	int32_t other_status = 0;
-	u_int8_t other_count = 0;
+	uint8_t other_count = 0;
 
 	int32_t config = (volt_count & 0xF) << 12 | (temperature_count & 0xF) << 8 | (pressure_count & 0xF) << 4 | (other_count & 0xF);
 
