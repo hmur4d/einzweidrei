@@ -1,8 +1,8 @@
 /* main program */
 
 #include "std_includes.h"
-#include "config.h"
 #include "log.h"
+#include "config.h"
 #include "net_io.h"
 #include "shared_memory.h"
 #include "interrupt_reader.h"
@@ -51,18 +51,6 @@ static void accept_monitoring_client(clientsocket_t* client) {
 
 	clientgroup_close_all();
 	monitoring_set_client(NULL);
-}
-
-//-- config from environment
-
-static int get_log_level() {
-	char* loglevel_name = getenv("LOG_LEVEL");
-	return log_level_from_name(loglevel_name, DEFAULT_LOG_LEVEL);
-}
-
-static char* get_memory_file() {
-	char* filename = getenv("DEV_MEM");
-	return filename == NULL ? DEFAULT_DEV_MEM : filename;
 }
 
 //--

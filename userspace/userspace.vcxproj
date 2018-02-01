@@ -102,6 +102,7 @@
     <ClCompile Include="clientgroup.c" />
     <ClCompile Include="commands.c" />
     <ClCompile Include="command_handlers.c" />
+    <ClCompile Include="config.c" />
     <ClCompile Include="interrupts.c" />
     <ClCompile Include="interrupt_reader.c" />
     <ClCompile Include="interrupt_handlers.c" />

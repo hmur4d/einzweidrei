@@ -13,4 +13,10 @@
 #define MONITORING_PORT		50 //socket3 in cameleon nios
 #define LOCK_PORT			60 //socket4 in cameleon nios
 
+//--
+
+int get_log_level();
+char* get_memory_file();
+
+
 #endif

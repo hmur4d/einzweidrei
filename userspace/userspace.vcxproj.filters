@@ -13,6 +13,7 @@
     <ClCompile Include="interrupt_reader.c" />
     <ClCompile Include="interrupts.c" />
     <ClCompile Include="shared_memory.c" />
+    <ClCompile Include="config.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />

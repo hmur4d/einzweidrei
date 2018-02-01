@@ -5,7 +5,6 @@
 #include "shared_memory.h"
 
 static void cmd_close(clientsocket_t* client, header_t* header, const void* body) {
-	//TODO close all sockets, not only this one
 	clientsocket_close(client);
 }
 
@@ -14,7 +13,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 	shared_memory_t* mem = shared_memory_get();
 
-	log_info("writing test value to shared memory: 0x%x <- %d", mem->sample, header->param1);
+	log_info("writing test value to shared memory: 0x%x <- 0x%x (%d)", mem->sample, header->param1, header->param1);
 	*mem->sample = header->param1;
 }
 
@@ -22,9 +21,7 @@ static void cmd_read(clientsocket_t* client, header_t* header, const void* body)
 	//TODO implement this
 
 	shared_memory_t* mem = shared_memory_get();
-	log_info("reading test value from shared memory: 0x%x", mem->sample);
-	log_info("shared memory value=%d", *mem->sample);
-
+	log_info("reading test value from shared memory: 0x%x = 0x%x (%d)", mem->sample, *mem->sample, *mem->sample);
 
 	header->body_size = 0;
 
