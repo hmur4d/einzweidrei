@@ -1,20 +1,21 @@
 include ~/projects/make-config/cross-compile.mk
+include ~/projects/make-config/kernel.mk
 
 # ne compile pas avec le toolchain buildroot & l'option -std=gnu11
 # fonctionne sans l'option
 # fonction avec l'option sur un gcc plus récent (ex: toolchain packagé sur ubuntu "WSL/Windows")
 #1>module\modsample.c(36,1): error : initializer element is not constant
 
-MODULE_NAME := modcameleon
-KDIR := ~/BR/KERNEL
+# needs to specify all files here, for multifile module
+# for some reason, using wildcards and filter-out ".mod.c" doesn't work in this context
+obj-m := modcameleon.o
+modcameleon-objs := module.o interrupt_info.o
 
 CFLAGS_MODULE += -fno-pic -Wno-declaration-after-statement
 #CFLAGS_MODULE += -std=gnu11
 
-obj-m := $(MODULE_NAME).o
-
 all:
-	$(MAKE) -C $(KDIR) M=`pwd`
+	$(MAKE) -C $(KERNEL_DIR) M=`pwd`
 	
 clean:
 	rm -f *.o *~ core .depend .*.cmd *.ko *.mod.c

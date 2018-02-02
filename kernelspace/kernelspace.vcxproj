@@ -86,7 +86,11 @@
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="modcameleon.c" />
+    <ClCompile Include="interrupt_info.c" />
+    <ClCompile Include="module.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="interrupt_info.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

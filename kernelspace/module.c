@@ -23,12 +23,12 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/semaphore.h>
-#include <linux/irq.h>
-#include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
 #include <linux/kfifo.h>
+
 #include "../common/interrupt_codes.h"
+#include "interrupt_info.h"
 
 MODULE_LICENSE("GPL");
 const char* MODULE_NAME = "ModCameleon";
@@ -36,33 +36,6 @@ const char* MODULE_NAME = "ModCameleon";
 
 //must be power of 2
 #define INTERRUPTS_FIFO_SIZE 16
-
-typedef struct {
-	const char* name;
-	int8_t code;
-	int gpio;
-	int irq;
-} interrupt_info_t;
-
-#define interrupt_info(code, gpio) {#code, code, gpio, -EINVAL}
-#define interrupt_info_end {NULL, -EINVAL, -EINVAL, -EINVAL}
-
-static interrupt_info_t interrupt_infos[] = {
-	interrupt_info(INTERRUPT_SCAN_DONE, 480),
-	interrupt_info(INTERRUPT_SEQUENCE_DONE, 472),
-	interrupt_info_end
-};
-
-interrupt_info_t* irq_to_interrupt_info(int irq) {
-	interrupt_info_t *info;
-	for (info = interrupt_infos; info->name != NULL; info++) {
-		if (info->irq == irq) {
-			return info;
-		}
-	}
-
-	return NULL;
-}
 
 struct semaphore sem;
 DEFINE_KFIFO(interrupts_fifo, int8_t, INTERRUPTS_FIFO_SIZE);
@@ -75,67 +48,14 @@ static long time_get_ns(void) {
 	return ktime_to_ns(ktime_get());
 }
 
-//-- IRQ
+//-- interrupts
 
-irqreturn_t publish_irq_as_interrupt(int irq, void *dev_id) {
-	printk(KERN_INFO "%s: Interrupt happened at irq=%d\n", MODULE_NAME, irq);
-	
-	interrupt_info_t* info = irq_to_interrupt_info(irq);
-	if (info == NULL) {
-		printk(KERN_INFO "%s: Unknown irq=%d! Ignoring...\n", MODULE_NAME, irq);
-		return IRQ_HANDLED;
-	}
-
+void publish_interrupt(interrupt_info_t* info) {
 	kfifo_in(&interrupts_fifo, &info->code, 1);
 	last_interrupt_ns = time_get_ns();
 	wake_up_interruptible(&interrupts_wait_queue);
-
-	return IRQ_HANDLED;
 }
 
-int register_all_irqs(void) {
-	interrupt_info_t *info;
-	for (info = interrupt_infos; info->name != NULL; info++) {
-		//tout ce bloc n'était pas necessaire sur la carte d'eval
-		/*
-		printk(KERN_INFO "%s: requestion gpio %d\n", MODULE_NAME, gpio_number);
-		bool isvalid = gpio_is_valid(gpio_number);
-		printk(KERN_INFO "%s: gpio_is_valid: %d\n", MODULE_NAME, isvalid);
-		int request = gpio_request(gpio_number, "test");
-		printk(KERN_INFO "%s: gpio_request: %d\n", MODULE_NAME, request);
-		int input = gpio_direction_input(gpio_number);
-		printk(KERN_INFO "%s: gpio_direction_input: %d\n", MODULE_NAME, input);
-		*/
-
-		info->irq = gpio_to_irq(info->gpio);
-		printk(KERN_INFO "%s: gpio_to_irq: %d -> %d (%s)\n", MODULE_NAME, info->gpio, info->irq, info->name);
-
-
-		int error = request_irq(info->irq, publish_irq_as_interrupt, 0, info->name, NULL);
-		if (error) {
-			printk(KERN_ALERT "%s: failure requesting irq %d (gpio=%d, %s) error=%d\n", MODULE_NAME, info->irq, info->gpio, info->name, error);
-			info->irq = -EINVAL;
-#ifndef XXX_IRQ_CONTINUE_ON_ERROR
-			return error;
-#endif
-		}
-		else {
-			printk(KERN_INFO "%s: requested irq %d (gpio=%d, %s)\n", MODULE_NAME, info->irq, info->gpio, info->name);
-		}
-	}
-
-	return 0;
-}
-
-void unregister_all_irqs(void) {
-	interrupt_info_t *info;
-	for (info = interrupt_infos; info->name != NULL; info++) {
-		if (info->irq != -EINVAL) {
-			printk(KERN_INFO "%s: free irq: irq=%d, gpio=%d (%s)\n", MODULE_NAME, info->irq, info->gpio, info->name);
-			free_irq(info->irq, NULL);
-		}
-	}
-}
 
 //-- device
 
@@ -277,10 +197,10 @@ void unregister_device(void) {
 int __init mod_init(void) {
 	sema_init(&sem, 1);
 
-	int irq_error = register_all_irqs();
-	if(irq_error) {
-		unregister_all_irqs();
-		return irq_error;
+	int error = register_interrupts(publish_interrupt);
+	if(error) {
+		unregister_interrupts();
+		return error;
 	}
 
 	return register_device();
@@ -288,7 +208,7 @@ int __init mod_init(void) {
 
 void __exit mod_exit(void) {
 	unregister_device();
-	unregister_all_irqs();
+	unregister_interrupts(); 
 }
 
 module_init(mod_init);
