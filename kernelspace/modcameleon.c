@@ -11,6 +11,10 @@
 #define __KERNEL__
 #endif
 
+//for debugging before having a suitable fpga image
+#define XXX_DISABLE_IRQ
+#define XXX_FAKE_INTERRUPTS
+
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/init.h>
@@ -61,13 +65,25 @@ irqreturn_t gpio_isr(int irq, void *dev_id) {
 }
 
 int register_irq(void) {
-	int err;
-	irq_number = gpio_to_irq(gpio_number);
+	//tout ce bloc n'était pas necessaire sur la carte d'eval
+	/*
+	printk(KERN_INFO "%s: requestion gpio %d\n", MODULE_NAME, gpio_number);
+	bool isvalid = gpio_is_valid(gpio_number);
+	printk(KERN_INFO "%s: gpio_is_valid: %d\n", MODULE_NAME, isvalid);
+	int request = gpio_request(gpio_number, "test");
+	printk(KERN_INFO "%s: gpio_request: %d\n", MODULE_NAME, request);
+	int input = gpio_direction_input(gpio_number);
+	printk(KERN_INFO "%s: gpio_direction_input: %d\n", MODULE_NAME, input);
+	*/
 
-	err = request_irq(irq_number, gpio_isr, 0, "button", NULL);
+	irq_number = gpio_to_irq(gpio_number);
+	printk(KERN_INFO "%s: gpio_to_irq: %d\n", MODULE_NAME, irq_number);
+
+
+	int err = request_irq(irq_number, gpio_isr, 0, "button", NULL);
 	if (err) {
+		printk(KERN_ALERT "%s: failure requesting irq %d: err=%d\n", MODULE_NAME, irq_number, err);
 		irq_number = 0;
-		printk(KERN_ALERT "%s: failure requesting irq %i\n", MODULE_NAME, irq_number);
 		return err;
 	}
 
@@ -94,6 +110,14 @@ int device_open(struct inode *inode, struct file *filp) {
 	printk(KERN_INFO "%s: device_open got semaphore\n", MODULE_NAME);
 
 	kfifo_reset(&interrupts_fifo);
+
+#ifdef XXX_FAKE_INTERRUPTS
+	int8_t code = INTERRUPT_SCAN_DONE;
+	kfifo_in(&interrupts_fifo, &code, 1);
+	kfifo_in(&interrupts_fifo, &code, 1);
+	kfifo_in(&interrupts_fifo, &code, 1);
+#endif
+
 	//filp->private_data = ...
 	return 0;
 }
@@ -213,12 +237,13 @@ void unregister_device(void) {
 //-- module init
 
 int __init mod_init(void) {
-	int err;
 	sema_init(&sem, 1);
 
-	err = register_irq();
+#ifndef XXX_DISABLE_IRQ
+	int err = register_irq();
 	if (err)
 		return err;
+#endif
 
 	return register_device();
 }
