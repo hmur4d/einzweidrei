@@ -11,10 +11,6 @@
 #define __KERNEL__
 #endif
 
-//for debugging before having a suitable fpga image
-#define XXX_IRQ_CONTINUE_ON_ERROR
-#define XXX_FAKE_INTERRUPTS
-
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/init.h>
@@ -27,11 +23,12 @@
 #include <linux/gpio.h>
 #include <linux/kfifo.h>
 
+#include "config.h"
+#include "klog.h"
 #include "../common/interrupt_codes.h"
 #include "interrupt_info.h"
 
 MODULE_LICENSE("GPL");
-const char* MODULE_NAME = "ModCameleon";
 
 
 //must be power of 2
@@ -60,12 +57,12 @@ void publish_interrupt(interrupt_info_t* info) {
 //-- device
 
 int device_open(struct inode *inode, struct file *filp) {
-	printk(KERN_INFO "%s: device_open\n", MODULE_NAME);
+	klog_info("device_open called\n");
 	//test semaphore, limite volontairement à un seul open simultané
 	if (down_interruptible(&sem))
 		return -ERESTARTSYS;
 
-	printk(KERN_INFO "%s: device_open got semaphore\n", MODULE_NAME);
+	klog_info("got semaphore\n");
 
 	kfifo_reset(&interrupts_fifo);
 
@@ -81,22 +78,21 @@ int device_open(struct inode *inode, struct file *filp) {
 }
 
 int device_release(struct inode *inode, struct file *filp) {
-	printk(KERN_INFO "%s: device_release\n", MODULE_NAME);
+	klog_info("device_release called\n");
 	up(&sem);
 
 	//free private data if needed
 	return 0;
 }
 
-//read bloquant
+//blocking read, one char at a time
 ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, loff_t *position) {
-	printk(KERN_INFO "%s: Device file is read at offset=%i, read bytes count=%u\n",
-		MODULE_NAME, (int)*position, (unsigned int)count);
+	klog_info("Device file is read at offset=%i, read bytes count=%u\n", (int)*position, (uint)count);
 
 	if (kfifo_is_empty(&interrupts_fifo)) {
-		//l'appelant pourrait préciser l'attribut NONBLOCK, on doit le respecter
+		//the caller could have set the O_NONBLOCK attribute, we must honor it.
 		if (filp->f_flags & O_NONBLOCK) {
-			printk(KERN_INFO "%s: read with O_NONBLOCK\n", MODULE_NAME);
+			klog_warning("read with O_NONBLOCK\n");
 			return -EAGAIN;
 		}
 
@@ -108,7 +104,7 @@ ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, l
 	//pas besoin de vérifier si on est les seuls réveillés dans ce cas, car on 
 	//a pris le sémaphore à l'open du device
 	int diff = time_get_ns() - last_interrupt_ns;
-	printk(KERN_INFO "%s: time elapsed between interrupt and read: %d ns\n", MODULE_NAME, diff);
+	klog_info("time elapsed between interrupt and read: %d ns\n", diff);
 
 	//force interrupts to be read one by one
 	count = 1;
@@ -142,24 +138,24 @@ int register_device(void) {
 
 	err = alloc_chrdev_region(&device_number, 0, 1, MODULE_NAME);
 	if (err) {
-		printk(KERN_ERR "Error %d while allocating device number\n", err);
+		klog_error("Error %d while allocating device number\n", err);
 		return err;
 	}
-	printk(KERN_INFO "Registered device, got major number: %d\n", MAJOR(device_number));
+	klog_info("Registered device, got major number: %d\n", MAJOR(device_number));
 
 	cdev_init(&cdev, &interrupt_fops);
 	cdev.owner = THIS_MODULE;
 
 	err = cdev_add(&cdev, device_number, 1);
 	if (err) {
-		printk(KERN_ERR "Error %d adding device\n", err);
+		klog_error("Error %d adding device\n", err);
 		unregister_device();
 		return err;
 	}
 
 	device_class = class_create(THIS_MODULE, "Interrupts");
 	if (IS_ERR(device_class)) {
-		printk(KERN_ERR "Error adding creating device class\n");
+		klog_error("Error adding creating device class\n");
 		unregister_device();
 		return PTR_ERR(device_class);
 	}
@@ -168,7 +164,7 @@ int register_device(void) {
 		device_number, NULL, /* no additional data */
 		"interrupts");
 	if (IS_ERR(device)) {
-		printk(KERN_ERR "Error creating device\n");
+		klog_error("Error creating device\n");
 		unregister_device();
 		return PTR_ERR(device);
 	}
@@ -177,7 +173,7 @@ int register_device(void) {
 }
 
 void unregister_device(void) {
-	printk(KERN_INFO "%s: unregister_device() is called\n", MODULE_NAME);
+	klog_info("unregister_device() is called\n");
 
 	if (device != NULL) {
 		device_destroy(device_class, device_number);

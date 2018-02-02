@@ -90,7 +90,9 @@
     <ClCompile Include="module.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="config.h" />
     <ClInclude Include="interrupt_info.h" />
+    <ClInclude Include="klog.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -9,7 +9,7 @@ include ~/projects/make-config/kernel.mk
 # needs to specify all files here, for multifile module
 # for some reason, using wildcards and filter-out ".mod.c" doesn't work in this context
 obj-m := modcameleon.o
-modcameleon-objs := module.o interrupt_info.o
+modcameleon-objs := interrupt_info.o module.o
 
 CFLAGS_MODULE += -fno-pic -Wno-declaration-after-statement
 #CFLAGS_MODULE += -std=gnu11

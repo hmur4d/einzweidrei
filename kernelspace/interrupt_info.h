@@ -10,9 +10,12 @@ typedef struct {
 	int irq;
 } interrupt_info_t;
 
+//--
+
 typedef void(*interrupt_handler_f)(interrupt_info_t* interrupt);
 
 int register_interrupts(interrupt_handler_f handler);
 void unregister_interrupts(void);
+
 
 #endif

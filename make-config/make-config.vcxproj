@@ -81,8 +81,6 @@
   <ItemGroup>
     <None Include="cross-compile.mk" />
     <None Include="kernel.mk" />
-    <None Include="ssh.mk" />
-    <None Include="ssh.password" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

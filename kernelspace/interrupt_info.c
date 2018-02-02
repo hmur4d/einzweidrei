@@ -3,6 +3,7 @@
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 
+#include "klog.h"
 #include "interrupt_info.h"
 #include "../common/interrupt_codes.h"
 
@@ -16,6 +17,8 @@ static interrupt_info_t list[] = {
 	interrupt_info(INTERRUPT_SEQUENCE_DONE, 472),
 	interrupt_info_end
 };
+
+//--
 
 static interrupt_handler_f interrupt_handler = NULL;
 
@@ -31,16 +34,16 @@ static interrupt_info_t* irq_to_interrupt_info(int irq) {
 }
 
 static irqreturn_t transmit_irq_as_interrupt(int irq, void *dev_id) {
-	printk(KERN_INFO "%s: Interrupt happened at irq=%d\n", __FILE__, irq);
+	klog_info("Interrupt happened at irq=%d\n", irq);
 
 	if (interrupt_handler == NULL) {
-		printk(KERN_ALERT "%s: No interrupt handler! Ignoring...\n", __FILE__);
+		klog_warning("No interrupt handler! Ignoring...\n");
 		return IRQ_HANDLED;
 	}
 
 	interrupt_info_t* info = irq_to_interrupt_info(irq);
 	if (info == NULL) {
-		printk(KERN_ALERT "%s: Unknown irq=%d! Ignoring...\n", __FILE__, irq);
+		klog_warning("Unknown irq=%d! Ignoring...\n", irq);
 		return IRQ_HANDLED;
 	}
 	
@@ -67,19 +70,18 @@ int register_interrupts(interrupt_handler_f handler) {
 		*/
 
 		info->irq = gpio_to_irq(info->gpio);
-		printk(KERN_INFO "%s: gpio_to_irq: %d -> %d (%s)\n", __FILE__, info->gpio, info->irq, info->name);
-
+		klog_info("gpio_to_irq: %d -> %d (%s)\n", info->gpio, info->irq, info->name);
 
 		int error = request_irq(info->irq, transmit_irq_as_interrupt, 0, info->name, NULL);
 		if (error) {
-			printk(KERN_ALERT "%s: failure requesting irq %d (gpio=%d, %s) error=%d\n", __FILE__, info->irq, info->gpio, info->name, error);
+			klog_error("failure requesting irq %d (gpio=%d, %s) error=%d\n", info->irq, info->gpio, info->name, error);
 			info->irq = -EINVAL;
 #ifndef XXX_IRQ_CONTINUE_ON_ERROR
 			return error;
 #endif
 		}
 		else {
-			printk(KERN_INFO "%s: requested irq %d (gpio=%d, %s)\n", __FILE__, info->irq, info->gpio, info->name);
+			klog_info("requested irq %d (gpio=%d, %s)\n", info->irq, info->gpio, info->name);
 		}
 	}
 
@@ -90,7 +92,7 @@ void unregister_interrupts(void) {
 	interrupt_info_t *info;
 	for (info = list; info->name != NULL; info++) {
 		if (info->irq != -EINVAL) {
-			printk(KERN_INFO "%s: free irq: irq=%d, gpio=%d (%s)\n", __FILE__, info->irq, info->gpio, info->name);
+			klog_info("freeing irq: irq=%d, gpio=%d (%s)\n", info->irq, info->gpio, info->name);
 			free_irq(info->irq, NULL);
 		}
 	}
