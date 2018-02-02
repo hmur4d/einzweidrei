@@ -7,4 +7,7 @@
 
 #define MODULE_NAME "modcameleon"
 
+//must be power of 2
+#define INTERRUPTS_FIFO_SIZE 16
+
 #endif

@@ -1,8 +1,10 @@
 /*
-* Exemple de passage des interrupts vers userspace avec un read non bloquants
-* Le nombre d'interrupts passés est renvoyée sous forme de chaine à chaque read.
-* L'utilisation du sémaphore est importante dans ce cas, on ne veut pas qu'un process
-* puisse "manger" les interruptions qu'un autre attend : le premier qui ouvre le device gagne.
+This modules gets interrupts from GPIO irqs and expose them through a char device.
+
+Each time a GPIO irq happens, a corresponding interrupt code is put in a FIFO.
+The char device (/dev/interrupts) allows blocking reads, one char at a time. 
+The bytes read from /dev/interrupts comes from the FIFO. When it is empty, the call to read blocks.
+It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast transmission to userspace.
 */
 
 //special declarations for use with code assistance, which doesn't know
@@ -16,8 +18,6 @@
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
 #include <linux/semaphore.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
@@ -25,20 +25,18 @@
 
 #include "config.h"
 #include "klog.h"
-#include "../common/interrupt_codes.h"
+#include "dynamic_device.h"
 #include "interrupt_info.h"
+
+#include "../common/interrupt_codes.h"
 
 MODULE_LICENSE("GPL");
 
-
-//must be power of 2
-#define INTERRUPTS_FIFO_SIZE 16
+static dynamic_device_t dev_interrupts;
 
 struct semaphore sem;
 DEFINE_KFIFO(interrupts_fifo, int8_t, INTERRUPTS_FIFO_SIZE);
 DECLARE_WAIT_QUEUE_HEAD(interrupts_wait_queue);
-
-void unregister_device(void);
 
 long last_interrupt_ns;
 static long time_get_ns(void) {
@@ -121,72 +119,6 @@ ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, l
 	return count;
 }
 
-struct file_operations interrupt_fops = {
-	.owner = THIS_MODULE,
-	.open = device_open,
-	.release = device_release,
-	.read = device_read,
-};
-
-//-- création dynamique d'un device (/dev/interrupts)
-dev_t device_number;
-struct cdev cdev;
-struct class* device_class;
-struct device* device;
-int register_device(void) {
-	int err;
-
-	err = alloc_chrdev_region(&device_number, 0, 1, MODULE_NAME);
-	if (err) {
-		klog_error("Error %d while allocating device number\n", err);
-		return err;
-	}
-	klog_info("Registered device, got major number: %d\n", MAJOR(device_number));
-
-	cdev_init(&cdev, &interrupt_fops);
-	cdev.owner = THIS_MODULE;
-
-	err = cdev_add(&cdev, device_number, 1);
-	if (err) {
-		klog_error("Error %d adding device\n", err);
-		unregister_device();
-		return err;
-	}
-
-	device_class = class_create(THIS_MODULE, "Interrupts");
-	if (IS_ERR(device_class)) {
-		klog_error("Error adding creating device class\n");
-		unregister_device();
-		return PTR_ERR(device_class);
-	}
-
-	device = device_create(device_class, NULL, /* no parent device */
-		device_number, NULL, /* no additional data */
-		"interrupts");
-	if (IS_ERR(device)) {
-		klog_error("Error creating device\n");
-		unregister_device();
-		return PTR_ERR(device);
-	}
-
-	return 0;
-}
-
-void unregister_device(void) {
-	klog_info("unregister_device() is called\n");
-
-	if (device != NULL) {
-		device_destroy(device_class, device_number);
-	}
-
-	if (device_class != NULL) {
-		class_destroy(device_class);
-	}
-
-	cdev_del(&cdev);
-
-	unregister_chrdev_region(device_number, 1);
-}
 
 //-- module init
 
@@ -199,11 +131,20 @@ int __init mod_init(void) {
 		return error;
 	}
 
-	return register_device();
+	struct file_operations dev_interrupt_fops = {
+		.owner = THIS_MODULE,
+		.open = device_open,
+		.release = device_release,
+		.read = device_read,
+	};
+
+	return register_device("interrupts", &dev_interrupts, &dev_interrupt_fops);
 }
 
 void __exit mod_exit(void) {
-	unregister_device();
+	//XXX does it crash if mod_init fails before registering device?
+	//is mod_exit() even called if mod_init fails?
+	unregister_device(&dev_interrupts);
 	unregister_interrupts(); 
 }
 

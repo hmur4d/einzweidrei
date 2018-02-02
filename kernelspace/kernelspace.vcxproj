@@ -86,11 +86,13 @@
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="dynamic_device.c" />
     <ClCompile Include="interrupt_info.c" />
     <ClCompile Include="module.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
+    <ClInclude Include="dynamic_device.h" />
     <ClInclude Include="interrupt_info.h" />
     <ClInclude Include="klog.h" />
   </ItemGroup>

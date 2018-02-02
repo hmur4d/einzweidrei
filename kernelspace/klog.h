@@ -1,6 +1,10 @@
 #ifndef _KLOG_H_
 #define _KLOG_H_
 
+/*
+Kernel logging macros.
+*/
+
 #include <linux/printk.h>
 #include "config.h"
 

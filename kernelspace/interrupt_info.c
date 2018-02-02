@@ -3,8 +3,8 @@
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 
-#include "klog.h"
 #include "interrupt_info.h"
+#include "klog.h"
 #include "../common/interrupt_codes.h"
 
 //macros to declare associations between GPIO and interrupt code in a readable list
