@@ -1,9 +1,6 @@
-#include <linux/fs.h>
-
 #include "dynamic_device.h"
 #include "config.h"
 #include "klog.h"
-
 
 int register_device(const char* name, dynamic_device_t* dyndev, struct file_operations* fops) {
 	klog_info("Registering dynamic device: %s\n", name);

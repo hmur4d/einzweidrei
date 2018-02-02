@@ -5,7 +5,7 @@
 Kernel logging macros.
 */
 
-#include <linux/printk.h>
+#include "linux_includes.h"
 #include "config.h"
 
 //convert int to string

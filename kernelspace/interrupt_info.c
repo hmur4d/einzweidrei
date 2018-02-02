@@ -1,8 +1,3 @@
-#include <linux/errno.h>
-#include <linux/gpio.h>
-#include <linux/irq.h>
-#include <linux/interrupt.h>
-
 #include "interrupt_info.h"
 #include "klog.h"
 #include "../common/interrupt_codes.h"

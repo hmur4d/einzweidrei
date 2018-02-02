@@ -95,6 +95,7 @@
     <ClInclude Include="dynamic_device.h" />
     <ClInclude Include="interrupt_info.h" />
     <ClInclude Include="klog.h" />
+    <ClInclude Include="linux_includes.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

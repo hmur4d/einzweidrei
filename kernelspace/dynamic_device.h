@@ -6,8 +6,7 @@ Dynamic creation of a character device.
 Allows exposing file operations to a device, without calling mknod from userspace.
 */
 
-#include <linux/cdev.h>
-#include <linux/device.h>
+#include "linux_includes.h"
 
 typedef struct {
 	const char* name;

@@ -7,22 +7,7 @@ The bytes read from /dev/interrupts comes from the FIFO. When it is empty, the c
 It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast transmission to userspace.
 */
 
-//special declarations for use with code assistance, which doesn't know
-//we're built from the kernel build system
-#ifdef INTELLISENSE
-#define __KERNEL__
-#endif
-
-#include <linux/module.h>
-#include <linux/sched.h>
-#include <linux/init.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <linux/semaphore.h>
-#include <linux/kernel.h>
-#include <linux/gpio.h>
-#include <linux/kfifo.h>
-
+#include "linux_includes.h"
 #include "config.h"
 #include "klog.h"
 #include "dynamic_device.h"

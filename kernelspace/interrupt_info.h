@@ -5,7 +5,7 @@
 Association between GPIO, IRQ and interrupt code.
 */
 
-#include <linux/types.h>
+#include "linux_includes.h"
 
 typedef struct {
 	const char* name;
