@@ -23,7 +23,7 @@ static struct semaphore dev_interrupts_mutex;
 DEFINE_KFIFO(interrupts_fifo, int8_t, INTERRUPTS_FIFO_SIZE);
 DECLARE_WAIT_QUEUE_HEAD(interrupts_wait_queue);
 
-long last_interrupt_ns;
+static long last_interrupt_ns;
 static long time_get_ns(void) {
 	return ktime_to_ns(ktime_get());
 }
