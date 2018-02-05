@@ -106,6 +106,12 @@ ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, l
 	return nbytes;
 }
 
+struct file_operations dev_interrupt_fops = {
+	.owner = THIS_MODULE,
+	.open = device_open,
+	.release = device_release,
+	.read = device_read,
+};
 
 //-- module init
 
@@ -116,20 +122,11 @@ int __init mod_init(void) {
 		return error;
 	}
 
-	struct file_operations dev_interrupt_fops = {
-		.owner = THIS_MODULE,
-		.open = device_open,
-		.release = device_release,
-		.read = device_read,
-	};
-
 	sema_init(&dev_interrupts_mutex, 1);
 	return register_device("interrupts", &dev_interrupts, &dev_interrupt_fops);
 }
 
 void __exit mod_exit(void) {
-	//XXX does it crash if mod_init fails before registering device?
-	//is mod_exit() even called if mod_init fails?
 	unregister_device(&dev_interrupts);
 	unregister_interrupts(); 
 }
