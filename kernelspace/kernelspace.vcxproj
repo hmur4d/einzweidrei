@@ -89,7 +89,7 @@
     <ClCompile Include="blocking_queue.c" />
     <ClCompile Include="dev_interrupts.c" />
     <ClCompile Include="dynamic_device.c" />
-    <ClCompile Include="interrupt_info.c" />
+    <ClCompile Include="gpio_irq.c" />
     <ClCompile Include="module.c" />
   </ItemGroup>
   <ItemGroup>
@@ -97,7 +97,7 @@
     <ClInclude Include="config.h" />
     <ClInclude Include="dev_interrupts.h" />
     <ClInclude Include="dynamic_device.h" />
-    <ClInclude Include="interrupt_info.h" />
+    <ClInclude Include="gpio_irq.h" />
     <ClInclude Include="klog.h" />
     <ClInclude Include="linux_includes.h" />
   </ItemGroup>

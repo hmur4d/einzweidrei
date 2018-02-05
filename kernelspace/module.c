@@ -11,23 +11,23 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 #include "config.h"
 #include "klog.h"
 #include "blocking_queue.h"
-#include "interrupt_info.h"
+#include "gpio_irq.h"
 #include "dev_interrupts.h"
 
 MODULE_LICENSE("GPL");
 
 static blocking_queue_t interrupts_queue;
 
-static void publish_interrupt(interrupt_info_t* info) {
-	if (!blocking_queue_add(&interrupts_queue, info->code)) {
-		klog_error("Unable to add interrupt 0x%x (%s)!", info->code, info->name);
+static void publish_interrupt(gpio_irq_t* gpioirq) {
+	if (!blocking_queue_add(&interrupts_queue, gpioirq->code)) {
+		klog_error("Unable to add interrupt 0x%x (%s)!", gpioirq->code, gpioirq->name);
 	}
 }
 
 int __init mod_init(void) {
-	int error = register_interrupts(publish_interrupt);
+	int error = register_gpio_irqs(publish_interrupt);
 	if(error) {
-		unregister_interrupts();
+		unregister_gpio_irqs();
 		return error;
 	}
 
@@ -41,7 +41,7 @@ int __init mod_init(void) {
 
 void __exit mod_exit(void) {
 	dev_interrupts_destroy();
-	unregister_interrupts(); 
+	unregister_gpio_irqs(); 
 	klog_info("Module unloaded successfully!\n");
 }
 

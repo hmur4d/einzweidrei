@@ -6,7 +6,7 @@
 //use a jump table to map handlers to codes, faster than looping on a list
 //the interrupt codes needs to be in a usable range though - the constant matches the index on the table
 //so no big offsets are possible.
-static interrupt_handler_f handlers[INTERRUPT_JUMPTABLE_SIZE];
+static gpio_irq_handler_f handlers[INTERRUPT_JUMPTABLE_SIZE];
 
 static bool initialized = false;
 
@@ -23,7 +23,7 @@ static void init_handlers() {
 }
 
 
-bool _register_interrupt_handler(int8_t code, const char* name, interrupt_handler_f handler) {
+bool _register_interrupt_handler(int8_t code, const char* name, gpio_irq_handler_f handler) {
 	if (code < 0 || code >= INTERRUPT_JUMPTABLE_SIZE) {
 		log_error("Interrupt code '%d' (%s) outside of range 0-%d", code, name, INTERRUPT_JUMPTABLE_SIZE);
 		return false;
@@ -48,7 +48,7 @@ void call_interrupt_handler(int8_t code) {
 		init_handlers();
 	}
 
-	interrupt_handler_f handler = handlers[code];
+	gpio_irq_handler_f handler = handlers[code];
 	if (handler != NULL) {
 		log_debug("Calling interrupt handler for code 0x%x", code);
 		handler(code);
