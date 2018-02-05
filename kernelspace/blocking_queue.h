@@ -3,7 +3,7 @@
 
 /*
 Defines a blocking queue, using a fifo with a wait queue.
-This queue will block when calling blocking_queue_get(..) on an empty queue.
+This queue will block when calling blocking_queue_take(..) on an empty queue.
 It will not block when trying to add a value to a full queue, but will report an error instead.
 */
 

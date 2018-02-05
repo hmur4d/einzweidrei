@@ -25,14 +25,14 @@ int register_device(const char* name, dynamic_device_t* dyndev, struct file_oper
 
 	dyndev->device_class = class_create(THIS_MODULE, name);
 	if (IS_ERR(dyndev->device_class)) {
-		klog_error("Error adding creating device class\n");
+		klog_error("Error creating device class %s\n", name);
 		unregister_device(dyndev);
 		return PTR_ERR(dyndev->device_class);
 	}
 
 	dyndev->device = device_create(dyndev->device_class, NULL, dyndev->device_number, NULL, name);
 	if (IS_ERR(dyndev->device)) {
-		klog_error("Error creating device\n");
+		klog_error("Error creating device %s\n", name);
 		unregister_device(dyndev);
 		return PTR_ERR(dyndev->device);
 	}
