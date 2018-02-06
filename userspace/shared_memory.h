@@ -8,18 +8,23 @@ Shared memory, allows read/write access to FPGA memory
 #include "std_includes.h"
 
 //Start address and length of the Lightweight bridge
-#define HPS_TO_FPGA_LW_BASE 0xFF200000		//4280287232
+#define HPS_TO_FPGA_BASE 0xc0000000
+#define HPS_TO_FPGA_SPAN 0x0020000	//? to be defined
+
+#define HPS_TO_FPGA_LW_BASE 0xFF200000
 #define HPS_TO_FPGA_LW_SPAN 0x0020000
 
-//sample address for test
-//cyclone V
-#define LEDS_BASE 0x10040
-//arria10
-//#define LEDS_BASE 0x120
+//sample addresses for test
+#define COUNTING 0x0
+#define COUNTER_WRITE 0x0
+#define COUNTER_READ 0x4
 
 //Used to expose typed memory blocks
 typedef struct {
-	uint32_t* sample; //sample for test
+	//sample for test on "counters" fpga image
+	int32_t* counting; 
+	int32_t* write_counter;
+	int32_t* read_counter;
 } shared_memory_t;
 
 //Opens and mmap shared memory

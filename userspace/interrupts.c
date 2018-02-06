@@ -3,6 +3,7 @@
 #include "../common/interrupt_codes.h"
 #include "interrupt_handlers.h"
 #include "net_io.h"
+#include "shared_memory.h"
 
 //each interrupt handler is blocking the interrupt reader thread.
 //use a message queue like in cameleon nios? maybe not, the /dev/interrupts file is already a kind of queue...
@@ -33,6 +34,10 @@ static void scan_done(int8_t code) {
 
 static void sequence_done(int8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
+
+	shared_memory_t* mem = shared_memory_acquire();
+	log_info("reading test value from shared memory: 0x%x = 0x%x (%d)", mem->read_counter, *mem->read_counter, *mem->read_counter);
+	shared_memory_release(mem);
 
 	header_t header;
 	reset_header(&header);

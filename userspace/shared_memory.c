@@ -4,12 +4,15 @@
 static bool initialized = false;
 static sem_t mutex;
 static int fd;
-static void* lw_bridge;
+static void* hps2fpga;
+static void* hps2fpga_lw;
 static shared_memory_t sharedmem;
 
 static void assign_memory_blocks() {
-	//sample for test
-	sharedmem.sample = (uint32_t*)(lw_bridge + LEDS_BASE); 
+	//sample for test on "counters" fpga image
+	sharedmem.counting = (int32_t*)(hps2fpga_lw + COUNTING);
+	sharedmem.write_counter = (int32_t*)(hps2fpga + COUNTER_WRITE);
+	sharedmem.read_counter = (int32_t*)(hps2fpga + COUNTER_READ);
 }
 
 //--
@@ -29,10 +32,18 @@ bool shared_memory_init(const char* memory_file) {
 		return false;
 	}
 
-	//mmap the entire address space of the Lightweight bridge
-	lw_bridge = (uint32_t*)mmap(NULL, HPS_TO_FPGA_LW_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, HPS_TO_FPGA_LW_BASE);
-	if (lw_bridge == MAP_FAILED) {
-		log_error_errno("Unable to mmap the lightweight bridge");
+	//HPS2FPGA Lightweight bridge
+	hps2fpga_lw = (uint32_t*)mmap(NULL, HPS_TO_FPGA_LW_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, HPS_TO_FPGA_LW_BASE);
+	if (hps2fpga_lw == MAP_FAILED) {
+		log_error_errno("Unable to mmap the hps2fpga lightweight bridge");
+		close(fd);
+		return false;
+	}
+
+	//HPS2FPGA bridge
+	hps2fpga = (uint32_t*)mmap(NULL, HPS_TO_FPGA_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, HPS_TO_FPGA_BASE);
+	if (hps2fpga == MAP_FAILED) {
+		log_error_errno("Unable to mmap the hps2fpga bridge");
 		close(fd);
 		return false;
 	}
@@ -76,8 +87,13 @@ bool shared_memory_close() {
 	sem_wait(&mutex);
 
 	log_info("Closing shared memory");
-	if (munmap(lw_bridge, HPS_TO_FPGA_LW_SPAN) != 0) {
-		log_error_errno("Unable to munmap the lightweight bridge");
+	if (munmap(hps2fpga_lw, HPS_TO_FPGA_LW_SPAN) != 0) {
+		log_error_errno("Unable to munmap the hps2fpga lightweight bridge");
+		return false;
+	}
+
+	if (munmap(hps2fpga, HPS_TO_FPGA_SPAN) != 0) {
+		log_error_errno("Unable to munmap the hps2fpga bridge");
 		return false;
 	}
 

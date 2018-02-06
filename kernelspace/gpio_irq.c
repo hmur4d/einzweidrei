@@ -8,8 +8,8 @@
 
 //associations between GPIO and interrupt codes
 static gpio_irq_t list[] = {
-	_gpio(INTERRUPT_SCAN_DONE,		480),
-	_gpio(INTERRUPT_SEQUENCE_DONE,	472),
+	//_gpio(INTERRUPT_SCAN_DONE,		0),
+	_gpio(INTERRUPT_SEQUENCE_DONE,	480),
 	_gpio_list_end
 };
 
@@ -19,6 +19,7 @@ static gpio_irq_handler_f gpio_irq_handler = NULL;
 
 static gpio_irq_t* find_gpio_irq(int irq) {
 	gpio_irq_t *gpioirq;
+
 	for (gpioirq = list; gpioirq->name != NULL; gpioirq++) {
 		if (gpioirq->irq == irq) {
 			return gpioirq;

@@ -1,0 +1,69 @@
+pour tester les interrupts & mémoires, avec l'image "compteurs led"
+
+/*
+ecriture compteur: 0xC0000000 -Hps2FPGA, 32 bits
+
+lecture compteur: 0xC0000004 (nb de clignotements de la led)
+
+interrupt: pio adresse 1002 => gpio 480
+
+bit start: 0xFF200000 -LwBridge, 32bits
+
+
+pour utiliser /dev/mem pour le hps2fpga, passer ca au bootloader
+mw.l 0xFFD13504 0x1
+=> noc_fw_soc2fpga_soc2fpga_scr (per-master security bit for soc2fpga), 
+=> 0x1 => mpu_m0 = 1
+
+mw.l 0xFFD11004 0xffffffff
+=> noc_l4_priv_l4_priv_filter
+
+# celui la semble suffire?
+# https://www.altera.com/documentation/sfo1410070178831.html
+# brgmodrst 
+===
+The BRGMODRST register is used by software to trigger module resets (individual module reset signals). 
+Software explicitly asserts and de-asserts module reset signals by writing bits in the appropriate *MODRST register. 
+It is up to software to ensure module reset signals are asserted for the appropriate length of time and are de-asserted in the correct order. 
+It is also up to software to not assert a module reset signal that would prevent software from de-asserting the module reset signal. 
+For example, software should not assert the module reset to the CPU executing the software.
+
+Software writes a bit to 1 to assert the module reset signal and to 0 to de-assert the module reset signal.
+
+All fields are reset by a cold reset.All fields are also reset by a warm reset if not masked by the corresponding BRGWARMMASK field.
+The reset value of all fields is 1. This holds the corresponding module in reset until software is ready to release the module from reset by writing 0 to its field.
+===
+i_rst_mgr_rstmgr	0xFFD05000	0xFFD0502C
+#=> 0x3C => 0011 1100
+=> hps2fpga: 0
+=> lwhps2fpga: 0
+=> fpga2hps: 1
+=> f2ssdram0: 1
+=> f2ssdram1: 1
+=> f2ssdram2: 1
+=> ddrsch: 0
+
+mw.l 0xFFD0502C 0x3C
+run mmcload
+run mmcboot
+
+
+====
+
+# devmem 0xc0000000 32 25000000
+# devmem 0xc0000000 32
+0x017D7840
+# devmem 0xff200000 32 1
+# devmem 0xc0000004 32
+0xB33F37F1
+# devmem 0xc0000004 32
+0xB33F37F2
+# devmem 0xc0000004 32
+0xB33F37F3
+# devmem 0xc0000004 32
+0xB33F37F3
+# devmem 0xc0000004 32
+0xB33F37F4
+# devmem 0xc0000004 32
+
+*/
