@@ -19,7 +19,6 @@ static struct file_operations device_fops = {
 
 static dynamic_device_t device;
 static struct semaphore mutex;
-static blocking_queue_t* queue = NULL;
 
 //-- 
 
@@ -32,7 +31,7 @@ static int device_open(struct inode *inode, struct file *filp) {
 		return -ERESTARTSYS;
 
 	klog_info("got semaphore, emptying queue\n");
-	blocking_queue_reset(queue);
+	blocking_queue_reset();
 
 #ifdef XXX_FAKE_INTERRUPTS
 	blocking_queue_add(queue, INTERRUPT_SCAN_DONE);
@@ -56,14 +55,14 @@ static int device_release(struct inode *inode, struct file *filp) {
 static ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, loff_t *position) {
 	klog_info("Device file is read at offset=%i, read bytes count=%u\n", (int)*position, (uint)count);
 
-	if (filp->f_flags & O_NONBLOCK && blocking_queue_is_empty(queue)) {
+	if (filp->f_flags & O_NONBLOCK && blocking_queue_is_empty()) {
 		//the caller could have set the O_NONBLOCK attribute, we must honor it.
 		klog_warning("read with O_NONBLOCK on an empty file\n");
 		return -EAGAIN;
 	}
 
 	int8_t value;
-	if (!blocking_queue_take(queue, &value)) {
+	if (!blocking_queue_take(&value)) {
 		klog_error("Unable to get interrupt from blocking queue!\n");
 		return -EFAULT;
 	}
@@ -81,8 +80,7 @@ static ssize_t device_read(struct file *filp, char __user *user_buffer, size_t c
 
 //--
 
-bool dev_interrupts_create(blocking_queue_t* interrupts_queue) {
-	queue = interrupts_queue;
+bool dev_interrupts_create(void) {
 	sema_init(&mutex, 1);
 	if (register_device("interrupts", &device, &device_fops) != 0) {
 		klog_error("Unable to create /dev/interrupts");
@@ -92,7 +90,6 @@ bool dev_interrupts_create(blocking_queue_t* interrupts_queue) {
 	return true;
 }
 
-void dev_interrupts_destroy() {
-	queue = NULL;
+void dev_interrupts_destroy(void) {
 	unregister_device(&device);
 }

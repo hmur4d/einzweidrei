@@ -16,10 +16,9 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 
 MODULE_LICENSE("GPL");
 
-static blocking_queue_t interrupts_queue;
 
 static void publish_interrupt(gpio_irq_t* gpioirq) {
-	if (!blocking_queue_add(&interrupts_queue, gpioirq->code)) {
+	if (!blocking_queue_add(gpioirq->code)) {
 		klog_error("Unable to add interrupt 0x%x (%s)!", gpioirq->code, gpioirq->name);
 	}
 }
@@ -31,7 +30,7 @@ int __init mod_init(void) {
 		return error;
 	}
 
-	if (!dev_interrupts_create(&interrupts_queue)) {
+	if (!dev_interrupts_create()) {
 		return -ENOMSG;
 	}
 
