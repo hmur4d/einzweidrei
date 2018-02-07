@@ -53,7 +53,7 @@ static int device_release(struct inode *inode, struct file *filp) {
 
 //blocking read, one char at a time
 static ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, loff_t *position) {
-	klog_info("Device file is read at offset=%i, read bytes count=%u\n", (int)*position, (uint)count);
+	klog_info("/dev/interrupt read at offset=%i, read bytes count=%u\n", (int)*position, (uint)count);
 
 	if (filp->f_flags & O_NONBLOCK && blocking_queue_is_empty()) {
 		//the caller could have set the O_NONBLOCK attribute, we must honor it.
