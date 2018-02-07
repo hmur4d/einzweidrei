@@ -1,5 +1,7 @@
 /*
-This modules gets interrupts from GPIO irqs and expose them through a char device.
+This modules has two features:
+1. enable the hps2fpga bridge, making it available through /dev/mem
+2. gets interrupts from GPIO irqs and expose them through a char device.
 
 Each time a GPIO irq happens, a corresponding interrupt code is put in a FIFO.
 The char device (/dev/interrupts) allows blocking reads, one char at a time. 
@@ -13,9 +15,9 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 #include "blocking_queue.h"
 #include "gpio_irq.h"
 #include "dev_interrupts.h"
+#include "hps2fpga.h"
 
 MODULE_LICENSE("GPL");
-
 
 static void publish_interrupt(gpio_irq_t* gpioirq) {
 	if (!blocking_queue_add(gpioirq->code)) {
@@ -24,6 +26,10 @@ static void publish_interrupt(gpio_irq_t* gpioirq) {
 }
 
 int __init mod_init(void) {
+	if (!enable_hps2fpga_bridge()) {
+		return -ENOMSG;
+	}
+
 	int error = register_gpio_irqs(publish_interrupt);
 	if(error) {
 		unregister_gpio_irqs();
