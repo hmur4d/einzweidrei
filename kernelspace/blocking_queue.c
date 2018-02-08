@@ -38,6 +38,7 @@ bool blocking_queue_take(int8_t* value) {
 
 	int diff = time_get_ns() - last_push;
 	klog_info("time elapsed between push and get: %d ns\n", diff);
+	klog_info("queue size: %d\n", kfifo_size(&fifo));
 
 	size_t nbytes = 1;
 	if (kfifo_out(&fifo, value, nbytes) != nbytes) {

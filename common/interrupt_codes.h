@@ -12,5 +12,7 @@
 #define INTERRUPT_ACQUISITION_CORRUPTED       0x9	
 #define INTERRUPT_TIME_TO_UPDATE              0xA
 
+#define INTERRUPT_ACQUISITION_TEST		      0xB	//for testing only
+
 #endif
 

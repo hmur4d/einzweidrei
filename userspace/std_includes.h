@@ -21,6 +21,8 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <sys/mman.h>
 #include <sys/socket.h> 
 #include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <netinet/in.h> 
 #include <arpa/inet.h>
 

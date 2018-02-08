@@ -13,6 +13,7 @@ static void assign_memory_blocks() {
 	sharedmem.counting = (int32_t*)(hps2fpga_lw + COUNTING);
 	sharedmem.write_counter = (int32_t*)(hps2fpga + COUNTER_WRITE);
 	sharedmem.read_counter = (int32_t*)(hps2fpga + COUNTER_READ);
+	sharedmem.acq_buffer = (int32_t*)(hps2fpga + ACQUISITION_BUFFER);
 }
 
 //--

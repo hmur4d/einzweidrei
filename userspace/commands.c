@@ -130,15 +130,28 @@ static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 
 	shared_memory_t* mem = shared_memory_acquire();
 	
-	int32_t counter = 25000000;
+	int32_t counter = 500;
 	log_info("writing counter value to shared memory: 0x%x <- 0x%x (%d)", mem->write_counter, counter, counter);
 	*mem->write_counter = counter;
 
-	log_info("reading read counter: 0x%x = 0x%x (%d)", mem->read_counter, *mem->read_counter, *mem->read_counter);
+	uint32_t start_once = 3;
+	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->counting, start_once, start_once);
+	*mem->counting = start_once;
+	shared_memory_release(mem);
+}
 
-	uint32_t start = 1;
-	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->counting, start, start);
-	*mem->counting = start;
+static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
+	//TODO implement this
+
+	shared_memory_t* mem = shared_memory_acquire();
+
+	int32_t counter = 500;
+	log_info("writing counter value to shared memory: 0x%x <- 0x%x (%d)", mem->write_counter, counter, counter);
+	*mem->write_counter = counter;
+
+	uint32_t start_repeat = 1;
+	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->counting, start_repeat, start_repeat);
+	*mem->counting = start_repeat;
 	shared_memory_release(mem);
 }
 
@@ -147,12 +160,9 @@ static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const vo
 
 	shared_memory_t* mem = shared_memory_acquire();
 
-	uint32_t stop = 0;
-	log_info("writing stop counting: 0x%x <- 0x%x (%d)", mem->counting, stop, stop);
-	*mem->counting = stop;
-
-	log_info("reading read counter: 0x%x = 0x%x (%d)", mem->read_counter, *mem->read_counter, *mem->read_counter);
-
+	uint32_t stop_reset = 4;
+	log_info("writing stop counting: 0x%x <- 0x%x (%d)", mem->counting, stop_reset, stop_reset);
+	*mem->counting = stop_reset;
 	shared_memory_release(mem);
 }
 
@@ -175,6 +185,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_READ_PIO, read_pio);
 
 	success &= register_command_handler(CMD_ZG, cmd_zg);
+	success &= register_command_handler(CMD_RS, cmd_rs);
 	success &= register_command_handler(CMD_STOP_SEQUENCE, cmd_stop_sequence);
 
 

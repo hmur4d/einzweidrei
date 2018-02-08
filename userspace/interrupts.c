@@ -34,11 +34,7 @@ static void scan_done(int8_t code) {
 
 static void sequence_done(int8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
-
-	shared_memory_t* mem = shared_memory_acquire();
-	log_info("reading test value from shared memory: 0x%x = 0x%x (%d)", mem->read_counter, *mem->read_counter, *mem->read_counter);
-	shared_memory_release(mem);
-
+	
 	header_t header;
 	reset_header(&header);
 	header.cmd = MSG_ACQU_DONE;
@@ -49,6 +45,54 @@ static void sequence_done(int8_t code) {
 		send_message(client, &header, NULL);
 	}
 	sem_post(&mutex);
+}
+
+//--
+
+static void acquisition_test(int8_t code) {
+	log_info("Received acquisition_test interrupt, code=0x%x", code);
+}
+
+static void copy_acq_buffer(int32_t* from) {
+	int half_size = ACQUISITION_BUFFER_SIZE / 2;
+	int nbytes = half_size * sizeof(int32_t);
+	int32_t buffer[half_size];
+
+	log_info("memcpy from shared memory: 0x%x to 0x%x (%d bytes)", from, from + half_size, nbytes);
+	long sec_to_ns = 1000000000;
+	struct timespec tstart = { 0,0 }, tend = { 0,0 };
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+	memcpy(buffer, from, nbytes);
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+
+	log_info("memcpy took %f ns",
+		((double)tend.tv_sec*sec_to_ns + (double)tend.tv_nsec) -
+		((double)tstart.tv_sec*sec_to_ns + (double)tstart.tv_nsec));
+
+	for (int i = 0; i < 10 && i < half_size; i++) {
+		log_info("buffer[%d] = %d (0x%x)", i, buffer[i], buffer[i]);
+	}
+
+	//TODO: queue & send with ACQU_TRANSFER
+	//need to send outside of interrupt handler
+}
+
+static void acquisition_half_full(int8_t code) {
+	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
+
+	shared_memory_t* mem = shared_memory_acquire();
+	copy_acq_buffer(mem->acq_buffer);
+	shared_memory_release(mem);
+}
+
+static void acquisition_full(int8_t code) {
+	log_info("Received acquisition_full interrupt, code=0x%x", code);
+
+	int half_size = ACQUISITION_BUFFER_SIZE / 2;
+
+	shared_memory_t* mem = shared_memory_acquire();
+	copy_acq_buffer(mem->acq_buffer+half_size);
+	shared_memory_release(mem);
 }
 
 //--
@@ -80,5 +124,11 @@ bool register_all_interrupts() {
 	bool success = true;
 	success &= register_interrupt_handler(INTERRUPT_SCAN_DONE, scan_done);
 	success &= register_interrupt_handler(INTERRUPT_SEQUENCE_DONE, sequence_done);
+
+	//tests interrupts & memory
+	success &= register_interrupt_handler(INTERRUPT_ACQUISITION_TEST, acquisition_test);
+	success &= register_interrupt_handler(INTERRUPT_ACQUISITION_HALF_FULL, acquisition_half_full);
+	success &= register_interrupt_handler(INTERRUPT_ACQUISITION_FULL, acquisition_full);
+
 	return success;
 }
