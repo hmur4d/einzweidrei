@@ -114,6 +114,19 @@ bool interrupts_init() {
 	return true;
 }
 
+bool interrupts_destroy() {
+	interrupts_set_client(NULL);
+
+	log_debug("Destroying interrupts mutex");
+	if (pthread_mutex_destroy(&mutex) != 0) {
+		log_error("Unable to destroy mutex");
+		return false;
+	}
+
+	initialized = false;
+	return true;
+}
+
 void interrupts_set_client(clientsocket_t* clientsocket) {
 	if (!initialized) {
 		log_error("Trying to set an interrupts client, but interrupts are not initalized!");

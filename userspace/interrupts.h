@@ -26,6 +26,9 @@ Interrupt handlers: interrupt implementations.
 //Must be called before setting a client.
 bool interrupts_init();
 
+//Cleanup function.
+bool interrupts_destroy();
+
 //Sets the sequencer client, to be notified of interruptions
 //Can be set to NULL to disable sending before freeing the socket.
 void interrupts_set_client(clientsocket_t* clientsocket);

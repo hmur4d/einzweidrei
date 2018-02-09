@@ -130,6 +130,7 @@ int main(int argc, char ** argv) {
 
 	monitoring_stop();
 	interrupt_reader_stop();
+	interrupts_destroy();
 	clientgroup_destroy();
 
 	destroy_command_handlers();
