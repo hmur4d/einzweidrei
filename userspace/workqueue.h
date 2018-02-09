@@ -18,12 +18,12 @@ typedef void(*cleanup_f) (void* data);
 
 //Initialize the work queue, start its thread.
 //Must be done before submitting any worker.
-bool workqueue_init();
+bool workqueue_start();
 
-//Cleanup function. Cancels threads.
+//Stops threads and cleanup.
 //If there are still workers in queue, they will not be processed. 
 //The cleanup function will still be called.
-bool workqueue_destroy();
+bool workqueue_stop();
 
 //Submit a new worker. The data & cleanup function can be NULL if the worker doesn't need any data.
 bool workqueue_submit(worker_f worker, void* data, cleanup_f cleanup);

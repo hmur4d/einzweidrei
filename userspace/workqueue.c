@@ -107,7 +107,7 @@ static void* workqueue_thread(void* data) {
 
 //--
 
-bool workqueue_init() {
+bool workqueue_start() {
 	log_debug("Creating workqueue mutex");
 	if (pthread_mutex_init(&mutex, NULL) != 0) {
 		log_error("Unable to init mutex");
@@ -138,7 +138,7 @@ bool workqueue_init() {
 	return true;
 }
 
-bool workqueue_destroy() {
+bool workqueue_stop() {
 	if (pthread_cancel(thread) != 0) {
 		log_error("Unable to cancel workqueue thread");
 		return false;

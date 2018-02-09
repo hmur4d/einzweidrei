@@ -70,11 +70,6 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 
-	if (!workqueue_init()) {
-		log_error("Unable to init work queue, exiting");
-		return 1;
-	}
-
 	if (!interrupts_init()) {
 		log_error("Unable to init interrupts, exiting");
 		return 1;
@@ -87,6 +82,11 @@ int main(int argc, char ** argv) {
 
 	if (!register_all_commands()) {
 		log_error("Error while registering commands, exiting");
+		return 1;
+	}
+
+	if (!workqueue_start()) {
+		log_error("Unable to start work queue, exiting");
 		return 1;
 	}
 
@@ -136,9 +136,9 @@ int main(int argc, char ** argv) {
 
 	monitoring_stop();
 	interrupt_reader_stop();
+	workqueue_stop();
 	interrupts_destroy();
 	clientgroup_destroy();
-	workqueue_destroy();
 		
 	destroy_command_handlers();
 	destroy_interrupt_handlers();
