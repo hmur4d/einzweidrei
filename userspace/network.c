@@ -95,7 +95,7 @@ bool serversocket_listen(serversocket_t* serversocket, ushort port, const char* 
 
 bool serversocket_wait(serversocket_t* serversocket) {
 	if (pthread_join(serversocket->thread, NULL) != 0) {
-		log_error_errno("Error un pthread_join for server socket %s:%d", serversocket->name, serversocket->port);
+		log_error("Error un pthread_join for server socket %s:%d", serversocket->name, serversocket->port);
 		return false;
 	}
 
@@ -104,7 +104,10 @@ bool serversocket_wait(serversocket_t* serversocket) {
 }
 
 void serversocket_close(serversocket_t* serversocket) {
-	//TODO: cancel thread if possible?
+	if (pthread_cancel(serversocket->thread) == 0) {
+		log_debug("Server socket thread (%s:%d) was still running and got cancelled", serversocket->name, serversocket->port);
+		serversocket_wait(serversocket);
+	}
 
 	log_debug("Closing server socket: %s:%d", serversocket->name, serversocket->port);
 	if(close(serversocket->fd) == 0) {
