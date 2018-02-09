@@ -16,7 +16,6 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <time.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <semaphore.h> 
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sys/socket.h> 

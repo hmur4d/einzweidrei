@@ -4,7 +4,7 @@ static void write_log(const char* level, const char* srcfile, const char* functi
 static void write_log_to(FILE* fp, const char* level, const char* srcfile, const char* function, int line, const struct tm* timeinfo, int errcode, const char* format, va_list args);
 
 static bool initialized = false;
-static sem_t mutex;
+static pthread_mutex_t mutex;
 static int loglevel = LEVEL_ALL;
 static FILE* logfile = NULL;
 
@@ -40,7 +40,7 @@ int log_level_from_name(const char* name, int default_level) {
 bool log_init(int level, const char* logfile_path) {
 	loglevel = level;
 
-	if (sem_init(&mutex, 0, 1) < 0) {
+	if (pthread_mutex_init(&mutex, NULL) != 0) {
 		perror("log_init: unable to init log mutex");
 		return false;
 	}
@@ -60,7 +60,7 @@ bool log_close() {
 		perror("log_close: nable to close log file");
 	}
 
-	if (sem_destroy(&mutex) < 0) {
+	if (pthread_mutex_destroy(&mutex) != 0) {
 		perror("log_close: unable to destroy log mutex");
 		return false;
 	}
@@ -115,7 +115,7 @@ static void write_log_to(FILE* fp, const char* level, const char* srcfile, const
 	va_list args_copy;
 	va_copy(args_copy, args);
 
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 
 	//[level][day time][file, function():line]
 	fprintf(fp, "[%-5.5s][%02d/%02d/%04d %02d:%02d:%02d][%s, %s():%d]\n",
@@ -132,5 +132,5 @@ static void write_log_to(FILE* fp, const char* level, const char* srcfile, const
 	fprintf(fp, "\n\n");
 	fflush(fp);
 
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 }

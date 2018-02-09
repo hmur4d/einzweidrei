@@ -9,7 +9,7 @@
 //use a message queue like in cameleon nios? maybe not, the /dev/interrupts file is already a kind of queue...
 
 static bool initialized = false;
-static sem_t mutex; 
+static pthread_mutex_t mutex;
 static clientsocket_t* client = NULL;
 
 static void scan_done(int8_t code) {
@@ -24,12 +24,12 @@ static void scan_done(int8_t code) {
 	header.param4 = 0; //4D counter
 	header.param5 = 0; //?
 
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 	if (client != NULL) {
 		log_info("Sending SCAN_DONE message");
 		send_message(client, &header, NULL);
 	}
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 }
 
 static void sequence_done(int8_t code) {
@@ -39,12 +39,12 @@ static void sequence_done(int8_t code) {
 	reset_header(&header);
 	header.cmd = MSG_ACQU_DONE;
 
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 	if (client != NULL) {
 		log_info("Sending ACQU_DONE message");
 		send_message(client, &header, NULL);
 	}
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 }
 
 //--
@@ -105,8 +105,8 @@ static void acquisition_full(int8_t code) {
 
 bool interrupts_init() {
 	log_debug("Creating interrupts mutex");
-	if (sem_init(&mutex, 0, 1) < 0) {
-		log_error_errno("Unable to init mutex");
+	if (pthread_mutex_init(&mutex, NULL) != 0) {
+		log_error("Unable to init mutex");
 		return false;
 	}
 
@@ -121,9 +121,9 @@ void interrupts_set_client(clientsocket_t* clientsocket) {
 	}
 
 	log_debug("Setting interrupts client socket");
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 	client = clientsocket;
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 }
 
 bool register_all_interrupts() {

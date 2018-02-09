@@ -9,7 +9,7 @@ typedef struct {
 } clientgroup_t;
 
 static bool initialized = false;
-static sem_t mutex;
+static pthread_mutex_t mutex;
 static clientgroup_t group;
 
 static void clientgroup_reset() {
@@ -22,14 +22,14 @@ static void clientgroup_reset() {
 
 bool clientgroup_init() {
 	log_debug("Initializing client group");
-	if (sem_init(&mutex, 0, 1) < 0) {
-		log_error_errno("Unable to init mutex");
+	if (pthread_mutex_init(&mutex, NULL) != 0) {
+		log_error("Unable to init mutex");
 		return false;
 	}
 
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 	clientgroup_reset();
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 
 	initialized = true;
 	return true;
@@ -37,8 +37,8 @@ bool clientgroup_init() {
 
 bool clientgroup_destroy() {
 	log_debug("Destroying client group");
-	if (sem_destroy(&mutex) < 0) {
-		log_error_errno("Unable to destroy mutex");
+	if (pthread_mutex_destroy(&mutex) != 0) {
+		log_error("Unable to destroy mutex");
 		return false;
 	}
 
@@ -53,7 +53,7 @@ static bool clientgroup_set_one(clientsocket_t** dest, const char* dest_name, cl
 	}
 
 	bool result;
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 
 	if (*dest != NULL) {
 		log_warning("Trying to set a new %s client while the previous one wasn't destroyed yet!", dest_name);
@@ -65,7 +65,7 @@ static bool clientgroup_set_one(clientsocket_t** dest, const char* dest_name, cl
 		result = true;
 	}
 	
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 	return result;
 }
 
@@ -98,11 +98,11 @@ void clientgroup_close_all() {
 	}
 
 	log_info("Closing all client sockets");
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 	clientgroup_close_one(group.command);
 	clientgroup_close_one(group.sequencer);
 	clientgroup_close_one(group.monitoring);
 	clientgroup_close_one(group.lock);
 	clientgroup_reset();
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 }

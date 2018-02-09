@@ -4,7 +4,7 @@
 #include "commands.h"
 
 static bool initialized = false;
-static sem_t mutex;
+static pthread_mutex_t mutex;
 static pthread_t thread;
 static clientsocket_t* client = NULL;
 
@@ -62,9 +62,9 @@ static void send_monitoring_message() {
 static void* monitoring_thread(void* data) {
 	while (true) {
 		usleep(MONITORING_SLEEP_TIME);
-		sem_wait(&mutex);
+		pthread_mutex_lock(&mutex);
 		send_monitoring_message();
-		sem_post(&mutex);
+		pthread_mutex_unlock(&mutex);
 	}
 
 	return NULL;
@@ -72,8 +72,8 @@ static void* monitoring_thread(void* data) {
 
 bool monitoring_start() {
 	log_debug("Creating monitoring mutex");
-	if (sem_init(&mutex, 0, 1) < 0) {
-		log_error_errno("Unable to init mutex");
+	if (pthread_mutex_init(&mutex, NULL) != 0) {
+		log_error("Unable to init mutex");
 		return false;
 	}
 
@@ -94,9 +94,9 @@ void monitoring_set_client(clientsocket_t* clientsocket) {
 	}
 
 	log_debug("setting monitoring client socket");
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 	client = clientsocket;
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 }
 
 bool monitoring_stop() {
@@ -110,8 +110,8 @@ bool monitoring_stop() {
 		return false;
 	}
 
-	if (sem_destroy(&mutex) < 0) {
-		log_error_errno("Unable to destroy mutex");
+	if (pthread_mutex_destroy(&mutex) != 0) {
+		log_error("Unable to destroy mutex");
 		return false;
 	}
 

@@ -2,7 +2,7 @@
 #include "log.h"
 
 static bool initialized = false;
-static sem_t mutex;
+static pthread_mutex_t mutex;
 static int fd;
 static void* hps2fpga;
 static void* hps2fpga_lw;
@@ -22,8 +22,8 @@ bool shared_memory_init(const char* memory_file) {
 	log_info("Opening shared memory: %s", memory_file);
 
 	log_debug("Creating shared memory mutex");
-	if (sem_init(&mutex, 0, 1) < 0) {
-		log_error_errno("Unable to init mutex");
+	if (pthread_mutex_init(&mutex, NULL) != 0) {
+		log_error("Unable to init mutex");
 		return false;
 	}
 
@@ -60,7 +60,7 @@ shared_memory_t* shared_memory_acquire() {
 		return NULL;
 	}
 
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 	return &sharedmem;
 }
 
@@ -75,7 +75,7 @@ bool shared_memory_release(shared_memory_t* mem) {
 		return false;
 	}
 
-	sem_post(&mutex);
+	pthread_mutex_unlock(&mutex);
 	return true;
 }
 
@@ -85,7 +85,7 @@ bool shared_memory_close() {
 		return false;
 	}
 
-	sem_wait(&mutex);
+	pthread_mutex_lock(&mutex);
 
 	log_info("Closing shared memory");
 	if (munmap(hps2fpga_lw, HPS_TO_FPGA_LW_SPAN) != 0) {
@@ -103,8 +103,10 @@ bool shared_memory_close() {
 		return false;
 	}
 
-	if (sem_destroy(&mutex) < 0) {
-		log_error_errno("Unable to destroy mutex");
+	//can only destroy unlocked mutexes
+	pthread_mutex_unlock(&mutex);
+	if (pthread_mutex_destroy(&mutex) != 0) {
+		log_error("Unable to destroy mutex");
 		return false;
 	}
 
