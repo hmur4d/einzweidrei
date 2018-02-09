@@ -96,6 +96,7 @@
     <ClInclude Include="net_io.h" />
     <ClInclude Include="shared_memory.h" />
     <ClInclude Include="std_includes.h" />
+    <ClInclude Include="workqueue.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cameleon.c" />
@@ -111,6 +112,7 @@
     <ClCompile Include="network.c" />
     <ClCompile Include="net_io.c" />
     <ClCompile Include="shared_memory.c" />
+    <ClCompile Include="workqueue.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

@@ -14,6 +14,7 @@
     <ClCompile Include="interrupts.c" />
     <ClCompile Include="shared_memory.c" />
     <ClCompile Include="config.c" />
+    <ClCompile Include="workqueue.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />
@@ -29,6 +30,7 @@
     <ClInclude Include="interrupts.h" />
     <ClInclude Include="std_includes.h" />
     <ClInclude Include="shared_memory.h" />
+    <ClInclude Include="workqueue.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

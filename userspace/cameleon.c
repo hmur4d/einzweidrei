@@ -5,6 +5,7 @@
 #include "config.h"
 #include "net_io.h"
 #include "shared_memory.h"
+#include "workqueue.h"
 #include "interrupt_reader.h"
 #include "interrupt_handlers.h"
 #include "interrupts.h"
@@ -66,6 +67,11 @@ int main(int argc, char ** argv) {
 	char* memory_file = get_memory_file();
 	if (!shared_memory_init(memory_file)) {
 		log_error("Unable to open shared memory (%s), exiting", memory_file);
+		return 1;
+	}
+
+	if (!workqueue_init()) {
+		log_error("Unable to init work queue, exiting");
 		return 1;
 	}
 
@@ -132,7 +138,8 @@ int main(int argc, char ** argv) {
 	interrupt_reader_stop();
 	interrupts_destroy();
 	clientgroup_destroy();
-
+	workqueue_destroy();
+		
 	destroy_command_handlers();
 	destroy_interrupt_handlers();
 
