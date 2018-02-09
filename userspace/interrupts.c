@@ -4,6 +4,7 @@
 #include "interrupt_handlers.h"
 #include "net_io.h"
 #include "shared_memory.h"
+#include "workqueue.h"
 
 //each interrupt handler is blocking the interrupt reader thread.
 //use a message queue like in cameleon nios? maybe not, the /dev/interrupts file is already a kind of queue...
@@ -53,27 +54,34 @@ static void acquisition_test(int8_t code) {
 	log_info("Received acquisition_test interrupt, code=0x%x", code);
 }
 
-static void copy_acq_buffer(int32_t* from, int size) {
-	int nbytes = size * sizeof(int32_t);
-	int32_t buffer[size];
+static void log_buffer(void* data) {
+	int32_t* buffer = (int32_t*)data;
+	for (int i = 0; i < 10; i++) {
+		log_info("buffer[%d] = %d (0x%x)", i, buffer[i], buffer[i]);
+	}
+}
 
-	log_info("memcpy from shared memory: 0x%x to 0x%x (%d bytes)", from, from + size, nbytes);
+static void send_acq_buffer(int32_t* from, int size) {
+	int nbytes = size * sizeof(int32_t);
+	int32_t* buffer = malloc(nbytes);
+	if (buffer == NULL) {
+		log_error_errno("Unable to malloc buffer of %d bytes", nbytes);
+		return;
+	}
+
 	long sec_to_ns = 1000000000;
 	struct timespec tstart = { 0,0 }, tend = { 0,0 };
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
 	memcpy(buffer, from, nbytes);
 	clock_gettime(CLOCK_MONOTONIC, &tend);
 
-	log_info("memcpy took %f ns",
+	log_info("memcpy from 0x%x (%d) with %d bytes took %f ns",
+		from, from, nbytes,
 		((double)tend.tv_sec*sec_to_ns + (double)tend.tv_nsec) -
 		((double)tstart.tv_sec*sec_to_ns + (double)tstart.tv_nsec));
 
-	for (int i = 0; i < 10 && i < size; i++) {
-		log_info("buffer[%d] = %d (0x%x)", i, buffer[i], buffer[i]);
-	}
-
-	//TODO: queue & send with ACQU_TRANSFER
-	//need to send outside of interrupt handler
+	//TODO: send with ACQU_TRANSFER instead of logging
+	workqueue_submit(log_buffer, buffer, free);
 }
 
 static void acquisition_half_full(int8_t code) {
@@ -81,8 +89,8 @@ static void acquisition_half_full(int8_t code) {
 	int size = ACQUISITION_BUFFER_SIZE / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	//copy_acq_buffer(mem->acq_buffer, size);
-	copy_acq_buffer(mem->acq_buffer+1, size-1);
+	send_acq_buffer(mem->acq_buffer, size);
+	//send_acq_buffer(mem->acq_buffer+1, size-1);
 	shared_memory_release(mem);
 }
 
@@ -92,12 +100,9 @@ static void acquisition_full(int8_t code) {
 	int size = ACQUISITION_BUFFER_SIZE / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	copy_acq_buffer(mem->acq_buffer+size, size);
-	
-	//copy_acq_buffer(mem->acq_buffer + size+1, size-1);
+	send_acq_buffer(mem->acq_buffer+size, size);	
+	//send_acq_buffer(mem->acq_buffer + size+1, size-1);
 
-	//XXX copie totale
-	//copy_acq_buffer(mem->acq_buffer, ACQUISITION_BUFFER_SIZE);
 	shared_memory_release(mem);
 }
 

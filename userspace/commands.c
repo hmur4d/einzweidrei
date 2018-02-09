@@ -130,7 +130,7 @@ static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 
 	shared_memory_t* mem = shared_memory_acquire();
 	
-	int32_t counter = 500;
+	int32_t counter = 2500;
 	log_info("writing counter value to shared memory: 0x%x <- 0x%x (%d)", mem->write_counter, counter, counter);
 	*mem->write_counter = counter;
 
@@ -145,7 +145,7 @@ static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 
 	shared_memory_t* mem = shared_memory_acquire();
 
-	int32_t counter = 500;
+	int32_t counter = 2500;
 	log_info("writing counter value to shared memory: 0x%x <- 0x%x (%d)", mem->write_counter, counter, counter);
 	*mem->write_counter = counter;
 

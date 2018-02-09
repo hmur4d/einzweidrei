@@ -45,6 +45,7 @@ static workitem_t* create_workitem(worker_f worker, void* data, cleanup_f cleanu
 static void destroy_workitem(workitem_t* item) {
 	if (item->data != NULL && item->cleanup != NULL) {
 		//free contained data, using cleanup function.
+		log_debug("Calling cleanup function...");
 		item->cleanup(item->data);
 	}
 
@@ -201,7 +202,7 @@ bool workqueue_submit(worker_f worker, void* data, cleanup_f cleanup) {
 
 	pthread_mutex_unlock(&mutex);
 
-	log_info("submitted new worker");
+	log_debug("submitted new worker");
 	pthread_cond_signal(&not_empty_condition);
 	return true;
 }
