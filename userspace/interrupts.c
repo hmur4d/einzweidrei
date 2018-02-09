@@ -15,34 +15,7 @@ static clientsocket_t* client = NULL;
 //needed because each interrupt handler is blocking the interrupt reader thread
 //and we want to copy the data as soon as possible to avoid overwriting
 
-
-static message_t* create_message_with_body(int32_t cmd, void* body, int32_t body_size) {
-	message_t* message = malloc(sizeof(message_t));
-	if (message == NULL) {
-		log_error_errno("Unable to malloc message");
-		return NULL;
-	}
-
-	reset_header(&message->header);
-	message->header.cmd = cmd;
-	message->header.body_size = body_size;
-	message->body = body;
-	return message;
-}
-
-static message_t* create_message(int32_t cmd) {
-	return create_message_with_body(cmd, NULL, 0);
-}
-
-static void free_message(void* data) {
-	message_t* message = (message_t*)data;
-	if (message->body != NULL) {
-		free(message->body);
-	}
-	free(message);
-}
-
-static void send_async(void* data) {
+static void send_worker(void* data) {
 	message_t* message = (message_t*)data;
 
 	pthread_mutex_lock(&client_mutex);
@@ -50,6 +23,15 @@ static void send_async(void* data) {
 		send_message(client, &message->header, message->body);
 	}
 	pthread_mutex_unlock(&client_mutex);
+}
+
+static void cleanup_message(void* data) {
+	message_t* message = (message_t*)data;
+	free_message(message);
+}
+
+static void send_async(message_t* message) {
+	workqueue_submit(send_worker, message, cleanup_message);
 }
 
 //-- interrupt handlers
@@ -67,8 +49,7 @@ static void scan_done(int8_t code) {
 	message->header.param3 = 0; //3D counter
 	message->header.param4 = 0; //4D counter
 	message->header.param5 = 0; //?
-
-	workqueue_submit(send_async, message, free_message);
+	send_async(message);
 }
 
 static void sequence_done(int8_t code) {
@@ -79,7 +60,7 @@ static void sequence_done(int8_t code) {
 		return;
 	}
 
-	workqueue_submit(send_async, message, free_message);
+	send_async(message);
 }
 
 //--
@@ -115,8 +96,8 @@ static void send_acq_buffer(int32_t* from, int size) {
 
 	message->header.param1 = 0; //address?
 	message->header.param2 = 0; //address?
-	message->header.param6 = 0; //last transfert type
-	workqueue_submit(send_async, message, free_message);
+	message->header.param6 = 0; //last transfert time
+	send_async(message);
 }
 
 static void acquisition_half_full(int8_t code) {

@@ -36,6 +36,17 @@ typedef void(*message_consumer_f)(clientsocket_t* client, message_t* message);
 
 //--
 
+//Create a message with all params to zero and no body.
+//Must be freed. Returns NULL if malloc fails.
+message_t* create_message(int32_t cmd);
+
+//Create a message with all params to zero and a body.
+//Must be freed. Returns NULL if malloc fails.
+message_t* create_message_with_body(int32_t cmd, void* body, int32_t body_size);
+
+//Frees a previously created message.
+void free_message(message_t* message);
+
 //Resets header attributes to zero.
 void reset_header(header_t* header);
 

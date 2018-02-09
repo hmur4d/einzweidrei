@@ -1,9 +1,38 @@
 #include "net_io.h"
 #include "log.h"
 
+//-- message management
+
+message_t* create_message_with_body(int32_t cmd, void* body, int32_t body_size) {
+	message_t* message = malloc(sizeof(message_t));
+	if (message == NULL) {
+		log_error_errno("Unable to malloc message");
+		return NULL;
+	}
+
+	reset_header(&message->header);
+	message->header.cmd = cmd;
+	message->header.body_size = body_size;
+	message->body = body;
+	return message;
+}
+
+message_t* create_message(int32_t cmd) {
+	return create_message_with_body(cmd, NULL, 0);
+}
+
+void free_message(message_t* message) {
+	if (message->body != NULL) {
+		free(message->body);
+	}
+	free(message);
+}
+
 void reset_header(header_t* header) {
 	memset(header, 0, sizeof(header_t));
 }
+
+//-- unitary send/recv
 
 bool send_string(clientsocket_t* client, const char* str) {
 	log_debug("Sending string to %s:%d, str=%s", client->server_name, client->server_port, str);
@@ -69,8 +98,7 @@ static bool read_header(clientsocket_t* client, header_t* header) {
 	return true;
 }
 
-
-//--
+//-- message based send/recv
 
 bool send_message(clientsocket_t* client, const header_t* header, const void* body) {
 	if (!send_int(client, TAG_MSG_START)) {
