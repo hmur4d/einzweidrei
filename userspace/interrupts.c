@@ -6,48 +6,50 @@
 #include "shared_memory.h"
 #include "workqueue.h"
 
-//each interrupt handler is blocking the interrupt reader thread.
-//use workqueue for asynchronous processing
 
 static bool initialized = false;
 static pthread_mutex_t client_mutex;
 static clientsocket_t* client = NULL;
 
-//-- utils
+//-- send message through workqueue
+//needed because each interrupt handler is blocking the interrupt reader thread
+//and we want to copy the data as soon as possible to avoid overwriting
 
-static void send_with_mutex(header_t* header, void* body) {
+
+static message_t* create_message_with_body(int32_t cmd, void* body, int32_t body_size) {
+	message_t* message = malloc(sizeof(message_t));
+	if (message == NULL) {
+		log_error_errno("Unable to malloc message");
+		return NULL;
+	}
+
+	reset_header(&message->header);
+	message->header.cmd = cmd;
+	message->header.body_size = body_size;
+	message->body = body;
+	return message;
+}
+
+static message_t* create_message(int32_t cmd) {
+	return create_message_with_body(cmd, NULL, 0);
+}
+
+static void free_message(void* data) {
+	message_t* message = (message_t*)data;
+	if (message->body != NULL) {
+		free(message->body);
+	}
+	free(message);
+}
+
+static void send_async(void* data) {
+	message_t* message = (message_t*)data;
+
 	pthread_mutex_lock(&client_mutex);
 	if (client != NULL) {
-		send_message(client, header, body);
+		send_message(client, &message->header, message->body);
 	}
 	pthread_mutex_unlock(&client_mutex);
-}
-
-//-- async workers
-
-typedef struct {
-	int32_t* buffer;
-	int length;
-} acqu_transfer_data_t;
-
-static void cleanup_acqu_transfer_data(void* data) {
-	acqu_transfer_data_t* transfer_data = (acqu_transfer_data_t*)data;
-	free(transfer_data->buffer);
-	free(transfer_data);
-}
-
-static void acqu_transfer(void* data) {
-	acqu_transfer_data_t* transfer_data = (acqu_transfer_data_t*)data;
-
-	header_t header;
-	reset_header(&header);
-	header.cmd = MSG_ACQU_TRANSFER;
-	header.param1 = 0; //address?
-	header.param2 = 0; //address?
-	header.param6 = 0; //last transfert type
-	header.body_size = transfer_data->length * sizeof(int32_t);
-
-	send_with_mutex(&header, (void*)(transfer_data->buffer));
 }
 
 //-- interrupt handlers
@@ -55,26 +57,29 @@ static void acqu_transfer(void* data) {
 static void scan_done(int8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
 
-	header_t header;
-	reset_header(&header);
-	header.cmd = MSG_SCAN_DONE;
-	header.param1 = 0; //1D counter
-	header.param2 = 0; //2D counter
-	header.param3 = 0; //3D counter
-	header.param4 = 0; //4D counter
-	header.param5 = 0; //?
+	message_t* message = create_message(MSG_SCAN_DONE);
+	if (message == NULL) {
+		return;
+	}
 
-	send_with_mutex(&header, NULL);
+	message->header.param1 = 0; //1D counter
+	message->header.param2 = 0; //2D counter
+	message->header.param3 = 0; //3D counter
+	message->header.param4 = 0; //4D counter
+	message->header.param5 = 0; //?
+
+	workqueue_submit(send_async, message, free_message);
 }
 
 static void sequence_done(int8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
 	
-	header_t header;
-	reset_header(&header);
-	header.cmd = MSG_ACQU_DONE;
+	message_t* message = create_message(MSG_ACQU_DONE);
+	if (message == NULL) {
+		return;
+	}
 
-	send_with_mutex(&header, NULL);
+	workqueue_submit(send_async, message, free_message);
 }
 
 //--
@@ -102,16 +107,16 @@ static void send_acq_buffer(int32_t* from, int size) {
 		((double)tend.tv_sec*sec_to_ns + (double)tend.tv_nsec) -
 		((double)tstart.tv_sec*sec_to_ns + (double)tstart.tv_nsec));
 
-	acqu_transfer_data_t* data = malloc(sizeof(acqu_transfer_data_t));
-	if (data == NULL) {
-		log_error_errno("Unable to malloc transfer data container");
+	message_t* message = create_message_with_body(MSG_ACQU_TRANSFER, buffer, nbytes);
+	if (message == NULL) {
 		free(buffer);
 		return;
 	}
 
-	data->buffer = buffer;
-	data->length = size;
-	workqueue_submit(acqu_transfer, data, cleanup_acqu_transfer_data);
+	message->header.param1 = 0; //address?
+	message->header.param2 = 0; //address?
+	message->header.param6 = 0; //last transfert type
+	workqueue_submit(send_async, message, free_message);
 }
 
 static void acquisition_half_full(int8_t code) {
