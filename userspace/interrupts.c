@@ -53,12 +53,11 @@ static void acquisition_test(int8_t code) {
 	log_info("Received acquisition_test interrupt, code=0x%x", code);
 }
 
-static void copy_acq_buffer(int32_t* from) {
-	int half_size = ACQUISITION_BUFFER_SIZE / 2;
-	int nbytes = half_size * sizeof(int32_t);
-	int32_t buffer[half_size];
+static void copy_acq_buffer(int32_t* from, int size) {
+	int nbytes = size * sizeof(int32_t);
+	int32_t buffer[size];
 
-	log_info("memcpy from shared memory: 0x%x to 0x%x (%d bytes)", from, from + half_size, nbytes);
+	log_info("memcpy from shared memory: 0x%x to 0x%x (%d bytes)", from, from + size, nbytes);
 	long sec_to_ns = 1000000000;
 	struct timespec tstart = { 0,0 }, tend = { 0,0 };
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
@@ -69,7 +68,7 @@ static void copy_acq_buffer(int32_t* from) {
 		((double)tend.tv_sec*sec_to_ns + (double)tend.tv_nsec) -
 		((double)tstart.tv_sec*sec_to_ns + (double)tstart.tv_nsec));
 
-	for (int i = 0; i < 10 && i < half_size; i++) {
+	for (int i = 0; i < 10 && i < size; i++) {
 		log_info("buffer[%d] = %d (0x%x)", i, buffer[i], buffer[i]);
 	}
 
@@ -79,19 +78,26 @@ static void copy_acq_buffer(int32_t* from) {
 
 static void acquisition_half_full(int8_t code) {
 	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
+	int size = ACQUISITION_BUFFER_SIZE / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	copy_acq_buffer(mem->acq_buffer);
+	//copy_acq_buffer(mem->acq_buffer, size);
+	copy_acq_buffer(mem->acq_buffer+1, size-1);
 	shared_memory_release(mem);
 }
 
 static void acquisition_full(int8_t code) {
 	log_info("Received acquisition_full interrupt, code=0x%x", code);
 
-	int half_size = ACQUISITION_BUFFER_SIZE / 2;
+	int size = ACQUISITION_BUFFER_SIZE / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	copy_acq_buffer(mem->acq_buffer+half_size);
+	copy_acq_buffer(mem->acq_buffer+size, size);
+	
+	//copy_acq_buffer(mem->acq_buffer + size+1, size-1);
+
+	//XXX copie totale
+	//copy_acq_buffer(mem->acq_buffer, ACQUISITION_BUFFER_SIZE);
 	shared_memory_release(mem);
 }
 
