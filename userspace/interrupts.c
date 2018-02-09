@@ -7,11 +7,50 @@
 #include "workqueue.h"
 
 //each interrupt handler is blocking the interrupt reader thread.
-//use a message queue like in cameleon nios? maybe not, the /dev/interrupts file is already a kind of queue...
+//use workqueue for asynchronous processing
 
 static bool initialized = false;
-static pthread_mutex_t mutex;
+static pthread_mutex_t client_mutex;
 static clientsocket_t* client = NULL;
+
+//-- utils
+
+static void send_with_mutex(header_t* header, void* body) {
+	pthread_mutex_lock(&client_mutex);
+	if (client != NULL) {
+		send_message(client, header, body);
+	}
+	pthread_mutex_unlock(&client_mutex);
+}
+
+//-- async workers
+
+typedef struct {
+	int32_t* buffer;
+	int length;
+} acqu_transfer_data_t;
+
+static void cleanup_acqu_transfer_data(void* data) {
+	acqu_transfer_data_t* transfer_data = (acqu_transfer_data_t*)data;
+	free(transfer_data->buffer);
+	free(transfer_data);
+}
+
+static void acqu_transfer(void* data) {
+	acqu_transfer_data_t* transfer_data = (acqu_transfer_data_t*)data;
+
+	header_t header;
+	reset_header(&header);
+	header.cmd = MSG_ACQU_TRANSFER;
+	header.param1 = 0; //address?
+	header.param2 = 0; //address?
+	header.param6 = 0; //last transfert type
+	header.body_size = transfer_data->length * sizeof(int32_t);
+
+	send_with_mutex(&header, (void*)(transfer_data->buffer));
+}
+
+//-- interrupt handlers
 
 static void scan_done(int8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
@@ -25,12 +64,7 @@ static void scan_done(int8_t code) {
 	header.param4 = 0; //4D counter
 	header.param5 = 0; //?
 
-	pthread_mutex_lock(&mutex);
-	if (client != NULL) {
-		log_info("Sending SCAN_DONE message");
-		send_message(client, &header, NULL);
-	}
-	pthread_mutex_unlock(&mutex);
+	send_with_mutex(&header, NULL);
 }
 
 static void sequence_done(int8_t code) {
@@ -40,25 +74,13 @@ static void sequence_done(int8_t code) {
 	reset_header(&header);
 	header.cmd = MSG_ACQU_DONE;
 
-	pthread_mutex_lock(&mutex);
-	if (client != NULL) {
-		log_info("Sending ACQU_DONE message");
-		send_message(client, &header, NULL);
-	}
-	pthread_mutex_unlock(&mutex);
+	send_with_mutex(&header, NULL);
 }
 
 //--
 
 static void acquisition_test(int8_t code) {
 	log_info("Received acquisition_test interrupt, code=0x%x", code);
-}
-
-static void log_buffer(void* data) {
-	int32_t* buffer = (int32_t*)data;
-	for (int i = 0; i < 10; i++) {
-		log_info("buffer[%d] = %d (0x%x)", i, buffer[i], buffer[i]);
-	}
 }
 
 static void send_acq_buffer(int32_t* from, int size) {
@@ -80,8 +102,16 @@ static void send_acq_buffer(int32_t* from, int size) {
 		((double)tend.tv_sec*sec_to_ns + (double)tend.tv_nsec) -
 		((double)tstart.tv_sec*sec_to_ns + (double)tstart.tv_nsec));
 
-	//TODO: send with ACQU_TRANSFER instead of logging
-	workqueue_submit(log_buffer, buffer, free);
+	acqu_transfer_data_t* data = malloc(sizeof(acqu_transfer_data_t));
+	if (data == NULL) {
+		log_error_errno("Unable to malloc transfer data container");
+		free(buffer);
+		return;
+	}
+
+	data->buffer = buffer;
+	data->length = size;
+	workqueue_submit(acqu_transfer, data, cleanup_acqu_transfer_data);
 }
 
 static void acquisition_half_full(int8_t code) {
@@ -90,7 +120,6 @@ static void acquisition_half_full(int8_t code) {
 
 	shared_memory_t* mem = shared_memory_acquire();
 	send_acq_buffer(mem->acq_buffer, size);
-	//send_acq_buffer(mem->acq_buffer+1, size-1);
 	shared_memory_release(mem);
 }
 
@@ -101,8 +130,6 @@ static void acquisition_full(int8_t code) {
 
 	shared_memory_t* mem = shared_memory_acquire();
 	send_acq_buffer(mem->acq_buffer+size, size);	
-	//send_acq_buffer(mem->acq_buffer + size+1, size-1);
-
 	shared_memory_release(mem);
 }
 
@@ -110,7 +137,7 @@ static void acquisition_full(int8_t code) {
 
 bool interrupts_init() {
 	log_debug("Creating interrupts mutex");
-	if (pthread_mutex_init(&mutex, NULL) != 0) {
+	if (pthread_mutex_init(&client_mutex, NULL) != 0) {
 		log_error("Unable to init mutex");
 		return false;
 	}
@@ -123,7 +150,7 @@ bool interrupts_destroy() {
 	interrupts_set_client(NULL);
 
 	log_debug("Destroying interrupts mutex");
-	if (pthread_mutex_destroy(&mutex) != 0) {
+	if (pthread_mutex_destroy(&client_mutex) != 0) {
 		log_error("Unable to destroy mutex");
 		return false;
 	}
@@ -139,9 +166,9 @@ void interrupts_set_client(clientsocket_t* clientsocket) {
 	}
 
 	log_debug("Setting interrupts client socket");
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&client_mutex);
 	client = clientsocket;
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&client_mutex);
 }
 
 bool register_all_interrupts() {
