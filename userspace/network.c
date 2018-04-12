@@ -169,9 +169,9 @@ bool send_retry(clientsocket_t* client, const void* buffer, size_t len, int flag
 
 	do {
 		int nsent = send(client->fd, buffer + total, remaining, flags);
-		if (nsent < 0) {
+		if (nsent <= 0) {
 			log_error_errno("Unable to send full buffer, sent %d of %d bytes, client fd=%d, server=%s:%d", total, len, client->fd, client->server_name, client->server_port);
-			return nsent;
+			return false;
 		}
 
 		total += nsent;
@@ -191,7 +191,7 @@ bool recv_retry(clientsocket_t* client, void* buffer, size_t len, int flags) {
 
 	do {
 		int nread = recv(client->fd, buffer + total, remaining, flags);
-		if (nread < 0) {
+		if (nread <= 0) {
 			log_error_errno("Unable to recv full buffer, received %d of %d bytes, client fd=%d, server=%s:%d", total, len, client->fd, client->server_name, client->server_port);
 			return false;
 		}
