@@ -32,18 +32,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/.vstudio-$(USERNAME)</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/.vstudio-$(USERNAME)</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/.vstudio-$(USERNAME)</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/.vstudio-$(USERNAME)</RemoteRootDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
@@ -51,20 +55,20 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <RemoteBuildCommandLine>make PLATFORM=$(Platform)</RemoteBuildCommandLine>
-    <RemoteReBuildCommandLine>make clean all</RemoteReBuildCommandLine>
-    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
+    <RemoteBuildCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration)</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration) clean all</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration) clean</RemoteCleanCommandLine>
     <NMakeIncludeSearchPath>..\..\linux\linux-socfpga\include;..\..\linux\usr\include;..\..\linux\usr\include\x86_64-linux-gnu;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>INTELLISENSE</NMakePreprocessorDefinitions>
-    <RemoteBuildOutputs>/home/reflex/projects/userspace/cameleon</RemoteBuildOutputs>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/cameleon</RemoteBuildOutputs>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-    <RemoteBuildCommandLine>make PLATFORM=$(Platform)</RemoteBuildCommandLine>
-    <RemoteReBuildCommandLine>make clean all</RemoteReBuildCommandLine>
-    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
+    <RemoteBuildCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration)</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration) clean all</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration) clean</RemoteCleanCommandLine>
     <NMakeIncludeSearchPath>..\..\linux\linux-socfpga\include;..\..\linux\usr\include;..\..\linux\usr\include\x86_64-linux-gnu;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>INTELLISENSE</NMakePreprocessorDefinitions>
-    <RemoteBuildOutputs>/home/reflex/projects/userspace/cameleon</RemoteBuildOutputs>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/cameleon</RemoteBuildOutputs>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <RemoteBuildCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration)</RemoteBuildCommandLine>
@@ -72,7 +76,7 @@
     <RemoteCleanCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration) clean</RemoteCleanCommandLine>
     <NMakeIncludeSearchPath>..\..\linux\linux-socfpga\include;..\..\linux\usr\include;..\..\linux\usr\include\x86_64-linux-gnu;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>INTELLISENSE</NMakePreprocessorDefinitions>
-    <RemoteBuildOutputs>/home/reflex/projects/userspace/cameleon</RemoteBuildOutputs>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/cameleon</RemoteBuildOutputs>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <RemoteBuildCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration)</RemoteBuildCommandLine>
@@ -80,7 +84,7 @@
     <RemoteCleanCommandLine>make VS_PLATFORM=$(Platform) VS_CONFIG=$(Configuration) clean</RemoteCleanCommandLine>
     <NMakeIncludeSearchPath>..\..\linux\linux-socfpga\include;..\..\linux\usr\include;..\..\linux\usr\include\x86_64-linux-gnu;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>INTELLISENSE</NMakePreprocessorDefinitions>
-    <RemoteBuildOutputs>/home/reflex/projects/userspace/cameleon</RemoteBuildOutputs>
+    <RemoteBuildOutputs>$(RemoteProjectDir)/cameleon</RemoteBuildOutputs>
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="clientgroup.h" />

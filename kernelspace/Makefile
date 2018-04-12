@@ -1,5 +1,6 @@
-include ~/projects/make-config/cross-compile.mk
-include ~/projects/make-config/kernel.mk
+# besoin d'un chemin absolu car appelé depuis le Makefile du kernel
+include ~/.vstudio-vfiack/make-config/cross-compile.mk
+include ~/.vstudio-vfiack/make-config/kernel.mk
 
 # ne compile pas avec le toolchain buildroot & l'option -std=gnu11
 # fonctionne sans l'option
