@@ -15,6 +15,7 @@
     <ClCompile Include="shared_memory.c" />
     <ClCompile Include="config.c" />
     <ClCompile Include="workqueue.c" />
+    <ClCompile Include="ram.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />
@@ -31,6 +32,8 @@
     <ClInclude Include="std_includes.h" />
     <ClInclude Include="shared_memory.h" />
     <ClInclude Include="workqueue.h" />
+    <ClInclude Include="ram.h" />
+    <ClInclude Include="memory_map.h" />
     <ClInclude Include="generated\hps.h">
       <Filter>generated</Filter>
     </ClInclude>

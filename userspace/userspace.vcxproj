@@ -99,9 +99,11 @@
     <ClInclude Include="interrupt_reader.h" />
     <ClInclude Include="interrupt_handlers.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="memory_map.h" />
     <ClInclude Include="monitoring.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="net_io.h" />
+    <ClInclude Include="ram.h" />
     <ClInclude Include="shared_memory.h" />
     <ClInclude Include="std_includes.h" />
     <ClInclude Include="workqueue.h" />
@@ -119,6 +121,7 @@
     <ClCompile Include="monitoring.c" />
     <ClCompile Include="network.c" />
     <ClCompile Include="net_io.c" />
+    <ClCompile Include="ram.c" />
     <ClCompile Include="shared_memory.c" />
     <ClCompile Include="workqueue.c" />
   </ItemGroup>

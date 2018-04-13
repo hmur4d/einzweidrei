@@ -3,37 +3,80 @@
 #include "net_io.h"
 #include "command_handlers.h"
 #include "shared_memory.h"
+#include "ram.h"
+
+//probably not the correct place to define this, but not used anywhere else
+#define MOTHER_BOARD_ADDRESS 0x0
 
 static void cmd_close(clientsocket_t* client, header_t* header, const void* body) {
 	clientsocket_close(client);
 }
 
 static void cmd_write(clientsocket_t* client, header_t* header, const void* body) {
-	//TODO implement this
+	int ram_id = header->param1;
+	int device_address = header->param2;
+	int readback = header->param3;
+	int nbytes = header->body_size;
 
-	/*
+	if (device_address != MOTHER_BOARD_ADDRESS) {
+		//TODO implement for devices I2C
+		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);
+		return;
+	}
+
+	ram_descriptor_t ram;
+	if (!ram_find(ram_id, nbytes, &ram)) {
+		log_error("Unable to find valid ram or register for address 0x%x, ignoring.", ram_id);
+		return;
+	}
+
+	log_debug("writing rams: 0x%x - %d bytes", ram.address, ram.span);
 	shared_memory_t* mem = shared_memory_acquire();
-	int32_t value = 25000000;
-	log_info("writing test value to shared memory: 0x%x <- 0x%x (%d)", mem->write_counter, value, value);
-	*mem->write_counter = value;
+	memcpy(mem->rams + ram.address, body, ram.span * sizeof(int32_t));
 	shared_memory_release(mem);
-	*/
+
+	if (readback) {
+		log_debug("reading rams: 0x%x - %d bytes", ram.address, ram.span * sizeof(int32_t));
+		header->body_size = ram.span;
+		mem = shared_memory_acquire();
+		if (!send_message(client, header, mem->rams + ram.address)) {
+			log_error("Unable to send readback!");
+		}
+		shared_memory_release(mem);
+	}
 }
 
 static void cmd_read(clientsocket_t* client, header_t* header, const void* body) {
-	//TODO implement this
+	int ram_id = header->param1;
+	int device_address = header->param2;
+	int nbytes = header->param3;
 
-	/*
+	if (device_address != MOTHER_BOARD_ADDRESS) {
+		//TODO implement for devices I2C
+		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);
+		int32_t fake[nbytes / 4];
+	
+		if (!send_message(client, header, fake)) {
+			log_error("Unable to send response!");
+		}
+
+		return;
+	}
+
+	ram_descriptor_t ram;
+	if (!ram_find(ram_id, nbytes, &ram)) {
+		log_error("Unable to find valid ram or register for address 0x%x, ignoring.", ram_id);
+		return;
+	}
+
+
+	log_debug("reading rams: 0x%x - %d bytes", ram.address, ram.span * sizeof(int32_t));
+	header->body_size = ram.span;
 	shared_memory_t* mem = shared_memory_acquire();
-	log_info("reading test value from shared memory: 0x%x = 0x%x (%d)", mem->read_counter, *mem->read_counter, *mem->read_counter);
-	shared_memory_release(mem);
-	*/
-
-	header->body_size = 0;
-
-	if (!send_message(client, header, NULL)) {
+	if (!send_message(client, header, mem->rams + ram.address)) {
 		log_error("Unable to send response!");
 	}
+	shared_memory_release(mem);
 }
 
 static void cmd_test(clientsocket_t* client, header_t* header, const void* body) {
@@ -128,13 +171,13 @@ static void read_pio(clientsocket_t* client, header_t* header, const void* body)
 static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO implement this
 
-	shared_memory_t* mem = shared_memory_acquire();
-	
-	int32_t counter = 2500;
-	log_info("writing counter value to shared memory: 0x%x <- 0x%x (%d)", mem->write_counter, counter, counter);
-	*mem->write_counter = counter;
-
 	uint32_t start_once = 3;
+
+	shared_memory_t* mem = shared_memory_acquire();
+
+	//XXX premier octet pour controler le compteur
+	*mem->rams = 15000;
+
 	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_once, start_once);
 	*mem->control = start_once;
 	shared_memory_release(mem);
@@ -143,13 +186,9 @@ static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO implement this
 
-	shared_memory_t* mem = shared_memory_acquire();
-
-	int32_t counter = 2500;
-	log_info("writing counter value to shared memory: 0x%x <- 0x%x (%d)", mem->write_counter, counter, counter);
-	*mem->write_counter = counter;
-
 	uint32_t start_repeat = 1;
+	
+	shared_memory_t* mem = shared_memory_acquire();
 	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_repeat, start_repeat);
 	*mem->control = start_repeat;
 	shared_memory_release(mem);
@@ -158,9 +197,9 @@ static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO implement this
 
-	shared_memory_t* mem = shared_memory_acquire();
-
 	uint32_t stop_reset = 4;
+
+	shared_memory_t* mem = shared_memory_acquire();
 	log_info("writing stop counting: 0x%x <- 0x%x (%d)", mem->control, stop_reset, stop_reset);
 	*mem->control = stop_reset;
 	shared_memory_release(mem);

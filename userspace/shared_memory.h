@@ -16,11 +16,9 @@ Shared memory, allows read/write access to FPGA memory
 
 //Used to expose typed memory blocks
 typedef struct {
-	//sample for test on "counters" fpga image
 	int32_t* control; 
-	int32_t* write_counter;
-	int32_t* read_counter;
-	int32_t* acq_buffer;
+	int32_t* rams;
+	int32_t* data;
 } shared_memory_t;
 
 //Opens and mmap shared memory

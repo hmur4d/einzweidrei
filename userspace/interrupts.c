@@ -105,7 +105,7 @@ static void acquisition_half_full(int8_t code) {
 	int size = ACQUISITION_BUFFER_SIZE / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	send_acq_buffer(mem->acq_buffer, size);
+	send_acq_buffer(mem->data, size);
 	shared_memory_release(mem);
 }
 
@@ -115,7 +115,7 @@ static void acquisition_full(int8_t code) {
 	int size = ACQUISITION_BUFFER_SIZE / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	send_acq_buffer(mem->acq_buffer+size, size);	
+	send_acq_buffer(mem->data+size, size);
 	shared_memory_release(mem);
 }
 
