@@ -91,6 +91,10 @@
     <ClInclude Include="commands.h" />
     <ClInclude Include="command_handlers.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="generated\hps.h" />
+    <ClInclude Include="generated\hps_arm_a9_0.h" />
+    <ClInclude Include="generated\hps_arm_a9_1.h" />
+    <ClInclude Include="generated\hps_bridges.h" />
     <ClInclude Include="interrupts.h" />
     <ClInclude Include="interrupt_reader.h" />
     <ClInclude Include="interrupt_handlers.h" />

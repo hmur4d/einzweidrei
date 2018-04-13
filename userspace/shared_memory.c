@@ -4,16 +4,16 @@
 static bool initialized = false;
 static pthread_mutex_t mutex;
 static int fd;
-static void* hps2fpga;
-static void* hps2fpga_lw;
+static void* map_memory;
+static void* map_control;
 static shared_memory_t sharedmem;
 
 static void assign_memory_blocks() {
 	//sample for test on "counters" fpga image
-	sharedmem.counting = (int32_t*)(hps2fpga_lw + COUNTING);
-	sharedmem.write_counter = (int32_t*)(hps2fpga + COUNTER_WRITE);
-	sharedmem.read_counter = (int32_t*)(hps2fpga + COUNTER_READ);
-	sharedmem.acq_buffer = (int32_t*)(hps2fpga + ACQUISITION_BUFFER);
+	sharedmem.control = (int32_t*)map_control;
+	sharedmem.write_counter = (int32_t*)(map_memory + COUNTER_WRITE);
+	sharedmem.read_counter = (int32_t*)(map_memory + COUNTER_READ);
+	sharedmem.acq_buffer = (int32_t*)(map_memory + ACQUISITION_BUFFER);
 }
 
 //--
@@ -34,17 +34,17 @@ bool shared_memory_init(const char* memory_file) {
 	}
 
 	//HPS2FPGA Lightweight bridge
-	hps2fpga_lw = (uint32_t*)mmap(NULL, HPS_TO_FPGA_LW_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, HPS_TO_FPGA_LW_BASE);
-	if (hps2fpga_lw == MAP_FAILED) {
-		log_error_errno("Unable to mmap the hps2fpga lightweight bridge");
+	map_control = (uint32_t*)mmap(NULL, CONTROL_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, CONTROL_INTERFACE_BASE);
+	if (map_control == MAP_FAILED) {
+		log_error_errno("Unable to mmap the control memory (hps2fpga lightweight bridge)");
 		close(fd);
 		return false;
 	}
 
 	//HPS2FPGA bridge
-	hps2fpga = (uint32_t*)mmap(NULL, HPS_TO_FPGA_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, HPS_TO_FPGA_BASE);
-	if (hps2fpga == MAP_FAILED) {
-		log_error_errno("Unable to mmap the hps2fpga bridge");
+	map_memory = (uint32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
+	if (map_memory == MAP_FAILED) {
+		log_error_errno("Unable to mmap the memory (hps2fpga bridge");
 		close(fd);
 		return false;
 	}
@@ -88,13 +88,13 @@ bool shared_memory_close() {
 	pthread_mutex_lock(&mutex);
 
 	log_info("Closing shared memory");
-	if (munmap(hps2fpga_lw, HPS_TO_FPGA_LW_SPAN) != 0) {
-		log_error_errno("Unable to munmap the hps2fpga lightweight bridge");
+	if (munmap(map_control, CONTROL_INTERFACE_SPAN) != 0) {
+		log_error_errno("Unable to munmap the control memory (hps2fpga lightweight bridge)");
 		return false;
 	}
 
-	if (munmap(hps2fpga, HPS_TO_FPGA_SPAN) != 0) {
-		log_error_errno("Unable to munmap the hps2fpga bridge");
+	if (munmap(map_memory, MEM_INTERFACE_SPAN) != 0) {
+		log_error_errno("Unable to munmap the memory (hps2fpga bridge)");
 		return false;
 	}
 

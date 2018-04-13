@@ -31,11 +31,28 @@
     <ClInclude Include="std_includes.h" />
     <ClInclude Include="shared_memory.h" />
     <ClInclude Include="workqueue.h" />
+    <ClInclude Include="generated\hps.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="generated\hps_arm_a9_0.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="generated\hps_arm_a9_1.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="generated\hps_bridges.h">
+      <Filter>generated</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="README.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="generated">
+      <UniqueIdentifier>{98c3153e-6c7e-4466-80b0-fc21b2895389}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
