@@ -1,18 +1,22 @@
-# besoin d'un chemin absolu car appelé depuis le Makefile du kernel
-include ~/.vstudio-vfiack/make-config/cross-compile.mk
-include ~/.vstudio-vfiack/make-config/kernel.mk
+# doesn't honor Visual Studio's platform & configuration settings
+# it doesn't make sense to build the module for something else than the default ARM target.
 
-# ne compile pas avec le toolchain buildroot & l'option -std=gnu11
-# fonctionne sans l'option
-# fonction avec l'option sur un gcc plus récent (ex: toolchain packagé sur ubuntu "WSL/Windows")
-#1>module\modsample.c(36,1): error : initializer element is not constant
+# BASEDIR depends on the build step: 
+# when M is defined, we're called from the kernel's Makefile, and M contains the module path
+# otherwise, we're called directly from this Makefile so we use a relative path
+BASEDIR := $(if $(M),$(M)/..,..)
+include $(BASEDIR)/make-config/cross-compile.mk
+include $(BASEDIR)/make-config/kernel.mk
 
-# needs to specify all files here, for multifile module
+# we need to specify all files here, for multifile module
 # for some reason, using wildcards and filter-out ".mod.c" doesn't work in this context
 obj-m := modcameleon.o
 modcameleon-objs := dynamic_device.o blocking_queue.o gpio_irq.o dev_interrupts.o hps2fpga.o module.o
 
 CFLAGS_MODULE += -fno-pic -Wno-declaration-after-statement
+
+# -std=gnu11 doesn't work with buildroot's toolchain 
+# it does with a more recent gcc such as the toolchain included in "WSL/Windows"'s Ubuntu.
 #CFLAGS_MODULE += -std=gnu11
 
 all:
