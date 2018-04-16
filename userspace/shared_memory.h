@@ -18,7 +18,7 @@ Shared memory, allows read/write access to FPGA memory
 typedef struct {
 	int32_t* control; 
 	int32_t* rams;
-	int32_t* data;
+	int32_t* rxdata;
 } shared_memory_t;
 
 //Opens and mmap shared memory
