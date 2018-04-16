@@ -56,7 +56,7 @@ static void accept_monitoring_client(clientsocket_t* client) {
 
 //--
 
-int main(int argc, char ** argv) {
+int cameleon_main(int argc, char ** argv) {
 	int loglevel = get_log_level();
 	if (!log_init(loglevel, LOG_FILE)) {
 		return 1;
