@@ -203,6 +203,10 @@ static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 	uint32_t start_repeat = 1;
 	
 	shared_memory_t* mem = shared_memory_acquire();
+
+	//XXX premier octet pour controler le compteur
+	*mem->rams = 15000;
+
 	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_repeat, start_repeat);
 	*mem->control = start_repeat;
 	shared_memory_release(mem);
@@ -240,7 +244,6 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_ZG, cmd_zg);
 	success &= register_command_handler(CMD_RS, cmd_rs);
 	success &= register_command_handler(CMD_STOP_SEQUENCE, cmd_stop_sequence);
-
 
 	return success;
 }
