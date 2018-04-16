@@ -20,29 +20,38 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C
-		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);
+		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	
 		return;
 	}
 
 	ram_descriptor_t ram;
 	if (!ram_find(ram_id, nbytes, &ram)) {
 		log_error("Unable to find valid ram or register for address 0x%x, ignoring.", ram_id);
+		if (readback) {
+			if (!send_message(client, header, body)) {
+				log_error("Unable to send response!");
+			}
+		}
 		return;
 	}
 
-	log_debug("writing rams: 0x%x - %d bytes", ram.address, ram.span);
+	log_debug("writing rams: 0x%x - %d bytes", ram.offset_bytes, ram.span_bytes);
 	shared_memory_t* mem = shared_memory_acquire();
-	memcpy(mem->rams + ram.address, body, ram.span * sizeof(int32_t));
+	memcpy(mem->rams + ram.offset_int32, body, ram.span_bytes);
 	shared_memory_release(mem);
 
 	if (readback) {
-		log_debug("reading rams: 0x%x - %d bytes", ram.address, ram.span * sizeof(int32_t));
-		header->body_size = ram.span;
+		log_debug("reading rams: 0x%x - %d bytes", ram.offset_bytes, ram.span_bytes);
+		header->body_size = ram.span_bytes;
+		int32_t readback_body[ram.span_int32];
+
 		mem = shared_memory_acquire();
-		if (!send_message(client, header, mem->rams + ram.address)) {
+		memcpy(readback_body, mem->rams + ram.offset_int32, ram.span_bytes);
+		shared_memory_release(mem);
+
+		if (!send_message(client, header, readback_body)) {
 			log_error("Unable to send readback!");
 		}
-		shared_memory_release(mem);
 	}
 }
 
@@ -53,9 +62,8 @@ static void cmd_read(clientsocket_t* client, header_t* header, const void* body)
 
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C
-		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);
-		int32_t fake[nbytes / 4];
-	
+		log_warning("Received cmd_read for unknown address 0x%x :: 0x%x, returning fake data.", device_address, ram_id);
+		char fake[nbytes];
 		if (!send_message(client, header, fake)) {
 			log_error("Unable to send response!");
 		}
@@ -65,18 +73,24 @@ static void cmd_read(clientsocket_t* client, header_t* header, const void* body)
 
 	ram_descriptor_t ram;
 	if (!ram_find(ram_id, nbytes, &ram)) {
-		log_error("Unable to find valid ram or register for address 0x%x, ignoring.", ram_id);
+		log_error("Unable to find valid ram or register for address 0x%x, returning fake data.", ram_id);
+		char fake[nbytes];
+		if (!send_message(client, header, fake)) {
+			log_error("Unable to send response!");
+		}
 		return;
 	}
 
-
-	log_debug("reading rams: 0x%x - %d bytes", ram.address, ram.span * sizeof(int32_t));
-	header->body_size = ram.span;
+	log_debug("reading rams: 0x%x - %d bytes", ram.offset_bytes, ram.span_bytes);
+	header->body_size = ram.span_bytes;
+	int32_t read_body[ram.span_int32];
 	shared_memory_t* mem = shared_memory_acquire();
-	if (!send_message(client, header, mem->rams + ram.address)) {
+	memcpy(read_body, mem->rams + ram.offset_int32, ram.span_bytes);
+	shared_memory_release(mem);
+
+	if (!send_message(client, header, read_body)) {
 		log_error("Unable to send response!");
 	}
-	shared_memory_release(mem);
 }
 
 static void cmd_test(clientsocket_t* client, header_t* header, const void* body) {

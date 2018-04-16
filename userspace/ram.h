@@ -4,10 +4,15 @@
 #include "std_includes.h"
 
 typedef struct {
-	int address;
-	int span;
+	int id;
+	bool is_register;
+	int register_id;
+	int offset_bytes;
+	int offset_int32;
+	int span_bytes;	
+	int span_int32;
 } ram_descriptor_t;
 
-bool ram_find(unsigned int ram_id, int span, ram_descriptor_t* ram);
+bool ram_find(unsigned int ram_id, int span_bytes, ram_descriptor_t* ram);
 
 #endif

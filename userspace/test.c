@@ -29,20 +29,19 @@ int test_main(int argc, char ** argv) {
 	}
 
 	ram_descriptor_t ram;
-	ram.address = 0;
-	ram.span = 512;
+	ram_find(0, 512*sizeof(int32_t), &ram);
 
-	int32_t writebuf[ram.span];
-	int32_t readbuf[ram.span];
-	for (int i = 0; i < ram.span; i++) {
+	int32_t writebuf[ram.span_int32];
+	int32_t readbuf[ram.span_int32];
+	for (int i = 0; i < ram.span_int32; i++) {
 		writebuf[i] = i;
 		readbuf[i] = 0;
 	}
 	
 
-	log_info("writing %d bytes, starting at 0x%x", ram.span, ram.address);
+	log_info("writing %d bytes, starting at 0x%x", ram.span_bytes, ram.offset_bytes);
 	shared_memory_t* mem = shared_memory_acquire();
-	memcpy(mem->rams + ram.address, writebuf, ram.span * sizeof(int32_t));
+	memcpy(mem->rams + ram.offset_int32, writebuf, ram.span_bytes);
 	shared_memory_release(mem);
 	
 	log_info("closing /dev/mem");
@@ -57,13 +56,13 @@ int test_main(int argc, char ** argv) {
 		return 1;
 	}
 	
-	log_info("reading %d bytes, starting at 0x%x", ram.span, ram.address);
+	log_info("reading %d bytes, starting at 0x%x", ram.span_bytes, ram.offset_bytes);
 	mem = shared_memory_acquire();
-	memcpy(readbuf, mem->rams + ram.address, ram.span * sizeof(int32_t));
+	memcpy(readbuf, mem->rams + ram.offset_int32, ram.span_bytes);
 	shared_memory_release(mem);
 
 	log_info("readback comparison: address: written -> readback: status");
-	for (int i = 0; i < ram.span; i++) {
+	for (int i = 0; i < ram.span_int32; i++) {
 		char* status = writebuf[i] == readbuf[i] ? "OK" : "failed";
 		log_info("0x%x: %d -> %d: %s", i, writebuf[i], readbuf[i], status);
 	}
