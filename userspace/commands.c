@@ -189,7 +189,7 @@ static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 
 	shared_memory_t* mem = shared_memory_acquire();
 
-	//XXX premier octet pour controler le compteur
+	//XXX premier octet pour controler le compteur -> 100ms
 	*mem->rams = 15000;
 
 	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_once, start_once);

@@ -3,6 +3,7 @@
 #include "std_includes.h"
 #include "log.h"
 #include "config.h"
+#include "module_loader.h"
 #include "net_io.h"
 #include "shared_memory.h"
 #include "workqueue.h"
@@ -63,6 +64,11 @@ int cameleon_main(int argc, char ** argv) {
 	}
 
 	log_info("Starting main program");
+
+	if (!module_load(MODULE_PATH, "")) {
+		log_error("Unable to load module (%s), exiting", MODULE_PATH);
+		return 1;
+	}
 
 	char* memory_file = get_memory_file();
 	if (!shared_memory_init(memory_file)) {
@@ -134,6 +140,8 @@ int cameleon_main(int argc, char ** argv) {
 	serversocket_wait(&commandserver);
 	serversocket_close(&commandserver);
 
+	//TODO call atexit() instead so everything is still cleared 
+	//even if init failed or if user kills the process
 	monitoring_stop();
 	interrupt_reader_stop();
 	workqueue_stop();
@@ -144,6 +152,7 @@ int cameleon_main(int argc, char ** argv) {
 	destroy_interrupt_handlers();
 
 	shared_memory_close();
+	module_unload(MODULE_PATH); 
 
 	log_close();
 	return 0;

@@ -124,7 +124,7 @@ static void write_log_to(FILE* fp, const char* level, const char* srcfile, const
 		srcfile, function, line);
 	vfprintf(fp, format, args);
 	
-	//optionnally, add error code and message from errno
+	//optionally, add error code and message from errno
 	if (errcode != 0) {
 		fprintf(fp, "\nerrno %d: %s", errcode, strerror(errcode));
 	}

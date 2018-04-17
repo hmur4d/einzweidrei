@@ -8,6 +8,8 @@
 
 #define DEFAULT_DEV_MEM		"/dev/mem"
 
+#define MODULE_PATH			"/root/modcameleon.ko"
+
 #define COMMAND_PORT		40 //socket1 in cameleon nios
 #define SEQUENCER_PORT		30 //socket2 in cameleon nios
 #define MONITORING_PORT		50 //socket3 in cameleon nios
