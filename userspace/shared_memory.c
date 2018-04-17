@@ -105,8 +105,8 @@ bool shared_memory_release(shared_memory_t* mem) {
 
 bool shared_memory_close() {
 	if (!initialized) {
-		log_error("Trying to close shared memory, but it isn't initialized!");
-		return false;
+		log_warning("Trying to close shared memory, but it isn't initialized!");
+		return true;
 	}
 
 	pthread_mutex_lock(&mutex);

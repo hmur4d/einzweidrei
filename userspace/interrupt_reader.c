@@ -46,6 +46,11 @@ bool interrupt_reader_start(interrupt_consumer_f  interrupt_consumer) {
 bool interrupt_reader_stop() {
 	log_info("Stopping interrupt reader thread");
 
+	if (consumer == NULL) {
+		log_warning("Trying to stop interrupt reader, but it isn't initialized!");
+		return true;
+	}
+
 	if (pthread_cancel(thread) != 0) {
 		log_error("Unable to cancel interrupt reader thread");
 		return false;

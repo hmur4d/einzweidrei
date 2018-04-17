@@ -12,7 +12,7 @@ typedef struct command_handler_node {
 
 typedef command_handler_node_t command_handler_list_t;
 
-static command_handler_list_t* handlers;
+static command_handler_list_t* handlers = NULL;
 
 //--
 

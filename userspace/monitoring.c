@@ -100,6 +100,11 @@ void monitoring_set_client(clientsocket_t* clientsocket) {
 }
 
 bool monitoring_stop() {
+	if (!initialized) {
+		log_warning("Trying to stop monitoring, but it isn't initialized!");
+		return true;
+	}
+
 	if (pthread_cancel(thread) != 0) {
 		log_error("Unable to cancel monitoring thread");
 		return false;

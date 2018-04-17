@@ -139,6 +139,11 @@ bool workqueue_start() {
 }
 
 bool workqueue_stop() {
+	if (!initialized) {
+		log_warning("Trying to stop workqueue, but it isn't initialized!");
+		return true;
+	}
+
 	if (pthread_cancel(thread) != 0) {
 		log_error("Unable to cancel workqueue thread");
 		return false;

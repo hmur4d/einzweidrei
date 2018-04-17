@@ -56,8 +56,13 @@ bool log_init(int level, const char* logfile_path) {
 }
 
 bool log_close() {
+	if (!initialized) {
+		log_warning("Trying to close log, but it is not initalized!");
+		return true;
+	}
+
 	if (logfile != NULL && fclose(logfile) != 0) {
-		perror("log_close: nable to close log file");
+		perror("log_close: unable to close log file");
 	}
 
 	if (pthread_mutex_destroy(&mutex) != 0) {
@@ -72,6 +77,8 @@ bool log_close() {
 void _log(const char* srcfile, const char* function, int line, int level, const char* levelname, int errcode, const char* format, ...) {
 	if (!initialized) {
 		printf("_log: trying to log a message but the log isn't initialized!\n");
+		printf("[%-5.5s][%s, %s():%d]\n", levelname, srcfile, function, line);
+		printf("%s\n\n", format);
 		return;
 	}
 

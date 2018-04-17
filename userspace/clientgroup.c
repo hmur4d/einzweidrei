@@ -36,6 +36,11 @@ bool clientgroup_init() {
 }
 
 bool clientgroup_destroy() {
+	if (!initialized) {
+		log_warning("Trying to destroy clientgroup, but it is not initalized!");
+		return true;
+	}
+
 	log_debug("Destroying client group");
 	if (pthread_mutex_destroy(&mutex) != 0) {
 		log_error("Unable to destroy mutex");

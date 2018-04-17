@@ -133,6 +133,11 @@ bool interrupts_init() {
 }
 
 bool interrupts_destroy() {
+	if (!initialized) {
+		log_warning("Trying to destroy interrupts, but interrupts are not initalized!");
+		return true;
+	}
+
 	interrupts_set_client(NULL);
 
 	log_debug("Destroying interrupts mutex");
