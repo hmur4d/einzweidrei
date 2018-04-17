@@ -33,13 +33,6 @@ static int device_open(struct inode *inode, struct file *filp) {
 	klog_info("got semaphore, emptying queue\n");
 	blocking_queue_reset();
 
-#ifdef XXX_FAKE_INTERRUPTS
-	blocking_queue_add(queue, INTERRUPT_SCAN_DONE);
-	blocking_queue_add(queue, INTERRUPT_SEQUENCE_DONE);
-	blocking_queue_add(queue, INTERRUPT_SCAN_DONE);
-	blocking_queue_add(queue, INTERRUPT_SEQUENCE_DONE);
-#endif
-
 	return 0;
 }
 
