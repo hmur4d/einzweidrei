@@ -67,3 +67,12 @@ run mmcboot
 # devmem 0xc0000004 32
 
 */
+
+
+
+PROBLEME relecture registres
+# insmod modcameleon.ko
+# devmem 0xc02b8000 32 0xdeadbeef
+# devmem 0xc02b8004 32 0xcafebabe
+# devmem 0xc02b8004 32
+0x0000BEFF
