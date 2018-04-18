@@ -80,6 +80,7 @@ void disable_gpio_irqs(void) {
 		if (gpioirq->irq != -EINVAL) {
 			klog_info("freeing irq: irq=%d, gpio=%d (%s)\n", gpioirq->irq, gpioirq->gpio, gpioirq->name);
 			free_irq(gpioirq->irq, NULL);
+			gpioirq->irq = -EINVAL;
 		}
 	}
 }
