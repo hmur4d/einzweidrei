@@ -20,6 +20,8 @@ static struct file_operations device_fops = {
 
 static dynamic_device_t device;
 static struct semaphore mutex;
+static dev_interrupts_callback_f opened_callback;
+static dev_interrupts_callback_f closed_callback;
 
 //-- 
 
@@ -31,22 +33,20 @@ static int device_open(struct inode *inode, struct file *filp) {
 	if (down_interruptible(&mutex))
 		return -ERESTARTSYS;
 
-	klog_info("got semaphore, enabling irqs and emptying queue\n");
-	if (enable_gpio_irqs() != 0) {
-		klog_error("unable to enable GPIO IRQs");
-		disable_gpio_irqs();
-		return -EINVAL;
-	}
-
+	klog_info("got semaphore, emptying queue\n");
 	blocking_queue_reset();
-
+	if (opened_callback != NULL && !opened_callback())
+		return -EINVAL;
+	
 	return 0;
 }
 
 static int device_release(struct inode *inode, struct file *filp) {
 	klog_info("device_release called\n");
 
-	disable_gpio_irqs();
+	if (closed_callback != NULL && !closed_callback()) {
+		return -EINVAL;
+	}
 
 	//unlock the mutex to allow another process to open /dev/interrupts
 	up(&mutex);
@@ -82,7 +82,10 @@ static ssize_t device_read(struct file *filp, char __user *user_buffer, size_t c
 
 //--
 
-bool dev_interrupts_create(void) {
+bool dev_interrupts_create(dev_interrupts_callback_f opened, dev_interrupts_callback_f closed) {
+	opened_callback = opened;
+	closed_callback = closed;
+
 	sema_init(&mutex, 1);
 	if (register_device("interrupts", &device, &device_fops) != 0) {
 		klog_error("Unable to create /dev/interrupts");

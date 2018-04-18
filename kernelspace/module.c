@@ -22,6 +22,25 @@ MODULE_LICENSE("GPL");
 
 static bool failure = false;
 
+static bool dev_interrupts_opened(void) {
+	klog_info("/dev/interrupts opened, enabled irqs");
+	failure = false;
+
+	if (enable_gpio_irqs() != 0) {
+		klog_error("unable to enable GPIO IRQs");
+		disable_gpio_irqs();
+		return false;
+	}
+
+	return true;
+}
+
+static bool dev_interrupts_closed(void) {
+	klog_info("/dev/interrupts closed, disable irqs");
+	disable_gpio_irqs();
+	return true;
+}
+
 static void publish_interrupt(gpio_irq_t* gpioirq) {
 	if (failure) {
 		return;
@@ -44,7 +63,7 @@ int __init mod_init(void) {
 	set_gpio_irq_handler(publish_interrupt);
 	//Note: IRQs are registering only when /dev/interrupts is opened
 
-	if (!dev_interrupts_create()) {
+	if (!dev_interrupts_create(dev_interrupts_opened, dev_interrupts_closed)) {
 		return -ENOMSG;
 	}
 
