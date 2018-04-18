@@ -3,7 +3,7 @@
 #include "../common/interrupt_codes.h"
 
 //macros to declare associations between GPIO and interrupt code in a readable list
-#define _gpio(code, gpio) {#code, code, gpio, -EINVAL}
+#define _gpio(code, gpio) {#code, (uint8_t)code, gpio, -EINVAL}
 #define _gpio_list_end {NULL, -EINVAL, -EINVAL, -EINVAL}
 
 //associations between GPIO and interrupt codes

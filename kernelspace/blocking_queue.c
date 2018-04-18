@@ -17,7 +17,7 @@ bool blocking_queue_is_empty(void) {
 	return kfifo_is_empty(&fifo);
 }
 
-bool blocking_queue_add(int8_t value) {
+bool blocking_queue_add(uint8_t value) {
 	if (kfifo_in(&fifo, &value, 1) != 1) {
 		klog_warning("Unable to add item to blocking queue\n");
 		klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
@@ -33,7 +33,7 @@ bool blocking_queue_add(int8_t value) {
 	return true;
 }
 
-bool blocking_queue_take(int8_t* value) {
+bool blocking_queue_take(uint8_t* value) {
 	if (kfifo_is_empty(&fifo)) {
 		//let's wait until there's something in the fifo
 		if (wait_event_interruptible(waitqueue, !kfifo_is_empty(&fifo))) {

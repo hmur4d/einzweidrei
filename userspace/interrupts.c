@@ -33,13 +33,13 @@ static void cleanup_message(void* data) {
 	free_message(message);
 }
 
-static void send_async(message_t* message) {
-	workqueue_submit(send_worker, message, cleanup_message);
+static bool send_async(message_t* message) {
+	return workqueue_submit(send_worker, message, cleanup_message);
 }
 
 //-- interrupt handlers
 
-static void failure(int8_t code) {
+static bool failure(uint8_t code) {
 	log_error("Received FAILURE interrupt, code=0x%x", code);
 
 	//stop counter
@@ -48,19 +48,17 @@ static void failure(int8_t code) {
 	*mem->control = stop_reset;
 	shared_memory_release(mem);
 
-	if (!interrupt_reader_reset()) {
-		log_error("Unable to reset interrupt reader, exiting.");
-		clientgroup_close_all();
-		exit(1);
-	}
+	//false means the interrupt reader must be reset 
+	//so the kernel module can start processing interrupts again
+	return false; 
 }
 
-static void scan_done(int8_t code) {
+static bool scan_done(uint8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
 
 	message_t* message = create_message(MSG_SCAN_DONE);
 	if (message == NULL) {
-		return;
+		return false;
 	}
 
 	message->header.param1 = 0; //1D counter
@@ -68,32 +66,33 @@ static void scan_done(int8_t code) {
 	message->header.param3 = 0; //3D counter
 	message->header.param4 = 0; //4D counter
 	message->header.param5 = 0; //?
-	send_async(message);
+	return send_async(message);
 }
 
-static void sequence_done(int8_t code) {
+static bool sequence_done(uint8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
 	
 	message_t* message = create_message(MSG_ACQU_DONE);
 	if (message == NULL) {
-		return;
+		return false;
 	}
 
-	send_async(message);
+	return send_async(message);
 }
 
 //--
 
-static void acquisition_test(int8_t code) {
+static bool acquisition_test(uint8_t code) {
 	log_info("Received acquisition_test interrupt, code=0x%x", code);
+	return true;
 }
 
-static void send_acq_buffer(int32_t* from, int size) {
+static bool send_acq_buffer(int32_t* from, int size) {
 	int nbytes = size * sizeof(int32_t);
 	int32_t* buffer = malloc(nbytes);
 	if (buffer == NULL) {
 		log_error_errno("Unable to malloc buffer of %d bytes", nbytes);
-		return;
+		return false;
 	}
 
 	long sec_to_ns = 1000000000;
@@ -110,32 +109,34 @@ static void send_acq_buffer(int32_t* from, int size) {
 	message_t* message = create_message_with_body(MSG_ACQU_TRANSFER, buffer, nbytes);
 	if (message == NULL) {
 		free(buffer);
-		return;
+		return false;
 	}
 
 	message->header.param1 = 0; //address?
 	message->header.param2 = 0; //address?
 	message->header.param6 = 0; //last transfert time
-	send_async(message);
+	return send_async(message);
 }
 
-static void acquisition_half_full(int8_t code) {
+static bool acquisition_half_full(uint8_t code) {
 	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
 	int size = ACQUISITION_BUFFER_SIZE / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	send_acq_buffer(mem->rxdata, size);
+	bool result = send_acq_buffer(mem->rxdata, size);
 	shared_memory_release(mem);
+	return result;
 }
 
-static void acquisition_full(int8_t code) {
+static bool acquisition_full(uint8_t code) {
 	log_info("Received acquisition_full interrupt, code=0x%x", code);
 
 	int size = ACQUISITION_BUFFER_SIZE / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	send_acq_buffer(mem->rxdata+size, size);
+	bool result = send_acq_buffer(mem->rxdata+size, size);
 	shared_memory_release(mem);
+	return result;
 }
 
 //--

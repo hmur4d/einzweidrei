@@ -10,13 +10,13 @@ The list of interrupts and their associated GPIO is declared in gpio_irq.c
 
 typedef struct {
 	const char* name;
-	int8_t code;
+	uint8_t code;
 	int gpio;
 	int irq;
 } gpio_irq_t;
 
 //Callback, called each time a valid irq is received
-typedef void(*gpio_irq_handler_f)(gpio_irq_t* interrupt);
+typedef void (*gpio_irq_handler_f)(gpio_irq_t* interrupt);
 
 //--
 

@@ -20,10 +20,10 @@ bool blocking_queue_is_empty(void);
 
 //Adds a value to the end of the queue, wake up consumer if needed.
 //Not blocking, will return false if the queue is full.
-bool blocking_queue_add(int8_t value);
+bool blocking_queue_add(uint8_t value);
 
 //Gets a value from the start of the queue and remove it.
 //Blocking, will put the consumer to sleep if the queue is empty.
-bool blocking_queue_take(int8_t* value);
+bool blocking_queue_take(uint8_t* value);
 
 #endif

@@ -1,7 +1,10 @@
 #ifndef _INTERRUPT_CODES_H_
 #define _INTERRUPT_CODES_H_
 
-#define INTERRUPT_FAILURE					  0x13
+//when too many interrupts are happening and the userspace cannot process them fast enough
+//this "fake" interrupt is sent instead.
+#define INTERRUPT_FAILURE					  0xFF	
+
 #define INTERRUPT_SCAN_DONE                   0x1	//still used?
 #define INTERRUPT_SEQUENCE_DONE               0x2
 #define INTERRUPT_OVERFLOW                    0x3

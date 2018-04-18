@@ -1,7 +1,7 @@
 #include "interrupt_handlers.h"
 #include "log.h"
 
-#define INTERRUPT_JUMPTABLE_SIZE 20
+#define INTERRUPT_JUMPTABLE_SIZE 256
 
 //use a jump table to map handlers to codes, faster than looping on a list
 //the interrupt codes needs to be in a usable range though - the constant matches the index on the table
@@ -23,7 +23,7 @@ static void init_handlers() {
 }
 
 
-bool _register_interrupt_handler(int8_t code, const char* name, gpio_irq_handler_f handler) {
+bool _register_interrupt_handler(uint8_t code, const char* name, gpio_irq_handler_f handler) {
 	if (code < 0 || code >= INTERRUPT_JUMPTABLE_SIZE) {
 		log_error("Interrupt code '%d' (%s) outside of range 0-%d", code, name, INTERRUPT_JUMPTABLE_SIZE);
 		return false;
@@ -38,10 +38,10 @@ bool _register_interrupt_handler(int8_t code, const char* name, gpio_irq_handler
 	return true;
 }
 
-void call_interrupt_handler(int8_t code) {
+bool call_interrupt_handler(uint8_t code) {
 	if (code < 0 || code >= INTERRUPT_JUMPTABLE_SIZE) {
-		log_error("Interrupt code '%d' outside of range 0-%d, ignoring", code, INTERRUPT_JUMPTABLE_SIZE);
-		return;
+		log_error("Interrupt code '%d' outside of range 0-%d, ignoring", code, INTERRUPT_JUMPTABLE_SIZE-1);
+		return false;
 	}
 
 	if (!initialized) {
@@ -51,10 +51,11 @@ void call_interrupt_handler(int8_t code) {
 	gpio_irq_handler_f handler = handlers[code];
 	if (handler != NULL) {
 		log_debug("Calling interrupt handler for code 0x%x", code);
-		handler(code);
+		return handler(code);
 	}
 	else {
 		log_warning("No handler found for interrupt code 0x%x, ignoring", code);
+		return true;
 	}
 }
 
