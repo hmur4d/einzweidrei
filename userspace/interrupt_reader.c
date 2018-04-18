@@ -69,3 +69,19 @@ bool interrupt_reader_stop() {
 	consumer = NULL;
 	return true;
 }
+
+bool interrupt_reader_reset() {
+	if (close(interrupts_fd) < 0) {
+		log_error_errno("Unable to close %s", INTERRUPTS_FILE);
+		return false;
+	}
+
+	log_info("Opening %s file", INTERRUPTS_FILE);
+	interrupts_fd = open(INTERRUPTS_FILE, O_RDONLY);
+	if (interrupts_fd < 0) {
+		log_error_errno("Unable to open %s", INTERRUPTS_FILE);
+		return false;
+	}
+
+	return true;
+}

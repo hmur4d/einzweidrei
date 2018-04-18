@@ -2,10 +2,10 @@
 #include "log.h"
 #include "../common/interrupt_codes.h"
 #include "interrupt_handlers.h"
+#include "interrupt_reader.h"
 #include "net_io.h"
 #include "shared_memory.h"
 #include "workqueue.h"
-#include "module_loader.h"
 #include "config.h"
 #include "clientgroup.h"
 
@@ -48,14 +48,11 @@ static void failure(int8_t code) {
 	*mem->control = stop_reset;
 	shared_memory_release(mem);
 
-	/*
-	clientgroup_close_all();
-	module_unload(MODULE_PATH); //fails: resource busy
-	exit(1);
-	*/
-	//TODO prevenir le module qu'il peut regérer les IRQs
-	//ajouter un interrupt_reader_reset()
-	//on pourrait n'enregistrer les interrupts coté module que quand le /dev/interrupts est ouvert
+	if (!interrupt_reader_reset()) {
+		log_error("Unable to reset interrupt reader, exiting.");
+		clientgroup_close_all();
+		exit(1);
+	}
 }
 
 static void scan_done(int8_t code) {

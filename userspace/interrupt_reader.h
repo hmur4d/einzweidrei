@@ -18,6 +18,9 @@ bool interrupt_reader_start(interrupt_consumer_f interrupt_reader);
 //Stops reading the interrupt file and exit the thread.
 bool interrupt_reader_stop();
 
+//Closes and reopen the interrupt file.
+//This notifies the module to start listening to interrupts again after a failure.
+bool interrupt_reader_reset();
 
 #endif
 

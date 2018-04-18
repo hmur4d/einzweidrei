@@ -88,7 +88,7 @@ bool dev_interrupts_create(dev_interrupts_callback_f opened, dev_interrupts_call
 
 	sema_init(&mutex, 1);
 	if (register_device("interrupts", &device, &device_fops) != 0) {
-		klog_error("Unable to create /dev/interrupts");
+		klog_error("Unable to create /dev/interrupts\n");
 		return false;
 	}
 

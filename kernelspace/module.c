@@ -23,11 +23,11 @@ MODULE_LICENSE("GPL");
 static bool failure = false;
 
 static bool dev_interrupts_opened(void) {
-	klog_info("/dev/interrupts opened, enabled irqs");
+	klog_info("/dev/interrupts opened, enabled irqs\n");
 	failure = false;
 
 	if (enable_gpio_irqs() != 0) {
-		klog_error("unable to enable GPIO IRQs");
+		klog_error("unable to enable GPIO IRQs\n");
 		disable_gpio_irqs();
 		return false;
 	}
@@ -36,7 +36,7 @@ static bool dev_interrupts_opened(void) {
 }
 
 static bool dev_interrupts_closed(void) {
-	klog_info("/dev/interrupts closed, disable irqs");
+	klog_info("/dev/interrupts closed, disable irqs\n");
 	disable_gpio_irqs();
 	return true;
 }
@@ -48,8 +48,8 @@ static void publish_interrupt(gpio_irq_t* gpioirq) {
 
 	if (!blocking_queue_add(gpioirq->code)) {
 		failure = true;
-		klog_error("Unable to add interrupt 0x%x (%s)!", gpioirq->code, gpioirq->name);
-		klog_error("Stopping interruption handling.");
+		klog_error("Unable to add interrupt 0x%x (%s)!\n", gpioirq->code, gpioirq->name);
+		klog_error("Stopping interruption handling.\n");
 		blocking_queue_reset();
 		blocking_queue_add(INTERRUPT_FAILURE);
 	}
