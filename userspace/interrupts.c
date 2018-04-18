@@ -5,6 +5,9 @@
 #include "net_io.h"
 #include "shared_memory.h"
 #include "workqueue.h"
+#include "module_loader.h"
+#include "config.h"
+#include "clientgroup.h"
 
 
 static bool initialized = false;
@@ -35,6 +38,25 @@ static void send_async(message_t* message) {
 }
 
 //-- interrupt handlers
+
+static void failure(int8_t code) {
+	log_error("Received FAILURE interrupt, code=0x%x", code);
+
+	//stop counter
+	uint32_t stop_reset = 4;
+	shared_memory_t* mem = shared_memory_acquire();
+	*mem->control = stop_reset;
+	shared_memory_release(mem);
+
+	/*
+	clientgroup_close_all();
+	module_unload(MODULE_PATH); //fails: resource busy
+	exit(1);
+	*/
+	//TODO prevenir le module qu'il peut regérer les IRQs
+	//ajouter un interrupt_reader_reset()
+	//on pourrait n'enregistrer les interrupts coté module que quand le /dev/interrupts est ouvert
+}
 
 static void scan_done(int8_t code) {
 	log_info("Received scan_done interrupt, code=0x%x", code);
@@ -164,6 +186,7 @@ void interrupts_set_client(clientsocket_t* clientsocket) {
 
 bool register_all_interrupts() {
 	bool success = true;
+	success &= register_interrupt_handler(INTERRUPT_FAILURE, failure);
 	success &= register_interrupt_handler(INTERRUPT_SCAN_DONE, scan_done);
 	success &= register_interrupt_handler(INTERRUPT_SEQUENCE_DONE, sequence_done);
 

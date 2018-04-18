@@ -15,13 +15,24 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 #include "blocking_queue.h"
 #include "gpio_irq.h"
 #include "dev_interrupts.h"
+#include "../common/interrupt_codes.h"
 #include "hps2fpga.h"
 
 MODULE_LICENSE("GPL");
 
+static bool failure = false;
+
 static void publish_interrupt(gpio_irq_t* gpioirq) {
+	if (failure) {
+		return;
+	}
+
 	if (!blocking_queue_add(gpioirq->code)) {
+		failure = true;
 		klog_error("Unable to add interrupt 0x%x (%s)!", gpioirq->code, gpioirq->name);
+		klog_error("Stopping interruption handling.");
+		blocking_queue_reset();
+		blocking_queue_add(INTERRUPT_FAILURE);
 	}
 }
 

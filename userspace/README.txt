@@ -1,5 +1,14 @@
 === README.txt: cameleon userspace ==
 
+== starting up at boot and respawning
+
+in /etc/inittab
+console::respawn:/root/cameleon
+
+or better with a shell script that unloads the module first then calls cameleon:
+
+console::respawn:/root/run-cameleon.sh
+
 
 
 == Using environnment variables to change userspace behaviour
