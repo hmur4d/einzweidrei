@@ -1,6 +1,7 @@
 #include "dev_interrupts.h"
 #include "dynamic_device.h"
 #include "blocking_queue.h"
+#include "gpio_irq.h"
 #include "config.h"
 #include "klog.h"
 
@@ -30,7 +31,13 @@ static int device_open(struct inode *inode, struct file *filp) {
 	if (down_interruptible(&mutex))
 		return -ERESTARTSYS;
 
-	klog_info("got semaphore, emptying queue\n");
+	klog_info("got semaphore, enabling irqs and emptying queue\n");
+	if (enable_gpio_irqs() != 0) {
+		klog_error("unable to enable GPIO IRQs");
+		disable_gpio_irqs();
+		return -EINVAL;
+	}
+
 	blocking_queue_reset();
 
 	return 0;
@@ -38,6 +45,8 @@ static int device_open(struct inode *inode, struct file *filp) {
 
 static int device_release(struct inode *inode, struct file *filp) {
 	klog_info("device_release called\n");
+
+	disable_gpio_irqs();
 
 	//unlock the mutex to allow another process to open /dev/interrupts
 	up(&mutex);

@@ -41,11 +41,8 @@ int __init mod_init(void) {
 		return -ENOMSG;
 	}
 
-	int error = register_gpio_irqs(publish_interrupt);
-	if(error) {
-		unregister_gpio_irqs();
-		return error;
-	}
+	set_gpio_irq_handler(publish_interrupt);
+	//Note: IRQs are registering only when /dev/interrupts is opened
 
 	if (!dev_interrupts_create()) {
 		return -ENOMSG;
@@ -57,7 +54,7 @@ int __init mod_init(void) {
 
 void __exit mod_exit(void) {
 	dev_interrupts_destroy();
-	unregister_gpio_irqs(); 
+	disable_gpio_irqs();
 	klog_info("Module unloaded successfully!\n");
 }
 

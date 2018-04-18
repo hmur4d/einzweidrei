@@ -50,22 +50,13 @@ static irqreturn_t forward_irq_to_handler(int irq, void *dev_id) {
 
 //--
 
-int register_gpio_irqs(gpio_irq_handler_f handler) {
+void set_gpio_irq_handler(gpio_irq_handler_f handler) {
 	gpio_irq_handler = handler;
+}
 
+int enable_gpio_irqs() {
 	gpio_irq_t *gpioirq;
 	for (gpioirq = list; gpioirq->name != NULL; gpioirq++) {
-		//tout ce bloc n'était pas necessaire sur la carte d'eval
-		/*
-		printk(KERN_INFO "%s: requestion gpio %d\n", MODULE_NAME, gpio_number);
-		bool isvalid = gpio_is_valid(gpio_number);
-		printk(KERN_INFO "%s: gpio_is_valid: %d\n", MODULE_NAME, isvalid);
-		int request = gpio_request(gpio_number, "test");
-		printk(KERN_INFO "%s: gpio_request: %d\n", MODULE_NAME, request);
-		int input = gpio_direction_input(gpio_number);
-		printk(KERN_INFO "%s: gpio_direction_input: %d\n", MODULE_NAME, input);
-		*/
-
 		gpioirq->irq = gpio_to_irq(gpioirq->gpio);
 		klog_info("gpio_to_irq: %d -> %d (%s)\n", gpioirq->gpio, gpioirq->irq, gpioirq->name);
 
@@ -83,7 +74,7 @@ int register_gpio_irqs(gpio_irq_handler_f handler) {
 	return 0;
 }
 
-void unregister_gpio_irqs(void) {
+void disable_gpio_irqs(void) {
 	gpio_irq_t *gpioirq;
 	for (gpioirq = list; gpioirq->name != NULL; gpioirq++) {
 		if (gpioirq->irq != -EINVAL) {
