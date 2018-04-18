@@ -61,7 +61,7 @@ int __init mod_init(void) {
 	}
 
 	set_gpio_irq_handler(publish_interrupt);
-	//Note: IRQs are registering only when /dev/interrupts is opened
+	//Note: IRQs are registered only when /dev/interrupts is opened
 
 	if (!dev_interrupts_create(dev_interrupts_opened, dev_interrupts_closed)) {
 		return -ENOMSG;

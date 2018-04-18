@@ -49,14 +49,13 @@ bool call_interrupt_handler(uint8_t code) {
 	}
 
 	gpio_irq_handler_f handler = handlers[code];
-	if (handler != NULL) {
-		log_debug("Calling interrupt handler for code 0x%x", code);
-		return handler(code);
-	}
-	else {
+	if (handler == NULL) {
 		log_warning("No handler found for interrupt code 0x%x, ignoring", code);
 		return true;
 	}
+
+	log_debug("Calling interrupt handler for code 0x%x", code);
+	return handler(code);
 }
 
 void destroy_interrupt_handlers() {
