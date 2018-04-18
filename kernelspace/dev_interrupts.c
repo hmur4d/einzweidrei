@@ -1,6 +1,7 @@
 #include "dev_interrupts.h"
 #include "dynamic_device.h"
 #include "blocking_queue.h"
+#include "gpio_irq.h"
 #include "config.h"
 #include "klog.h"
 
@@ -19,6 +20,8 @@ static struct file_operations device_fops = {
 
 static dynamic_device_t device;
 static struct semaphore mutex;
+static dev_interrupts_callback_f opened_callback;
+static dev_interrupts_callback_f closed_callback;
 
 //-- 
 
@@ -32,12 +35,18 @@ static int device_open(struct inode *inode, struct file *filp) {
 
 	klog_info("got semaphore, emptying queue\n");
 	blocking_queue_reset();
-
+	if (opened_callback != NULL && !opened_callback())
+		return -EINVAL;
+	
 	return 0;
 }
 
 static int device_release(struct inode *inode, struct file *filp) {
 	klog_info("device_release called\n");
+
+	if (closed_callback != NULL && !closed_callback()) {
+		return -EINVAL;
+	}
 
 	//unlock the mutex to allow another process to open /dev/interrupts
 	up(&mutex);
@@ -46,7 +55,7 @@ static int device_release(struct inode *inode, struct file *filp) {
 
 //blocking read, one char at a time
 static ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, loff_t *position) {
-	klog_info("/dev/interrupt read at offset=%i, read bytes count=%u\n", (int)*position, (uint)count);
+	klog_info("/dev/interrupt read called at offset=%i, read bytes count=%u\n", (int)*position, (uint)count);
 
 	if (filp->f_flags & O_NONBLOCK && blocking_queue_is_empty()) {
 		//the caller could have set the O_NONBLOCK attribute, we must honor it.
@@ -54,7 +63,7 @@ static ssize_t device_read(struct file *filp, char __user *user_buffer, size_t c
 		return -EAGAIN;
 	}
 
-	int8_t value;
+	uint8_t value;
 	if (!blocking_queue_take(&value)) {
 		klog_error("Unable to get interrupt from blocking queue!\n");
 		return -EFAULT;
@@ -73,10 +82,13 @@ static ssize_t device_read(struct file *filp, char __user *user_buffer, size_t c
 
 //--
 
-bool dev_interrupts_create(void) {
+bool dev_interrupts_create(dev_interrupts_callback_f opened, dev_interrupts_callback_f closed) {
+	opened_callback = opened;
+	closed_callback = closed;
+
 	sema_init(&mutex, 1);
 	if (register_device("interrupts", &device, &device_fops) != 0) {
-		klog_error("Unable to create /dev/interrupts");
+		klog_error("Unable to create /dev/interrupts\n");
 		return false;
 	}
 

@@ -3,28 +3,48 @@
 
 static int interrupts_fd;
 static pthread_t thread;
-static interrupt_consumer_f consumer = NULL;
+static interrupt_handler_f handler = NULL;
+
+static bool interrupt_reader_reset() {
+	log_info("Resetting interupt reader, reopening %s file", INTERRUPTS_FILE);
+
+	if (close(interrupts_fd) < 0) {
+		log_error_errno("Unable to close %s", INTERRUPTS_FILE);
+		return false;
+	}
+
+	interrupts_fd = open(INTERRUPTS_FILE, O_RDONLY);
+	if (interrupts_fd < 0) {
+		log_error_errno("Unable to open %s", INTERRUPTS_FILE);
+		return false;
+	}
+
+	return true;
+}
 
 static void* interrupt_reader_thread(void* arg) {
 	log_info("Starting reading interrupts");
 
-	int8_t code;
+	uint8_t code;
 	while (read(interrupts_fd, &code, 1) == 1) {
 		log_debug("Read interrupt: 0x%x", code);
-		if (consumer == NULL) {
-			log_error("No interrupt consumer defined! Ignoring interrupts.");
+		if (handler == NULL) {
+			log_error("No interrupt handler defined! Ignoring interrupts.");
 			continue;
 		}
 
-		consumer(code);
+		if (!handler(code) && !interrupt_reader_reset()) {
+			log_error("Unrecoverable interrupt error");
+			break;
+		}
 	}
 
 	log_error("Stopped reading interrupts, read failed");
 	pthread_exit(0);
 }
 
-bool interrupt_reader_start(interrupt_consumer_f  interrupt_consumer) {
-	consumer = interrupt_consumer;
+bool interrupt_reader_start(interrupt_handler_f  interrupt_handler) {
+	handler = interrupt_handler;
 
 	//open device file for interrupts
 	log_info("Opening %s file", INTERRUPTS_FILE);
@@ -46,7 +66,7 @@ bool interrupt_reader_start(interrupt_consumer_f  interrupt_consumer) {
 bool interrupt_reader_stop() {
 	log_info("Stopping interrupt reader thread");
 
-	if (consumer == NULL) {
+	if (handler == NULL) {
 		log_warning("Trying to stop interrupt reader, but it isn't initialized!");
 		return true;
 	}
@@ -66,6 +86,6 @@ bool interrupt_reader_stop() {
 		return false;
 	}
 
-	consumer = NULL;
+	handler = NULL;
 	return true;
 }

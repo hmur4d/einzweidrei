@@ -15,13 +15,43 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 #include "blocking_queue.h"
 #include "gpio_irq.h"
 #include "dev_interrupts.h"
+#include "../common/interrupt_codes.h"
 #include "hps2fpga.h"
 
 MODULE_LICENSE("GPL");
 
+static bool failure = false;
+
+static bool dev_interrupts_opened(void) {
+	klog_info("/dev/interrupts opened, enabled irqs\n");
+	failure = false;
+
+	if (enable_gpio_irqs() != 0) {
+		klog_error("unable to enable GPIO IRQs\n");
+		disable_gpio_irqs();
+		return false;
+	}
+
+	return true;
+}
+
+static bool dev_interrupts_closed(void) {
+	klog_info("/dev/interrupts closed, disable irqs\n");
+	disable_gpio_irqs();
+	return true;
+}
+
 static void publish_interrupt(gpio_irq_t* gpioirq) {
+	if (failure) {
+		return;
+	}
+
 	if (!blocking_queue_add(gpioirq->code)) {
-		klog_error("Unable to add interrupt 0x%x (%s)!", gpioirq->code, gpioirq->name);
+		failure = true;
+		klog_error("Unable to add interrupt 0x%x (%s)!\n", gpioirq->code, gpioirq->name);
+		klog_error("Stopping interruption handling.\n");
+		blocking_queue_reset();
+		blocking_queue_add(INTERRUPT_FAILURE);
 	}
 }
 
@@ -30,13 +60,10 @@ int __init mod_init(void) {
 		return -ENOMSG;
 	}
 
-	int error = register_gpio_irqs(publish_interrupt);
-	if(error) {
-		unregister_gpio_irqs();
-		return error;
-	}
+	set_gpio_irq_handler(publish_interrupt);
+	//Note: IRQs are registering only when /dev/interrupts is opened
 
-	if (!dev_interrupts_create()) {
+	if (!dev_interrupts_create(dev_interrupts_opened, dev_interrupts_closed)) {
 		return -ENOMSG;
 	}
 
@@ -46,7 +73,7 @@ int __init mod_init(void) {
 
 void __exit mod_exit(void) {
 	dev_interrupts_destroy();
-	unregister_gpio_irqs(); 
+	disable_gpio_irqs();
 	klog_info("Module unloaded successfully!\n");
 }
 
