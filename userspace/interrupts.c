@@ -82,11 +82,6 @@ static bool sequence_done(uint8_t code) {
 
 //--
 
-static bool acquisition_test(uint8_t code) {
-	log_info("Received acquisition_test interrupt, code=0x%x", code);
-	return true;
-}
-
 static bool send_acq_buffer(int32_t* from, int size) {
 	int nbytes = size * sizeof(int32_t);
 	int32_t* buffer = malloc(nbytes);
@@ -187,9 +182,6 @@ bool register_all_interrupts() {
 	success &= register_interrupt_handler(INTERRUPT_FAILURE, failure);
 	success &= register_interrupt_handler(INTERRUPT_SCAN_DONE, scan_done);
 	success &= register_interrupt_handler(INTERRUPT_SEQUENCE_DONE, sequence_done);
-
-	//tests interrupts & memory
-	success &= register_interrupt_handler(INTERRUPT_ACQUISITION_TEST, acquisition_test);
 	success &= register_interrupt_handler(INTERRUPT_ACQUISITION_HALF_FULL, acquisition_half_full);
 	success &= register_interrupt_handler(INTERRUPT_ACQUISITION_FULL, acquisition_full);
 
