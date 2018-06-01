@@ -188,11 +188,7 @@ static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 	uint32_t start_once = 3;
 
 	shared_memory_t* mem = shared_memory_acquire();
-
-	//XXX premier octet pour controler le compteur -> 100ms
-	//*mem->rams = 15000;
-	*mem->rams = 0; //hyper fast, should crash the module
-
+	
 	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_once, start_once);
 	*mem->control = start_once;
 	shared_memory_release(mem);
@@ -204,10 +200,7 @@ static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 	uint32_t start_repeat = 1;
 	
 	shared_memory_t* mem = shared_memory_acquire();
-
-	//XXX premier octet pour controler le compteur
-	*mem->rams = 15000;
-
+	
 	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_repeat, start_repeat);
 	*mem->control = start_repeat;
 	shared_memory_release(mem);

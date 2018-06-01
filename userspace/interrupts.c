@@ -70,7 +70,7 @@ static bool scan_done(uint8_t code) {
 }
 
 static bool sequence_done(uint8_t code) {
-	log_info("Received scan_done interrupt, code=0x%x", code);
+	log_info("Received sequence_done interrupt, code=0x%x", code);
 	
 	message_t* message = create_message(MSG_ACQU_DONE);
 	if (message == NULL) {
