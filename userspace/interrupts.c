@@ -23,6 +23,7 @@ static void send_worker(void* data) {
 
 	pthread_mutex_lock(&client_mutex);
 	if (client != NULL) {
+		log_debug("sent message: 0x%0x", message->header.cmd);
 		send_message(client, &message->header, message->body);
 	}
 	pthread_mutex_unlock(&client_mutex);
@@ -103,6 +104,7 @@ static bool send_acq_buffer(int32_t* from, int size) {
 
 	message_t* message = create_message_with_body(MSG_ACQU_TRANSFER, buffer, nbytes);
 	if (message == NULL) {
+		log_error("unable to allow message");
 		free(buffer);
 		return false;
 	}
