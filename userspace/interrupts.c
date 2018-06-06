@@ -49,6 +49,13 @@ static bool failure(uint8_t code) {
 	*mem->control = stop_reset;
 	shared_memory_release(mem);
 
+	message_t* message = create_message(MSG_ACQU_CORRUPTED);
+	if (message == NULL) {
+		return false;
+	}
+
+	send_async(message);
+
 	//false means the interrupt reader must be reset 
 	//so the kernel module can start processing interrupts again
 	return false; 

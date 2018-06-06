@@ -12,7 +12,7 @@ Shared memory, allows read/write access to FPGA memory
 #define COUNTER_WRITE 0x0
 #define COUNTER_READ 0x4
 #define ACQUISITION_BUFFER	0x40000
-#define ACQUISITION_BUFFER_SIZE	0xFFFF //in words of 4 bytes
+#define ACQUISITION_BUFFER_SIZE	1 + 0xFFFF //in words of 4 bytes
 
 //Used to expose typed memory blocks
 typedef struct {
