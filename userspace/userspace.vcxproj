@@ -105,6 +105,7 @@
     <ClInclude Include="network.h" />
     <ClInclude Include="net_io.h" />
     <ClInclude Include="ram.h" />
+    <ClInclude Include="sequence_params.h" />
     <ClInclude Include="shared_memory.h" />
     <ClInclude Include="std_includes.h" />
     <ClInclude Include="workqueue.h" />
@@ -125,6 +126,7 @@
     <ClCompile Include="network.c" />
     <ClCompile Include="net_io.c" />
     <ClCompile Include="ram.c" />
+    <ClCompile Include="sequence_params.c" />
     <ClCompile Include="shared_memory.c" />
     <ClCompile Include="test.c" />
     <ClCompile Include="workqueue.c" />

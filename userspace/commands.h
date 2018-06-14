@@ -46,11 +46,14 @@ Command handlers: command id and implementation.
 #define CMD_UPDATE                                  0x30
 #define CMD_FLASH_GRADIENT_DC                       0x31
 
+
 #define CMD_LOCK_SEQ_ON_OFF                         1000 + 0x0		//named CMD_LOCK_START in spinlab, but ON_OFF seems better
 #define CMD_LOCK_SWEEP_ON_OFF                       1000 + 0x1
 #define CMD_LOCK_ON_OFF                             1000 + 0x2
 
 #define CMD_TX_MIXER                                2000 + 0x0		//used by compiler
+
+#define CMD_SEQUENCE_CLEAR							4000 + 0x0		//used to know when to clear previous sequence params 
 
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message

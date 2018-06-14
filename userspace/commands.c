@@ -4,6 +4,8 @@
 #include "command_handlers.h"
 #include "shared_memory.h"
 #include "ram.h"
+#include "memory_map.h"
+#include "sequence_params.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -52,6 +54,14 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		if (!send_message(client, header, readback_body)) {
 			log_error("Unable to send readback!");
 		}
+	}
+
+	if (ram.id == RAM_REGISTER_FIFO_INTERRUPT_SELECTED) {
+		sequence_params_t* pSeqParam = sequence_params_get();
+		int value = *((int*)body);
+		pSeqParam->number_half_full = value & 0xFFFF;
+		pSeqParam->number_full = (value >> 16) & 0xFFFF;
+		sequence_params_release(pSeqParam);
 	}
 }
 
@@ -215,6 +225,12 @@ static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const vo
 	log_info("writing stop counting: 0x%x <- 0x%x (%d)", mem->control, stop_reset, stop_reset);
 	*mem->control = stop_reset;
 	shared_memory_release(mem);
+}
+
+static void cmd_sequence_clear(clientsocket_t* client, header_t* header, const void* body) {
+	sequence_params_t* sequence_params=sequence_params_acquire();
+	sequence_params_clear(sequence_params);
+	sequence_params_release(sequence_params);
 }
 
 //--

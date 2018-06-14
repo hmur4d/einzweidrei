@@ -106,6 +106,11 @@ int cameleon_main(int argc, char ** argv) {
 		return 1;
 	}
 
+	if (!sequence_params_init()) {
+		log_error("Unable to init sequence params, exiting");
+		return 1;
+	}
+
 	if(!monitoring_start()) {
 		log_error("Unable to init monitoring, exiting");
 		return 1;

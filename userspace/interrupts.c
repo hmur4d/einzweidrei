@@ -8,6 +8,7 @@
 #include "workqueue.h"
 #include "config.h"
 #include "clientgroup.h"
+#include "sequence_params.h"
 
 
 static bool initialized = false;
@@ -124,7 +125,9 @@ static bool send_acq_buffer(int32_t* from, int size) {
 
 static bool acquisition_half_full(uint8_t code) {
 	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
-	int size = ACQUISITION_BUFFER_SIZE / 2;
+	sequence_params_t* sequence_params = sequence_params_acquire();
+	int size = sequence_params->number_half_full+1;
+	sequence_params_release(sequence_params);
 
 	shared_memory_t* mem = shared_memory_acquire();
 	bool result = send_acq_buffer(mem->rxdata, size);
@@ -134,8 +137,9 @@ static bool acquisition_half_full(uint8_t code) {
 
 static bool acquisition_full(uint8_t code) {
 	log_info("Received acquisition_full interrupt, code=0x%x", code);
-
-	int size = ACQUISITION_BUFFER_SIZE / 2;
+	sequence_params_t* sequence_params = sequence_params_acquire();
+	int size = sequence_params->number_half_full+1;
+	sequence_params_release(sequence_params);
 
 	shared_memory_t* mem = shared_memory_acquire();
 	bool result = send_acq_buffer(mem->rxdata+size, size);

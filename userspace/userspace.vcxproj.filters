@@ -19,6 +19,7 @@
     <ClCompile Include="test.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="module_loader.c" />
+    <ClCompile Include="sequence_params.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />
@@ -50,6 +51,7 @@
       <Filter>generated</Filter>
     </ClInclude>
     <ClInclude Include="module_loader.h" />
+    <ClInclude Include="sequence_params.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
