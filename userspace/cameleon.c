@@ -14,6 +14,7 @@
 #include "command_handlers.h"
 #include "commands.h"
 #include "monitoring.h"
+#include "sequence_params.h"
 
 //-- network handlers
 

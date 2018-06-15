@@ -57,11 +57,11 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 	}
 
 	if (ram.id == RAM_REGISTER_FIFO_INTERRUPT_SELECTED) {
-		sequence_params_t* pSeqParam = sequence_params_get();
+		sequence_params_t* sequence_params = sequence_params_acquire();
 		int value = *((int*)body);
-		pSeqParam->number_half_full = value & 0xFFFF;
-		pSeqParam->number_full = (value >> 16) & 0xFFFF;
-		sequence_params_release(pSeqParam);
+		sequence_params->number_half_full = value & 0xFFFF;
+		sequence_params->number_full = (value >> 16) & 0xFFFF;
+		sequence_params_release(sequence_params);
 	}
 }
 
@@ -254,6 +254,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_ZG, cmd_zg);
 	success &= register_command_handler(CMD_RS, cmd_rs);
 	success &= register_command_handler(CMD_STOP_SEQUENCE, cmd_stop_sequence);
+	success &= register_command_handler(CMD_SEQUENCE_CLEAR, cmd_sequence_clear);
 
 	return success;
 }
