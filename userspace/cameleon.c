@@ -160,7 +160,10 @@ int cameleon_main(int argc, char ** argv) {
 	destroy_interrupt_handlers();
 
 	shared_memory_close();
-	module_unload(MODULE_PATH); 
+
+#ifndef X86
+	module_unload(MODULE_PATH);
+#endif
 
 	log_close();
 	return 0;

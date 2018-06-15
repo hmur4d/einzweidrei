@@ -83,7 +83,10 @@ int test_main(int argc, char ** argv) {
 
 	shared_memory_release(mem);
 	shared_memory_close();
+
+#ifndef X86
 	module_unload(MODULE_PATH);
+#endif
 	log_close();
 
 	return 0;
