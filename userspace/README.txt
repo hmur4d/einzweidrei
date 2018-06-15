@@ -59,3 +59,13 @@ options:
   -e to accept hex bytes
 
 # echo -n -e \\x02 > /dev/interrupts
+
+
+
+== Summary for use on vairon (192.168.0.201)
+
+/tmp/fakemem and /dev/interrupts are already created.
+There is a restricton on port < 1024, so use of sudo is mandatory.
+
+# cat > /dev/interrupts &
+# sudo DEV_MEM=/tmp/fakemem ~/.vstudio-<username>/userspace/cameleon

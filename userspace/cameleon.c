@@ -66,10 +66,12 @@ int cameleon_main(int argc, char ** argv) {
 
 	log_info("Starting main program");
 
+#ifndef X86
 	if (!module_load(MODULE_PATH, "")) {
 		log_error("Unable to load module (%s), exiting", MODULE_PATH);
 		return 1;
 	}
+#endif
 
 	char* memory_file = get_memory_file();
 	if (!shared_memory_init(memory_file)) {

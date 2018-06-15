@@ -3,7 +3,7 @@ ifneq '$(VS_PLATFORM)' 'x86'
 	include ../make-config/cross-compile.mk
 	CFLAGS += -std=gnu11
 else 
-	CFLAGS += -std=gnu99
+	CFLAGS += -std=gnu99 -DX86
 endif
 
 # allows selecting Debug/Release configurations from Visual Studio
