@@ -56,11 +56,14 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		}
 	}
 
-	if (ram.id == RAM_REGISTER_FIFO_INTERRUPT_SELECTED) {
+	if (ram.id == RAM_REGISTERS_SELECTED+RAM_REGISTER_FIFO_INTERRUPT_SELECTED) {
+		
 		sequence_params_t* sequence_params = sequence_params_acquire();
-		int value = *((int*)body);
+		uint32_t value = *((uint32_t*)body);
+		
 		sequence_params->number_half_full = value & 0xFFFF;
 		sequence_params->number_full = (value >> 16) & 0xFFFF;
+		log_info("Ram.id==RAM_REGISTER_FIFO_INTERRUPT_SELECTED value=%d", value);
 		sequence_params_release(sequence_params);
 	}
 }

@@ -41,7 +41,7 @@ bool ram_find(unsigned int ram_id, int span_bytes, ram_descriptor_t* ram) {
 		return true;
 	}
 	if (ram_id == RAM_SMART_TTL_VALUES_DATA_SELECTED) {
-		ram->offset_bytes = RAM_SMART_TTL_VALUES_DATA_SELECTED;
+		ram->offset_bytes = RAM_SMART_TTL_VALUES_DATA_OFFSET;
 		ram->offset_int32 = ram->offset_bytes / sizeof(int32_t);
 		return true;
 	}

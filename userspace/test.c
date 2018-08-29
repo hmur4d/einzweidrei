@@ -251,7 +251,7 @@ void sync_dds(int* ioupdate_ptr, int* dds_sel_ptr, int spi_fd) {
 	int i;
 	printf("sync dds start \n");
 	int rd_data;
-	int ready;
+	//int ready;
 
 	/*
 	//master reset
@@ -439,7 +439,7 @@ int test_main(int argc, char ** argv) {
 	int spi_dds_1_fd;
 	int spi_adc_fd;
 	int spi_rx_dac_fd;
-	int rd_data = 0;
+	//int rd_data = 0;
 	int* lwbus_ptr;
 	int* ioupdate_ptr;
 	int* dds_sel_ptr;
