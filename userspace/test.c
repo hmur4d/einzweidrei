@@ -450,6 +450,7 @@ int test_main(int argc, char ** argv) {
 	float f;
 
 	int i;
+	
 	spi_dds_1_fd = open_spi("/dev/spidev32766.0");
 	spi_adc_fd = open_spi("/dev/spidev32766.1");
 	spi_rx_dac_fd = open_spi("/dev/spidev32766.2");
@@ -477,18 +478,51 @@ int test_main(int argc, char ** argv) {
 	rx_adc_write(spi_adc_fd, 0x00, 0x1);
 	rx_adc_write(spi_adc_fd, 0x46, 0x880C);
 	rx_adc_write(spi_adc_fd, 0x45, 0x2);
-
+	/*
 	printf("current aligned %d \n", *rx_bit_aligned_ptr);
+	for (int j = 0; j <= 3; j++) {
+		while (1) {
+			bits_aligned = *rx_bit_aligned_ptr;
+			if ((bits_aligned & (2^j)) == (2^j)) break;
+			*rx_bitsleep_ctr_ptr = (2^j);
+			delay();
+			*rx_bitsleep_ctr_ptr = 0;
+			printf("current aligned %d, %x \n", j, (bits_aligned & (2 ^ j)));
+		}
+	}*/
+
 	while (1) {
-		if (*rx_bit_aligned_ptr == 1) break;
+		if ((*rx_bit_aligned_ptr & 1) == 1) break;
 		*rx_bitsleep_ctr_ptr = 1;
 		delay();
 		*rx_bitsleep_ctr_ptr = 0;
-		printf("current aligned %d \n", *rx_bit_aligned_ptr);
+		printf("current aligned 1, %d \n", *rx_bit_aligned_ptr);
 	}
+	while (1) {
+		if ((*rx_bit_aligned_ptr & 2)== 2) break;
+		*rx_bitsleep_ctr_ptr = 2;
+		delay();
+		*rx_bitsleep_ctr_ptr = 0;
+		printf("current aligned 2, %d \n", *rx_bit_aligned_ptr);
+	}
+	while (1) {
+		if ((*rx_bit_aligned_ptr & 4 ) == 4) break;
+		*rx_bitsleep_ctr_ptr = 4;
+		delay();
+		*rx_bitsleep_ctr_ptr = 0;
+		printf("current aligned 3, %d \n", *rx_bit_aligned_ptr);
+	}
+	while (1) {
+		if ((*rx_bit_aligned_ptr & 8) == 8) break;
+		*rx_bitsleep_ctr_ptr = 8;
+		delay();
+		*rx_bitsleep_ctr_ptr = 0;
+		printf("current aligned 4, %d \n", *rx_bit_aligned_ptr);
+	}
+	
 	printf("current aligned %d \n", *rx_bit_aligned_ptr);
 	rx_adc_write(spi_adc_fd, 0x45, 0x00);
-
+	//rx_adc_write(spi_adc_fd, 0x45, 0x02);
 
 	sync_dds(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
 
@@ -496,7 +530,7 @@ int test_main(int argc, char ** argv) {
 	i = 60000;
 	f = i * 1.717986918 * 1000;
 	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800); //match latency
+	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408B00); //match latency
 	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0B, (int)f);
 	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0C, 0x0fff0000);
 
