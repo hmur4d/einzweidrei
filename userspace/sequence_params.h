@@ -7,6 +7,7 @@
 typedef struct {
 	int number_half_full;
 	int number_full;
+	int rx_gain;
 
 }sequence_params_t;
 

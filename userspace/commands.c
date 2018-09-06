@@ -6,6 +6,7 @@
 #include "ram.h"
 #include "memory_map.h"
 #include "sequence_params.h"
+#include "hardware.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -65,6 +66,18 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		sequence_params->number_full = (value >> 16) & 0xFFFF;
 		log_info("Ram.id==RAM_REGISTER_FIFO_INTERRUPT_SELECTED value=%d", value);
 		sequence_params_release(sequence_params);
+	}
+	if (ram.id == RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED) {
+
+		sequence_params_t* sequence_params = sequence_params_acquire();
+		uint32_t value = *((uint32_t*)body);
+
+		sequence_params->rx_gain = value;
+		log_info("Ram.id==RAM_REGISTER_RX_GAIN rx gain =%d", value);
+		sequence_params_release(sequence_params);
+
+		write_rx_gain(sequence_params->rx_gain);
+
 	}
 }
 
