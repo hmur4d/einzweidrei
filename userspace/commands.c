@@ -76,7 +76,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		log_info("Ram.id==RAM_REGISTER_RX_GAIN rx gain =%d", value);
 		sequence_params_release(sequence_params);
 
-		write_rx_gain(sequence_params->rx_gain);
+		hw_receiver_write_rx_gain(sequence_params->rx_gain);
 
 	}
 }
@@ -249,6 +249,25 @@ static void cmd_sequence_clear(clientsocket_t* client, header_t* header, const v
 	sequence_params_release(sequence_params);
 }
 
+static void cmd_lock_sequence_on_off(clientsocket_t* client, header_t* header, const void* body) {
+
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->lock_sequence_on_off, header->param1);
+	shared_memory_release(mem);
+}
+static void cmd_lock_on_off(clientsocket_t* client, header_t* header, const void* body) {
+
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->lock_on_off, header->param1);
+	shared_memory_release(mem);
+}
+static void cmd_lock_sweep_on_off(clientsocket_t* client, header_t* header, const void* body) {
+
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->lock_sweep_on_off, header->param1);
+	shared_memory_release(mem);
+}
+
 //--
 
 bool register_all_commands() {
@@ -271,6 +290,11 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_RS, cmd_rs);
 	success &= register_command_handler(CMD_STOP_SEQUENCE, cmd_stop_sequence);
 	success &= register_command_handler(CMD_SEQUENCE_CLEAR, cmd_sequence_clear);
+
+	success &= register_command_handler(CMD_LOCK_SEQ_ON_OFF, cmd_lock_sequence_on_off);
+	success &= register_command_handler(CMD_LOCK_SWEEP_ON_OFF, cmd_lock_sweep_on_off);
+	success &= register_command_handler(CMD_LOCK_ON_OFF, cmd_lock_on_off);
+
 
 	return success;
 }

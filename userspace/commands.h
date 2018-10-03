@@ -42,6 +42,13 @@ Command handlers: command id and implementation.
 #define CMD_WRITE_EEPROM_DATA                       0x16		//used by flash-cameleon only
 #define CMD_RX_DATA_ALIGN                           0x19		//not used by spinlab
 #define CMD_CONFIG_NETWORK                          0x1b		//used by flash-cameleon only
+#define CMD_DEVICE_INFO                             0x1c
+
+#define DEVICE_TYPE_CAMELEON4                       2
+#define DEVICE_FEATURE_LOCK                         200
+#define DEVICE_FEATURE_SEQUENCER                    300
+#define DEVICE_FEATURE_CAMELEON                     400
+#define DEVICE_FEATURE_GRADIENT                     800
 
 #define CMD_UPDATE                                  0x30
 #define CMD_FLASH_GRADIENT_DC                       0x31
