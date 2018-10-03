@@ -1,5 +1,6 @@
 #include "shared_memory.h"
 #include "log.h"
+#include "math.h"
 
 static bool initialized = false;
 static pthread_mutex_t mutex;
@@ -49,16 +50,60 @@ bool shared_memory_init(const char* memory_file) {
 		return false;
 	}
 
-	sharedmem.control = MAP_FAILED;
+	sharedmem.lwbridge = MAP_FAILED;
 	sharedmem.rams = MAP_FAILED;
 	sharedmem.rxdata = MAP_FAILED;
 
-	sharedmem.control = (int32_t*)mmap(NULL, CONTROL_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, CONTROL_INTERFACE_BASE);
-	if (sharedmem.control == MAP_FAILED) {
+	sharedmem.lwbridge = (int32_t*)mmap(NULL, CONTROL_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, CONTROL_INTERFACE_BASE);
+	if (sharedmem.lwbridge == MAP_FAILED) {
 		log_error_errno("Unable to mmap CONTROL_INTERFACE (hps2fpga lightweight bridge)");
 		shared_memory_munmap_and_close();
 		return false;
 	}
+
+	sharedmem.control = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 0,
+		.bit_size = 8,
+		.bit_offset = 0,
+		.name="control",
+	};
+	sharedmem.dds_sel = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16382,
+		.bit_size = 3,
+		.bit_offset = 0,
+		.name = "dds_sel",
+	};
+	sharedmem.dds_ioupdate = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16383,
+		.bit_size = 1,
+		.bit_offset = 0,
+		.name = "dds_ioupdate",
+	};
+	sharedmem.rx_bitsleep_ctr = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16381,
+		.bit_size = 4,
+		.bit_offset = 0,
+		.name = "rx_bitsleep_ctr",
+	};
+	sharedmem.rx_bit_aligned = (property_t) {
+		.read_ptr = sharedmem.lwbridge + 16379,
+		.write_ptr = NULL,
+		.bit_size = 4,
+		.bit_offset = 0,
+		.name = "rx_bit_aligned",
+	};
+	sharedmem.tx_att = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16379,
+		.bit_size = 32,
+		.bit_offset = 0,
+		.name = "tx_att",
+	};
+
 
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
 	if (sharedmem.rams == MAP_FAILED) {
@@ -125,4 +170,28 @@ bool shared_memory_close() {
 
 	initialized = false;
 	return true;
+}
+
+int32_t read_property(property_t prop)
+{
+	int32_t value = 0;
+	if (prop.read_ptr != NULL) {
+		value = ((*prop.read_ptr)>>prop.bit_offset) & (uint32_t)(pow(2,prop.bit_size)-1);
+	}
+	else {
+		log_error("Property '%s' is not an input!", prop.name);
+	}
+	return value;
+}
+
+void write_property(property_t prop, int32_t value)
+{
+	if (prop.write_ptr != NULL) {
+		int32_t mask = (uint32_t)(pow(2, prop.bit_size) - 1) << prop.bit_offset;
+		int32_t umask = ~mask;
+		*prop.write_ptr &= value << prop.bit_offset | umask;
+	}
+	else {
+		log_error("Property '%s' is not an output!",prop.name);
+	}
 }

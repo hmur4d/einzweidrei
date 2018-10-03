@@ -79,6 +79,12 @@ int cameleon_main(int argc, char ** argv) {
 		return 1;
 	}
 
+
+	 //Init hardware
+
+	init_hardware();
+
+
 	if (!interrupts_init()) {
 		log_error("Unable to init interrupts, exiting");
 		return 1;

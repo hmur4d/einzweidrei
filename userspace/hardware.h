@@ -90,11 +90,12 @@
 
 
 
-void init_rx_dac(int spi_fd);
 
 void rx_dac_wr(int spi_fd, char cmd, char addr, short data);
 
 void write_rx_gain(int binaryGain);
+
+int init_rx_adc(int spi_fd);
 
 
 
