@@ -216,7 +216,7 @@ static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 	shared_memory_t* mem = shared_memory_acquire();
 	
 	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_once, start_once);
-	*mem->control = start_once;
+	write_property(mem->control, start_once);
 	shared_memory_release(mem);
 }
 
@@ -228,7 +228,7 @@ static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 	shared_memory_t* mem = shared_memory_acquire();
 	
 	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_repeat, start_repeat);
-	*mem->control = start_repeat;
+	write_property(mem->control, start_repeat);
 	shared_memory_release(mem);
 }
 
@@ -239,7 +239,7 @@ static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const vo
 
 	shared_memory_t* mem = shared_memory_acquire();
 	log_info("writing stop counting: 0x%x <- 0x%x (%d)", mem->control, stop_reset, stop_reset);
-	*mem->control = stop_reset;
+	write_property(mem->control, stop_reset);
 	shared_memory_release(mem);
 }
 
