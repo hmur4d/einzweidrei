@@ -243,6 +243,7 @@ void dds_wr_n_ver(int* ioupdate_ptr, int spi_fd, int add, int wr_data) {
 }
 
 void delay(void) {
+	
 	for (int j = 0; j < 500; j++);
 }
 

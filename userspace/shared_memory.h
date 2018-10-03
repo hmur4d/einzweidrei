@@ -31,6 +31,9 @@ int* tx_att_ptr;
 //Used to expose typed memory blocks
 typedef struct {
 
+	property_t lock_sweep_on_off;
+	property_t lock_sequence_on_off;
+	property_t lock_on_off;
 	property_t control;
 	property_t dds_sel;
 	property_t dds_ioupdate;

@@ -12,7 +12,7 @@ static shared_memory_t sharedmem;
 static bool shared_memory_munmap_and_close() {
 	log_debug("Cleaning up mmapped memory");
 
-	if (sharedmem.control != MAP_FAILED && munmap(sharedmem.control, CONTROL_INTERFACE_SPAN) != 0) {
+	if (sharedmem.lwbridge != MAP_FAILED && munmap(sharedmem.lwbridge, CONTROL_INTERFACE_SPAN) != 0) {
 		log_error_errno("Unable to munmap CONTROL_INTERFACE (hps2fpga lightweight bridge)");
 		return false;
 	}
@@ -103,6 +103,27 @@ bool shared_memory_init(const char* memory_file) {
 		.bit_offset = 0,
 		.name = "tx_att",
 	};
+	sharedmem.lock_sweep_on_off = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16376,
+		.bit_size = 1,
+		.bit_offset = 0,
+		.name = "lock_sweep",
+	};
+	sharedmem.lock_on_off = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16377,
+		.bit_size = 1,
+		.bit_offset = 0,
+		.name = "lock_on",
+	};
+	sharedmem.lock_sequence_on_off = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16378,
+		.bit_size = 1,
+		.bit_offset = 0,
+		.name = "lock_sequence",
+	};
 
 
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
@@ -177,6 +198,7 @@ int32_t read_property(property_t prop)
 	int32_t value = 0;
 	if (prop.read_ptr != NULL) {
 		value = ((*prop.read_ptr)>>prop.bit_offset) & (uint32_t)(pow(2,prop.bit_size)-1);
+		log_info("Read property : %s = %d", prop.name, value);
 	}
 	else {
 		log_error("Property '%s' is not an input!", prop.name);
@@ -187,9 +209,11 @@ int32_t read_property(property_t prop)
 void write_property(property_t prop, int32_t value)
 {
 	if (prop.write_ptr != NULL) {
-		int32_t mask = (uint32_t)(pow(2, prop.bit_size) - 1) << prop.bit_offset;
-		int32_t umask = ~mask;
+		
+		uint32_t mask = (uint32_t)(pow(2, prop.bit_size) - 1) << prop.bit_offset;
+		uint32_t umask = ~mask;
 		*prop.write_ptr &= value << prop.bit_offset | umask;
+		log_info("Write property : %s = %d", prop.name, value);
 	}
 	else {
 		log_error("Property '%s' is not an output!",prop.name);

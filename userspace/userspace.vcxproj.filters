@@ -21,6 +21,10 @@
     <ClCompile Include="module_loader.c" />
     <ClCompile Include="sequence_params.c" />
     <ClCompile Include="hardware.c" />
+    <ClCompile Include="udp_broadcaster.c" />
+    <ClCompile Include="hw_transmitter.c" />
+    <ClCompile Include="hw_gradient.c" />
+    <ClCompile Include="hw_receiver.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />
@@ -54,6 +58,11 @@
     <ClInclude Include="module_loader.h" />
     <ClInclude Include="sequence_params.h" />
     <ClInclude Include="hardware.h" />
+    <ClInclude Include="udp_broadcaster.h" />
+    <ClInclude Include="Header.h" />
+    <ClInclude Include="hw_transmitter.h" />
+    <ClInclude Include="hw_gradient.h" />
+    <ClInclude Include="hw_receiver.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

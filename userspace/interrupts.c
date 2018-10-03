@@ -45,10 +45,12 @@ static bool failure(uint8_t code) {
 	log_error("Received FAILURE interrupt, code=0x%x", code);
 
 	//stop counter
+	/*
 	uint32_t stop_reset = 4;
 	shared_memory_t* mem = shared_memory_acquire();
 	*mem->control = stop_reset;
 	shared_memory_release(mem);
+	*/
 
 	message_t* message = create_message(MSG_ACQU_CORRUPTED);
 	if (message == NULL) {

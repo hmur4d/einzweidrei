@@ -96,6 +96,10 @@
     <ClInclude Include="generated\hps_arm_a9_1.h" />
     <ClInclude Include="generated\hps_bridges.h" />
     <ClInclude Include="hardware.h" />
+    <ClInclude Include="Header.h" />
+    <ClInclude Include="hw_gradient.h" />
+    <ClInclude Include="hw_transmitter.h" />
+    <ClInclude Include="hw_receiver.h" />
     <ClInclude Include="interrupts.h" />
     <ClInclude Include="interrupt_reader.h" />
     <ClInclude Include="interrupt_handlers.h" />
@@ -109,6 +113,7 @@
     <ClInclude Include="sequence_params.h" />
     <ClInclude Include="shared_memory.h" />
     <ClInclude Include="std_includes.h" />
+    <ClInclude Include="udp_broadcaster.h" />
     <ClInclude Include="workqueue.h" />
   </ItemGroup>
   <ItemGroup>
@@ -118,6 +123,9 @@
     <ClCompile Include="command_handlers.c" />
     <ClCompile Include="config.c" />
     <ClCompile Include="hardware.c" />
+    <ClCompile Include="hw_gradient.c" />
+    <ClCompile Include="hw_transmitter.c" />
+    <ClCompile Include="hw_receiver.c" />
     <ClCompile Include="interrupts.c" />
     <ClCompile Include="interrupt_reader.c" />
     <ClCompile Include="interrupt_handlers.c" />
@@ -131,6 +139,7 @@
     <ClCompile Include="sequence_params.c" />
     <ClCompile Include="shared_memory.c" />
     <ClCompile Include="test.c" />
+    <ClCompile Include="udp_broadcaster.c" />
     <ClCompile Include="workqueue.c" />
   </ItemGroup>
   <ItemGroup>
