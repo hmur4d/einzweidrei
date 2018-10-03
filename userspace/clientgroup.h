@@ -10,6 +10,9 @@ Groups all client sockets in one struct, to be able to close them all when one f
 
 //--
 
+
+
+
 //Initializes a client group. 
 //Must be done before calling any other function from this module.
 bool clientgroup_init();
@@ -22,6 +25,9 @@ bool clientgroup_set_command(clientsocket_t* client);
 bool clientgroup_set_sequencer(clientsocket_t* client);
 bool clientgroup_set_monitoring(clientsocket_t* client);
 bool clientgroup_set_lock(clientsocket_t* client);
+
+//getter
+bool clientgroup_is_connected();
 
 //Closes all sockets from this group. Don't destroy them nor reclaim any memory.
 void clientgroup_close_all();

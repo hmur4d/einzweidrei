@@ -15,6 +15,8 @@
 #include "commands.h"
 #include "monitoring.h"
 #include "sequence_params.h"
+#include "udp_broadcaster.h"
+#include "hardware.h"
 
 //-- network handlers
 
@@ -82,7 +84,7 @@ int cameleon_main(int argc, char ** argv) {
 
 	 //Init hardware
 
-	init_hardware();
+	hardware_init();
 
 
 	if (!interrupts_init()) {
@@ -124,6 +126,11 @@ int cameleon_main(int argc, char ** argv) {
 		log_error("Unable to init monitoring, exiting");
 		return 1;
 	}
+
+	if (!udp_broadcaster_start()) {
+		log_error("Unable to init udp, exiting");
+		return 1;
+	}
 			
 	serversocket_t commandserver;
 	if (!serversocket_listen(&commandserver, COMMAND_PORT, "command", accept_command_client)) {
@@ -157,6 +164,7 @@ int cameleon_main(int argc, char ** argv) {
 	//TODO call atexit() instead so everything is still cleared 
 	//even if init failed or if user kills the process
 	monitoring_stop();
+	udp_broadcaster_stop();
 	interrupt_reader_stop();
 	workqueue_stop();
 	interrupts_destroy();

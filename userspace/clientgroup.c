@@ -90,6 +90,10 @@ bool clientgroup_set_lock(clientsocket_t* client) {
 	return clientgroup_set_one(&group.lock, "lock", client);
 }
 
+bool clientgroup_is_connected() {
+	return group.command != NULL;
+}
+
 static void clientgroup_close_one(clientsocket_t* client) {
 	if (client != NULL && !client->closed) {
 		clientsocket_close(client);
