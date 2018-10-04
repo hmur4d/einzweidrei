@@ -1,4 +1,4 @@
-#include "interrupts.h"
+#include "sequencer_interrupts.h"
 #include "log.h"
 #include "../common/interrupt_codes.h"
 #include "interrupt_handlers.h"
@@ -151,7 +151,7 @@ static bool acquisition_full(uint8_t code) {
 
 //--
 
-bool interrupts_init() {
+bool sequencer_interrupts_init() {
 	log_debug("Creating interrupts mutex");
 	if (pthread_mutex_init(&client_mutex, NULL) != 0) {
 		log_error("Unable to init mutex");
@@ -162,13 +162,13 @@ bool interrupts_init() {
 	return true;
 }
 
-bool interrupts_destroy() {
+bool sequencer_interrupts_destroy() {
 	if (!initialized) {
 		log_warning("Trying to destroy interrupts, but interrupts are not initalized!");
 		return true;
 	}
 
-	interrupts_set_client(NULL);
+	sequencer_interrupts_set_client(NULL);
 
 	log_debug("Destroying interrupts mutex");
 	if (pthread_mutex_destroy(&client_mutex) != 0) {
@@ -180,7 +180,7 @@ bool interrupts_destroy() {
 	return true;
 }
 
-void interrupts_set_client(clientsocket_t* clientsocket) {
+void sequencer_interrupts_set_client(clientsocket_t* clientsocket) {
 	if (!initialized) {
 		log_error("Trying to set an interrupts client, but interrupts are not initalized!");
 		return;
@@ -192,7 +192,7 @@ void interrupts_set_client(clientsocket_t* clientsocket) {
 	pthread_mutex_unlock(&client_mutex);
 }
 
-bool register_all_interrupts() {
+bool register_sequencer_interrupts() {
 	bool success = true;
 	success &= register_interrupt_handler(INTERRUPT_FAILURE, failure);
 	success &= register_interrupt_handler(INTERRUPT_SCAN_DONE, scan_done);

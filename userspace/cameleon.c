@@ -9,7 +9,8 @@
 #include "workqueue.h"
 #include "interrupt_reader.h"
 #include "interrupt_handlers.h"
-#include "interrupts.h"
+#include "sequencer_interrupts.h"
+#include "lock_interrupts.h"
 #include "clientgroup.h"
 #include "command_handlers.h"
 #include "commands.h"
@@ -27,7 +28,7 @@ static void noop_message_consumer(clientsocket_t* client, message_t* message) {
 static void accept_command_client(clientsocket_t* client) {
 	log_info("Accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_command(client);
-	send_string(client, "Welcome to Cameleon4 command server!\n");
+	//send_string(client, "Welcome to Cameleon4 command server!\n");
 
 	consume_all_messages(client, call_command_handler);
 
@@ -37,25 +38,36 @@ static void accept_command_client(clientsocket_t* client) {
 static void accept_sequencer_client(clientsocket_t* client) {
 	log_info("Accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_sequencer(client);
-	send_string(client, "Welcome to Cameleon4 sequencer server!\n");
-	interrupts_set_client(client);
+	//send_string(client, "Welcome to Cameleon4 sequencer server!\n");
+	sequencer_interrupts_set_client(client);
 
 	consume_all_messages(client, noop_message_consumer);
 
 	clientgroup_close_all();
-	interrupts_set_client(NULL);
+	sequencer_interrupts_set_client(NULL);
 }
 
 static void accept_monitoring_client(clientsocket_t* client) {
 	log_info("Accepted client on %s:%d", client->server_name, client->server_port);
 	clientgroup_set_monitoring(client);
-	send_string(client, "Welcome to Cameleon4 monitoring server!\n");
+	//send_string(client, "Welcome to Cameleon4 monitoring server!\n");
 	monitoring_set_client(client);
 
 	consume_all_messages(client, noop_message_consumer);
 
 	clientgroup_close_all();
 	monitoring_set_client(NULL);
+}
+static void accept_lock_client(clientsocket_t* client) {
+	log_info("Accepted client on %s:%d", client->server_name, client->server_port);
+	clientgroup_set_lock(client);
+	//send_string(client, "Welcome to Cameleon4 lock server!\n");
+	lock_interrupts_set_client(client);
+
+	consume_all_messages(client, noop_message_consumer);
+
+	clientgroup_close_all();
+	lock_interrupts_set_client(NULL);
 }
 
 //--
@@ -87,13 +99,23 @@ int cameleon_main(int argc, char ** argv) {
 	//hardware_init();
 
 
-	if (!interrupts_init()) {
-		log_error("Unable to init interrupts, exiting");
+	if (!sequencer_interrupts_init()) {
+		log_error("Unable to init sequencer interrupts, exiting");
 		return 1;
 	}
 
-	if (!register_all_interrupts()) {
-		log_error("Error while registering interrupts, exiting");
+	if (!register_sequencer_interrupts()) {
+		log_error("Error while registering sequencer interrupts, exiting");
+		return 1;
+	}
+
+	if (!lock_interrupts_init()) {
+		log_error("Unable to init lock interrupts, exiting");
+		return 1;
+	}
+
+	if (!register_lock_interrupts()) {
+		log_error("Error while registering lock interrupts, exiting");
 		return 1;
 	}
 
@@ -150,6 +172,12 @@ int cameleon_main(int argc, char ** argv) {
 		return 1;
 	}
 
+	serversocket_t lockserver;
+	if (!serversocket_listen(&lockserver, LOCK_PORT, "lock", accept_lock_client)) {
+		log_error("Unable to init lock server, exiting");
+		return 1;
+	}
+
 	log_info("Cameleon is ready!");
 
 	serversocket_wait(&monitoringserver);
@@ -167,7 +195,8 @@ int cameleon_main(int argc, char ** argv) {
 	udp_broadcaster_stop();
 	interrupt_reader_stop();
 	workqueue_stop();
-	interrupts_destroy();
+	sequencer_interrupts_destroy();
+	lock_interrupts_destroy();
 	clientgroup_destroy();
 		
 	destroy_command_handlers();

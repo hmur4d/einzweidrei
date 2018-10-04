@@ -16,5 +16,8 @@
 #define INTERRUPT_ACQUISITION_CORRUPTED       0x9	
 #define INTERRUPT_TIME_TO_UPDATE              0xA
 
+#define INTERRUPT_LOCK_ACQUISITION_HALF_FULL       0xB	
+#define INTERRUPT_LOCK_ACQUISITION_FULL            0xC	
+
 #endif
 

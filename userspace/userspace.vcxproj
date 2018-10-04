@@ -99,9 +99,10 @@
     <ClInclude Include="hw_gradient.h" />
     <ClInclude Include="hw_transmitter.h" />
     <ClInclude Include="hw_receiver.h" />
-    <ClInclude Include="interrupts.h" />
+    <ClInclude Include="sequencer_interrupts.h" />
     <ClInclude Include="interrupt_reader.h" />
     <ClInclude Include="interrupt_handlers.h" />
+    <ClInclude Include="lock_interrupts.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="memory_map.h" />
     <ClInclude Include="module_loader.h" />
@@ -125,9 +126,10 @@
     <ClCompile Include="hw_gradient.c" />
     <ClCompile Include="hw_transmitter.c" />
     <ClCompile Include="hw_receiver.c" />
-    <ClCompile Include="interrupts.c" />
+    <ClCompile Include="sequencer_interrupts.c" />
     <ClCompile Include="interrupt_reader.c" />
     <ClCompile Include="interrupt_handlers.c" />
+    <ClCompile Include="lock_interrupts.c" />
     <ClCompile Include="log.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="module_loader.c" />
