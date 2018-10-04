@@ -60,6 +60,8 @@ static void serversocket_accept_blocking(serversocket_t* serversocket) {
 		log_info("Accept callback ended, letting the client socket opened on %s:%d, closing it.", client.server_name, client.server_port);
 		clientsocket_close(&client);
 	}
+
+	clientsocket_destroy(&client);
 }
 
 static void* serversocket_accept_thread_routine(void* data) {
