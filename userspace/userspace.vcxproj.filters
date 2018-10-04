@@ -59,7 +59,6 @@
     <ClInclude Include="sequence_params.h" />
     <ClInclude Include="hardware.h" />
     <ClInclude Include="udp_broadcaster.h" />
-    <ClInclude Include="Header.h" />
     <ClInclude Include="hw_transmitter.h" />
     <ClInclude Include="hw_gradient.h" />
     <ClInclude Include="hw_receiver.h" />
