@@ -15,7 +15,7 @@ endif
 
 TARGET := cameleon
 CFLAGS += -static -Wall -Werror
-LDFLAGS += -pthread -Wall -Werror
+LDFLAGS += -pthread -lm -Wall -Werror
 
 C_SRCS := $(wildcard *.c)
 C_OBJS := ${C_SRCS:.c=.o}

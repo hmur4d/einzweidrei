@@ -26,5 +26,6 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <sys/types.h>
 #include <netinet/in.h> 
 #include <arpa/inet.h>
+#include <math.h>
 
 #endif

@@ -1,6 +1,5 @@
 #include "shared_memory.h"
 #include "log.h"
-#include "math.h"
 
 static bool initialized = false;
 static pthread_mutex_t mutex;
