@@ -23,7 +23,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C
-		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	
+		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// à voir le cas ou monitoring temperature du cameleon et ecriture des threshold
 		return;
 	}
 
@@ -38,7 +38,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		return;
 	}
 
-	log_debug("writing rams: 0x%x - %d bytes", ram.offset_bytes, ram.span_bytes);
+	log_info("writing rams: id=%d 0x%x - %d bytes - value=%d", ram.id, ram.offset_bytes, ram.span_bytes,*((uint32_t*)body));
 	shared_memory_t* mem = shared_memory_acquire();
 	memcpy(mem->rams + ram.offset_int32, body, ram.span_bytes);
 	shared_memory_release(mem);

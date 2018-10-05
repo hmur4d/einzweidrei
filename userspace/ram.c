@@ -10,16 +10,24 @@ bool ram_find(unsigned int ram_id, int span_bytes, ram_descriptor_t* ram) {
 	ram->span_bytes = span_bytes;
 	ram->span_int32 = span_bytes / sizeof(int32_t);
 
-	//TODO rams pour composant Lock
+	//rams pour composant Lock
+	if (ram_id >= RAM_REGISTERS_LOCK_SELECTED && ram_id<RAM_REGISTERS_LOCK_SELECTED + RAM_REGISTERS_LOCK_NUMBER_OF_REGISTERS) {
+		ram->is_register = true;
+		ram->register_id = ram_id - RAM_REGISTERS_LOCK_SELECTED;
+		ram->offset_bytes = RAM_REGISTERS_OFFSET + ram->register_id * RAM_REGISTERS_OFFSET_STEP;
+		ram->offset_int32 = ram->offset_bytes / sizeof(int32_t);
+		return true;
+	}
 
 	// registers: address is offsetted by RAM_REGISTERS_SELECTED
-	if (ram_id >= RAM_REGISTERS_SELECTED && ram_id < RAM_REGISTERS_SELECTED + RAM_REGISTERS_LOCK_SELECTED) {
+	if (ram_id >= RAM_REGISTERS_SELECTED && ram_id < RAM_REGISTERS_SELECTED + RAM_REGISTERS_NUMBER_OF_REGISTERS) {
 		ram->is_register = true;
 		ram->register_id = ram_id - RAM_REGISTERS_SELECTED;
 		ram->offset_bytes = RAM_REGISTERS_OFFSET + ram->register_id * RAM_REGISTERS_OFFSET_STEP;
 		ram->offset_int32 = ram->offset_bytes / sizeof(int32_t);
 		return true;
 	}
+
 
 	//rams: address is the ram id, we need to translate it
 	//normal case, ram before registers

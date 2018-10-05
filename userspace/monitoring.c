@@ -19,7 +19,7 @@ static void send_monitoring_message() {
 		return;
 	}
 
-	int32_t id = 0;
+	int32_t id = 1;
 	
 	//TODO find real values
 	int32_t volt_status = 0;

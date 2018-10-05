@@ -2,6 +2,7 @@
 #include "log.h"
 
 static void clientsocket_init(clientsocket_t* clientsocket, serversocket_t* serversocket);
+static void clientsocket_destroy(clientsocket_t * clientsocket);
 
 //-- server sockets
 
@@ -152,7 +153,8 @@ void clientsocket_close(clientsocket_t* clientsocket) {
 	log_info("Client socket closed: %s:%d", clientsocket->server_name, clientsocket->server_port);
 }
 
-void clientsocket_destroy(clientsocket_t* clientsocket) {
+static void clientsocket_destroy(clientsocket_t* clientsocket) {
+	/* commenté car l'appel de free fait planter...à voir
 	log_debug("Destroying client socket: %s:%d", clientsocket->server_name, clientsocket->server_port);
 	if (!clientsocket->closed) {
 		log_warning("Trying to destroy an opened client socket, closing it first");
@@ -160,6 +162,7 @@ void clientsocket_destroy(clientsocket_t* clientsocket) {
 	}
 
 	free(clientsocket);
+	*/
 }
 
 

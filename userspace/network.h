@@ -50,6 +50,8 @@ void serversocket_close(serversocket_t* serversocket);
 //This is needed because a socket could be closed while trying to receive data in a loop. 
 void clientsocket_close(clientsocket_t* clientsocket);
 
+
+
 //-- basic IO
 
 //Sends "len" bytes, retrying in a loop until all bytes are sent or the socket fails.
