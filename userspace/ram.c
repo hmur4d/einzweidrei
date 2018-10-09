@@ -14,7 +14,7 @@ bool ram_find(unsigned int ram_id, int span_bytes, ram_descriptor_t* ram) {
 	if (ram_id >= RAM_REGISTERS_LOCK_SELECTED && ram_id<RAM_REGISTERS_LOCK_SELECTED + RAM_REGISTERS_LOCK_NUMBER_OF_REGISTERS) {
 		ram->is_register = true;
 		ram->register_id = ram_id - RAM_REGISTERS_LOCK_SELECTED;
-		ram->offset_bytes = RAM_REGISTERS_OFFSET + ram->register_id * RAM_REGISTERS_OFFSET_STEP;
+		ram->offset_bytes = RAM_REGISTERS_LOCK_OFFSET + ram->register_id * RAM_REGISTERS_OFFSET_STEP;
 		ram->offset_int32 = ram->offset_bytes / sizeof(int32_t);
 		return true;
 	}

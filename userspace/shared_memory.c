@@ -224,7 +224,8 @@ void write_property(property_t prop, int32_t value)
 		
 		uint32_t mask = (uint32_t)(pow(2, prop.bit_size) - 1) << prop.bit_offset;
 		uint32_t umask = ~mask;
-		*prop.write_ptr &= value << prop.bit_offset | umask;
+		int previous = (*prop.write_ptr) & umask;
+		*prop.write_ptr = previous | ((value << prop.bit_offset) & mask);
 		log_info("Write property : %s = %d", prop.name, value);
 	}
 	else {
