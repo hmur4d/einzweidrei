@@ -3,32 +3,17 @@
 #include "../common/interrupt_codes.h"
 
 //macros to declare associations between GPIO and interrupt code in a readable list
-
-// calcule GPIO :
-// GPIO=(GPIO_bank-1)*32+GPIO_index
-// 480=(16-1)*32+0
-#define GPIO_BANK 16
-#define _gpio(code) {#code, (uint8_t)code, (code-1)+(GPIO_BANK-1)*32, -EINVAL}
+#define _gpio(code, gpio) {#code, (uint8_t)code, GPIO_BASE+gpio, -EINVAL}
 #define _gpio_list_end {NULL, -EINVAL, -EINVAL, -EINVAL}
 
 //associations between GPIO and interrupt codes
-
-
-
 static gpio_irq_t list[] = {
-	_gpio(INTERRUPT_SCAN_DONE),
-	_gpio(INTERRUPT_SEQUENCE_DONE),
-	_gpio(INTERRUPT_OVERFLOW),
-	_gpio(INTERRUPT_SETUP),
-	_gpio(INTERRUPT_DUMMYSCAN_DONE),
-	_gpio(INTERRUPT_PRESCAN_DONE),
-	_gpio(INTERRUPT_ACQUISITION_CORRUPTED),
-	_gpio(INTERRUPT_TIME_TO_UPDATE),
-	_gpio(INTERRUPT_ACQUISITION_HALF_FULL), // ori 486
-	_gpio(INTERRUPT_ACQUISITION_FULL), // ori 487
-
-	_gpio(INTERRUPT_LOCK_ACQUISITION_HALF_FULL), // 10 
-	_gpio(INTERRUPT_LOCK_ACQUISITION_FULL), // 11
+	_gpio(INTERRUPT_SCAN_DONE,				0),
+	_gpio(INTERRUPT_SEQUENCE_DONE,			1),
+	_gpio(INTERRUPT_ACQUISITION_HALF_FULL,	8),
+	_gpio(INTERRUPT_ACQUISITION_FULL,		9),
+	_gpio(INTERRUPT_LOCK_ACQUISITION_FULL,	10),
+	_gpio(INTERRUPT_LOCK_ACQUISITION_HALF_FULL,	11),
 	_gpio_list_end
 };
 

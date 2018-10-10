@@ -1,6 +1,8 @@
 #ifndef _GPIO_IRQ_
 #define _GPIO_IRQ_
 
+#define GPIO_BASE 480
+
 /*
 Association between GPIO, IRQ and interrupt code.
 The list of interrupts and their associated GPIO is declared in gpio_irq.c

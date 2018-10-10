@@ -55,7 +55,7 @@ static void send_monitoring_message() {
 	offset = copy_to_body(body, offset, temperature, temperature_count);
 	//TODO pressure & other?
 
-	log_debug("Sending monitoring message");
+	log_info("Sending monitoring message");
 	send_message(client, &header, body);
 }
 
