@@ -40,7 +40,7 @@ static bool send_async(message_t* message) {
 
 
 static bool send_acq_buffer(int32_t* from, int size) {
-	int nbytes = size * sizeof(int32_t);
+	int nbytes = size*sizeof(int32_t);
 	int32_t* buffer = malloc(nbytes);
 	if (buffer == NULL) {
 		log_error_errno("Unable to malloc buffer of %d bytes", nbytes);
@@ -74,20 +74,20 @@ static bool send_acq_buffer(int32_t* from, int size) {
 
 static bool lock_acquisition_half_full(uint8_t code) {
 	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
-	int size = LOCK_RX_INTERFACE_SPAN/2;
+	int word_count = 2048/sizeof(int32_t);// LOCK_RX_INTERFACE_SPAN / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	bool result = send_acq_buffer(mem->lock_rxdata, size);
+	bool result = send_acq_buffer(mem->lock_rxdata, word_count);
 	shared_memory_release(mem);
 	return result;
 }
 
 static bool lock_acquisition_full(uint8_t code) {
 	log_info("Received lock_acquisition_full interrupt, code=0x%x", code);
-	int size = LOCK_RX_INTERFACE_SPAN/2;
+	int word_count = 2048 / sizeof(int32_t);// LOCK_RX_INTERFACE_SPAN / 2;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	bool result = send_acq_buffer(mem->lock_rxdata + size, size);
+	bool result = send_acq_buffer(mem->lock_rxdata + word_count, word_count);
 	shared_memory_release(mem);
 	return result;
 }
