@@ -39,7 +39,7 @@ static bool send_async(message_t* message) {
 }
 
 
-static bool send_acq_buffer(int32_t* from, int size) {
+static bool send_acq_buffer(int32_t* from, int size,int isFull) {
 	int nbytes = size*sizeof(int32_t);
 	int32_t* buffer = malloc(nbytes);
 	if (buffer == NULL) {
@@ -65,7 +65,7 @@ static bool send_acq_buffer(int32_t* from, int size) {
 		return false;
 	}
 
-	message->header.param1 = 0; //address?
+	message->header.param1 = isFull; //address?
 	message->header.param2 = 0; //address?
 	message->header.param6 = 0; //last transfert time
 	return send_async(message);
@@ -74,20 +74,20 @@ static bool send_acq_buffer(int32_t* from, int size) {
 
 static bool lock_acquisition_half_full(uint8_t code) {
 	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
-	int word_count = 2048/sizeof(int32_t);// LOCK_RX_INTERFACE_SPAN / 2;
+	int word_count = 2048/sizeof(int32_t);
 
 	shared_memory_t* mem = shared_memory_acquire();
-	bool result = send_acq_buffer(mem->lock_rxdata, word_count);
+	bool result = send_acq_buffer(mem->lock_rxdata, word_count,0);
 	shared_memory_release(mem);
 	return result;
 }
 
 static bool lock_acquisition_full(uint8_t code) {
 	log_info("Received lock_acquisition_full interrupt, code=0x%x", code);
-	int word_count = 2048 / sizeof(int32_t);// LOCK_RX_INTERFACE_SPAN / 2;
+	int word_count = 2048 / sizeof(int32_t);
 
 	shared_memory_t* mem = shared_memory_acquire();
-	bool result = send_acq_buffer(mem->lock_rxdata + word_count, word_count);
+	bool result = send_acq_buffer(mem->lock_rxdata + word_count, word_count,1);
 	shared_memory_release(mem);
 	return result;
 }
