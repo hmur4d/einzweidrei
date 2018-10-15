@@ -7,6 +7,7 @@
 #include "memory_map.h"
 #include "sequence_params.h"
 #include "hardware.h"
+#include "lock_interrupts.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -67,16 +68,26 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		log_info("Ram.id==RAM_REGISTER_FIFO_INTERRUPT_SELECTED value=%d", value);
 		sequence_params_release(sequence_params);
 	}
-	if (ram.id == RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED) {
+	if (ram.id >= RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED && ram.id<=RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX3_SELECTED) {
 
-		sequence_params_t* sequence_params = sequence_params_acquire();
+		int rx_channel = ram.id - RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED;
+		
 		uint32_t value = *((uint32_t*)body);
-
-		sequence_params->rx_gain = value;
 		log_info("Ram.id==RAM_REGISTER_RX_GAIN rx gain =%d", value);
-		sequence_params_release(sequence_params);
+		hw_receiver_write_rx_gain(rx_channel,value);
 
-		hw_receiver_write_rx_gain(sequence_params->rx_gain);
+	}
+	if (ram.id == RAM_REGISTERS_LOCK_SELECTED + RAM_REGISTER_LOCK_GAIN_RX_SELECTED) {
+
+		uint32_t value = *((uint32_t*)body);
+		log_info("Ram.id==RAM_REGISTER_LOCK_RX_GAIN lock.gain =%d", value);
+		hw_receiver_write_rx_gain(LOCK_RX_CHANNEL,value);
+
+	}
+	if (ram.id == RAM_REGISTERS_LOCK_SELECTED + RAM_REGISTER_LOCK_POWER_SELECTED) {
+
+		uint32_t value = *((uint32_t*)body);
+		log_info("Ram.id==RAM_REGISTER_LOCK_POWER lock.power =%d", value);
 
 	}
 }

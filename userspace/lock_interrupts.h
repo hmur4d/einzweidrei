@@ -8,6 +8,8 @@
 
 #define MSG_LOCK_SCAN_DONE      0x30000 + 0x0
 
+#define LOCK_RX_CHANNEL 3
+
 //--
 
 //Initialize interrupts. 

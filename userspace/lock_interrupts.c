@@ -65,7 +65,7 @@ static bool send_acq_buffer(int32_t* from, int size,int isFull) {
 		return false;
 	}
 
-	message->header.param1 = isFull; //address?
+	message->header.param1 = isFull; 
 	message->header.param2 = 0; //address?
 	message->header.param6 = 0; //last transfert time
 	return send_async(message);
