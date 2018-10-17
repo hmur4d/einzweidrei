@@ -53,7 +53,7 @@ static bool send_acq_buffer(int32_t* from, int size,int isFull) {
 	memcpy(buffer, from, nbytes);
 	clock_gettime(CLOCK_MONOTONIC, &tend);
 
-	log_info("memcpy from 0x%x (%d) with %d bytes took %f ns",
+	log_debug("memcpy from 0x%x (%d) with %d bytes took %f ns",
 		from, from, nbytes,
 		((double)tend.tv_sec*sec_to_ns + (double)tend.tv_nsec) -
 		((double)tstart.tv_sec*sec_to_ns + (double)tstart.tv_nsec));
@@ -73,7 +73,7 @@ static bool send_acq_buffer(int32_t* from, int size,int isFull) {
 //-- lock interrupt function
 
 static bool lock_acquisition_half_full(uint8_t code) {
-	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
+	log_debug("Received acquisition_half_full interrupt, code=0x%x", code);
 	int word_count = 2048/sizeof(int32_t);
 
 	shared_memory_t* mem = shared_memory_acquire();
@@ -83,7 +83,7 @@ static bool lock_acquisition_half_full(uint8_t code) {
 }
 
 static bool lock_acquisition_full(uint8_t code) {
-	log_info("Received lock_acquisition_full interrupt, code=0x%x", code);
+	log_debug("Received lock_acquisition_full interrupt, code=0x%x", code);
 	int word_count = 2048 / sizeof(int32_t);
 
 	shared_memory_t* mem = shared_memory_acquire();

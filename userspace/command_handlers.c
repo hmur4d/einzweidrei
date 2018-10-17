@@ -68,9 +68,9 @@ void call_command_handler(clientsocket_t* client, message_t* message) {
 		log_error("Unknown command: 0x%x, ignoring", message->header.cmd);
 		return;
 	}
-	if (message->header.cmd != 0x7) {
-		log_info("Calling handler for command: 0x%x (%s)", message->header.cmd, node->name);
-	}
+	//if (message->header.cmd != 0x7) {
+		//log_info("Calling handler for command: 0x%x (%s)", message->header.cmd, node->name);
+	//}
 	node->handler(client, &message->header, message->body);
 }
 

@@ -39,7 +39,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		return;
 	}
 
-	log_info("writing rams: id=%d 0x%x - %d bytes - value=%d", ram.id, ram.offset_bytes, ram.span_bytes,*((uint32_t*)body));
+	log_debug("writing rams: id=%d 0x%x - %d bytes - value=%d", ram.id, ram.offset_bytes, ram.span_bytes,*((uint32_t*)body));
 	shared_memory_t* mem = shared_memory_acquire();
 	memcpy(mem->rams + ram.offset_int32, body, ram.span_bytes);
 	shared_memory_release(mem);
@@ -65,22 +65,21 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		
 		sequence_params->number_half_full = value & 0xFFFF;
 		sequence_params->number_full = (value >> 16) & 0xFFFF;
-		log_info("Ram.id==RAM_REGISTER_FIFO_INTERRUPT_SELECTED value=%d", value);
+		log_info("Ram.id==RAM_REGISTER_FIFO_INTERRUPT_SELECTED half_full=%d, full=%d", sequence_params->number_half_full,sequence_params->number_full);
 		sequence_params_release(sequence_params);
 	}
 	if (ram.id >= RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED && ram.id<=RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX3_SELECTED) {
 
-		int rx_channel = ram.id - RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED;
+		int rx_channel = ram.id - (RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED);
 		
 		uint32_t value = *((uint32_t*)body);
-		log_info("Ram.id==RAM_REGISTER_RX_GAIN rx gain =%d", value);
 		hw_receiver_write_rx_gain(rx_channel,value);
 
 	}
 	if (ram.id == RAM_REGISTERS_LOCK_SELECTED + RAM_REGISTER_LOCK_GAIN_RX_SELECTED) {
 
 		uint32_t value = *((uint32_t*)body);
-		log_info("Ram.id==RAM_REGISTER_LOCK_RX_GAIN lock.gain =%d", value);
+		log_info("Ram.id==RAM_REGISTER_LOCK_RX_GAIN");
 		hw_receiver_write_rx_gain(LOCK_RX_CHANNEL,value);
 
 	}
@@ -88,6 +87,18 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 		uint32_t value = *((uint32_t*)body);
 		log_info("Ram.id==RAM_REGISTER_LOCK_POWER lock.power =%d", value);
+
+	}
+	if (ram.id == RAM_REGISTERS_SELECTED + 0) {
+
+		uint32_t value = *((uint32_t*)body);
+		log_info("Ram.id==REG IF FREQ =0x%.2X", value);
+
+	}
+	if (ram.id == RAM_REGISTERS_SELECTED + RAM_REGISTER_DECFACTOR_SELECTED) {
+
+		uint32_t value = *((uint32_t*)body);
+		log_info("Ram.id==REG DECFACTOR =0x%.2X", value);
 
 	}
 }

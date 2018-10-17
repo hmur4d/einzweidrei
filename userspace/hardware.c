@@ -76,9 +76,9 @@ void spi_send(spi_t spi, char * tx_buff, char * rx_buff)
 
 void hardware_init() {
 
-	hw_transmitter_init();
+	//hw_transmitter_init();
 	hw_receiver_init();
-	hw_gradient_init();
+	//hw_gradient_init();
 
 
 }

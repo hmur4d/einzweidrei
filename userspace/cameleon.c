@@ -96,7 +96,7 @@ int cameleon_main(int argc, char ** argv) {
 
 	 //Init hardware
 
-	//hardware_init();
+	hardware_init();
 
 
 	if (!sequencer_interrupts_init()) {

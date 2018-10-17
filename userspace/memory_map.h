@@ -64,6 +64,7 @@ Memory map, copied as-is from CameleonNIOS
 #define RAM_REGISTER_GAIN_RX5_SELECTED                  76
 #define RAM_REGISTER_GAIN_RX6_SELECTED                  77
 #define RAM_REGISTER_GAIN_RX7_SELECTED                  78
+#define RAM_REGISTER_DECFACTOR_SELECTED			        25
 
 #define RAM_REGISTER_GRADIENT_X_DC_SELECTED             44
 #define RAM_REGISTER_GRADIENT_Y_DC_SELECTED             55

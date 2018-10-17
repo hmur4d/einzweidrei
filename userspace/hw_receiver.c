@@ -33,6 +33,7 @@ static void rx_adc_write(char addr, short data) {
 
 
 static int init_rx_adc(shared_memory_t * mem) {
+	
 	rx_adc_write( 0x00, 0x1);
 	rx_adc_write( 0x46, 0x880C);
 	rx_adc_write( 0x45, 0x2);
@@ -94,6 +95,7 @@ static int init_rx_adc(shared_memory_t * mem) {
 void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 	char dac_addr_list[] = {ADDR_CMD_DAC_A ,ADDR_CMD_DAC_B,ADDR_CMD_DAC_C,ADDR_CMD_DAC_D };
 	spi_open(&spi_rx_dac);
+	log_info("hw_receiver_write_rx_gain rx[%d].gain=%d", rx_channel, binary_gain);
 	rx_dac_write( CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, dac_addr_list[rx_channel], binary_gain);
 	spi_close(&spi_rx_dac);
 }
