@@ -126,7 +126,7 @@ void hw_receiver_init() {
 	spi_open(&spi_rx_dac);
 
 	shared_memory_t * mem = shared_memory_acquire();
-	init_rx_adc(mem);
+	//init_rx_adc(mem);
 	shared_memory_release(mem);
 	
 	init_rx_dac();
