@@ -51,7 +51,7 @@ Memory map, copied as-is from CameleonNIOS
 #define RAM_REGISTERS_OFFSET_STEP                       0x00000004
 #define RAM_REGISTERS_OFFSET                            (RAM_OFFSET_STEP * RAM_INTERFACE_NUMBER_OF_RAMS)
 #define RAM_REGISTERS_SELECTED                          100
-#define RAM_REGISTERS_NUMBER_OF_REGISTERS               134
+#define RAM_REGISTERS_NUMBER_OF_REGISTERS               189
 
 
 #define RAM_REGISTER_RX_ENABLED_SELECTED                5
