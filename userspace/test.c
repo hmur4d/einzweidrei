@@ -246,6 +246,64 @@ void delay(void) {
 	for (int j = 0; j < 50; j++);
 }
 
+void all_dds_dac_cal(int* ioupdate_ptr, int* dds_sel_ptr, int spi_fd) {
+	for (int i = 1; i <= 4; i++) {
+		*dds_sel_ptr = i;
+		usleep(2);
+
+		//set DAC_CAL 1 reg 0x03
+		dds_wr_n_upd(ioupdate_ptr,spi_fd, 0x03, 0x01052120);
+		//DAC_CAL  finishes after 16 cycles of SYNC, so 12.8ns * 16 = 205ns 
+		usleep(2);
+		//set DAC_CAL 0
+		dds_wr_n_upd(ioupdate_ptr,spi_fd, 0x03, 0x00052120);
+	}
+}
+
+void all_dds_cal_w_sync(int* ioupdate_ptr, int* dds_sel_ptr, int spi_fd) {
+		*dds_sel_ptr = 1;
+		usleep(2);
+		//set CAL_W_SYNC=1 and SYNC IN DELAY
+		dds_wr_n_upd(ioupdate_ptr, spi_fd, 0x1B, 0x00000840);
+		*dds_sel_ptr = 2;
+		usleep(2);
+		//set CAL_W_SYNC=1 and SYNC IN DELAY
+		dds_wr_n_upd(ioupdate_ptr, spi_fd, 0x1B, 0x00000840);
+		*dds_sel_ptr = 3;
+		usleep(2);
+		//set CAL_W_SYNC=1 and SYNC IN DELAY
+		dds_wr_n_upd(ioupdate_ptr, spi_fd, 0x1B, 0x00000840);
+		*dds_sel_ptr = 4;
+		usleep(2);
+		//set CAL_W_SYNC=1 and SYNC IN DELAY
+		dds_wr_n_upd(ioupdate_ptr, spi_fd, 0x1B, 0x00000840);
+
+
+}
+
+void all_dds_parallel_config(int* ioupdate_ptr, int* dds_sel_ptr, int spi_fd) {
+	for (int i = 1; i <= 3; i++) {
+		*dds_sel_ptr = i;
+		usleep(2);
+		//set 3wire, OSK enable, sine output enable
+		dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x00, 0x0001010A);
+		//set SYNC_CLK enable, Matched latency, parallel_data_port_enable
+		dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x01, 0x00408B00);
+		printf("DDS %d configured \n", i); 
+	}
+
+	*dds_sel_ptr =4;
+	usleep(2);
+	//set 3wire, OSK enable, sine output enable
+	dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x00, 0x0001010A);
+	//set SYNC_CLK enable, Matched latency, parallel_data_port_enable
+	dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x01, 0x00808800);
+
+	dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x13, 0x8ce703af);
+	dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x14, 0xffff0000);
+
+	printf("DDS %d configured \n", 4);
+}
 
 void sync_dds(int* ioupdate_ptr, int* dds_sel_ptr, int spi_fd) {
 	int i;
@@ -325,6 +383,7 @@ void sync_dds(int* ioupdate_ptr, int* dds_sel_ptr, int spi_fd) {
 	}
 	*/
 
+	/*
 	printf("sync dds : cal with sync dds %d \n", i);
 	*dds_sel_ptr = 1;
 	delay();
@@ -348,7 +407,7 @@ void sync_dds(int* ioupdate_ptr, int* dds_sel_ptr, int spi_fd) {
 	//set 3 wire SPI MSBfirst, vco cal disable
 	dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x00, 0x0101010A);
 	dds_wr_n_upd(ioupdate_ptr, spi_fd, 0x1B, 0x00000840);
-
+	*/
 
 
 
@@ -492,7 +551,7 @@ int test_main(int argc, char ** argv) {
 	int spi_adc_fd;
 	int spi_rx_dac_fd;
 	int spi_wm1_fd;
-	//int rd_data = 0;
+	int rd_data = 0;
 	int* lwbus_ptr;
 	int* ioupdate_ptr;
 	int* dds_sel_ptr;
@@ -521,8 +580,10 @@ int test_main(int argc, char ** argv) {
 
 	*rx_bitsleep_rst_ptr = 0;
 
+	
 	init_rx_dac(spi_rx_dac_fd);
 
+	
 	write_wm8804(spi_wm1_fd, 0x1E, 2); //power up
 	write_wm8804(spi_wm1_fd, 0x1B, 2);
 	write_wm8804(spi_wm1_fd, 0x12, 6); // not audio no copyright
@@ -530,7 +591,7 @@ int test_main(int argc, char ** argv) {
 	write_wm8804(spi_wm1_fd, 0x08, 0x38); // for the RX : no hold
 	wm_rd = read_wm8804(spi_wm1_fd, 0);
 	printf("read from wm : %x \n", wm_rd);
-
+	
 
 	//printf("percent gain rx? \n");
 	//scanf("%d", &i);
@@ -539,14 +600,32 @@ int test_main(int argc, char ** argv) {
 	rx_dac_wr(spi_rx_dac_fd, CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, ADDR_CMD_DAC_A, (int)f);
 	rx_dac_wr(spi_rx_dac_fd, CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, ADDR_CMD_DAC_B, (int)f);
 	rx_dac_wr(spi_rx_dac_fd, CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, ADDR_CMD_DAC_C, (int)f);
-
+	
 
 	*lock_control_ptr = 0;  //lock deactivaeted
-							//reset dds
+	 
+	//-----------------------------------------------//
+	printf("DDS SYNCING start \n");
+	//reset dds
 	*rx_bitsleep_rst_ptr =1 << 8;
-	delay();
+	usleep(2); 
 	*rx_bitsleep_rst_ptr = 0;
-	sync_dds(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
+
+	//DAC CAL
+	all_dds_dac_cal(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
+	//CAL_W_SYNC
+	all_dds_cal_w_sync(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
+	//DAC CAL
+	all_dds_dac_cal(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
+	//normal config
+	all_dds_parallel_config(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
+	//end HPS control on DDS
+	*dds_sel_ptr = 0;
+
+	printf("DDS SYNCING end \n");
+	//-----------------------------------------------//
+	
+	//sync_dds(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
 
 	rx_adc_write(spi_adc_fd, 0x00, 0x1);
 	//16bits 1 waire
@@ -565,9 +644,10 @@ int test_main(int argc, char ** argv) {
 
 	for (i = 0; i <= 7; i++) {
 		while (1) {
+			usleep(1);
 			if ((*rx_bit_aligned_ptr & 1<<i) == 1 << i) break;
 			*rx_bitsleep_ctr_ptr = 1 << i;
-			delay();
+			usleep(1);
 			*rx_bitsleep_ctr_ptr = 0;
 			printf("current aligned %d, %d \n",i, *rx_bit_aligned_ptr);
 		}
@@ -585,32 +665,34 @@ int test_main(int argc, char ** argv) {
 	//rx_adc_write(spi_adc_fd, 0x14, 0x000F); //lfns
 	//sync_dds(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
 
-	*dds_sel_ptr = 1;
-	i = 60000;
-	f = i * 1.717986918 * 1000;
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00808800); //match latency
-																//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0B, 0x228f5c28);
-																//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0C, 0x0fff0000);
+	/*
+		*dds_sel_ptr = 1;
+		i = 60000;
+		f = i * 1.717986918 * 1000;
+		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
+		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800); //match latency
+		//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0B, 0x1fffffff);
+		//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0C, 0x0fff0000);
 
-	*dds_sel_ptr = 2;
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00808800); //match latency
+		*dds_sel_ptr = 2;
+		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
+		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800); //match latency  0x00808800
 
-	*dds_sel_ptr = 3;
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00808800); //match latency dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800);
+		*dds_sel_ptr = 3;
+		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
+		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800); //match latency dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800);
 
-	*dds_sel_ptr = 4;
-	i = 42949672;
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A); //osk enavle
-	dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00808800);
-	//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0B, i);
-	//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0C, 0x001ff0000);
+		*dds_sel_ptr = 4;
+		i = 42949672;
+		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A); //osk enavle
+		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00808800);
+		//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0B, i);
+		//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0C, 0x001ff0000);
 
-	//enable 
-	*dds_sel_ptr = 0;
-	//v3
+		//enable 
+		*dds_sel_ptr = 0;
+		//v3
+	*/
 
 	//rx_adc_write(spi_adc_fd, 0x25, 0x40);
 	//rx_adc_write(spi_adc_fd, 0x45, 0x2);
