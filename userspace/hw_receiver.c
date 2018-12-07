@@ -30,7 +30,24 @@ static void rx_adc_write(char addr, short data) {
 	spi_send(spi_rx_adc, tx_buff, rx_buff);
 }
 
+static void init_rx_mapping() {
 
+	//OUT1A	LSB_IN3
+	//OUT1B	MSB_IN3
+	//OUT2A	LSB_IN4
+	//OUT2B	MSB_IN4
+	//OUT3A	LSB_IN1
+	//OUT3B	MSB_IN1
+	//OUT4A	LSB_IN2
+	//OUT4B	MSB_IN2
+
+	//rx_adc_write(0x50, 0x8745);
+	//rx_adc_write(0x51, 0x8016);
+	//rx_adc_write(0x52, 0x8023);
+	rx_adc_write(0x50, 0x8654);
+	rx_adc_write(0x51, 0x8107);
+	rx_adc_write(0x52, 0x8032);
+}
 
 static int init_rx_adc(shared_memory_t * mem) {
 	
@@ -93,6 +110,7 @@ static int init_rx_adc(shared_memory_t * mem) {
 }
 
 void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
+
 	char dac_addr_list[] = {ADDR_CMD_DAC_A ,ADDR_CMD_DAC_B,ADDR_CMD_DAC_C,ADDR_CMD_DAC_D };
 	spi_open(&spi_rx_dac);
 	log_info("hw_receiver_write_rx_gain rx[%d].gain=%d", rx_channel, binary_gain);
@@ -127,6 +145,7 @@ void hw_receiver_init() {
 
 	shared_memory_t * mem = shared_memory_acquire();
 	//init_rx_adc(mem);
+	init_rx_mapping();
 	shared_memory_release(mem);
 	
 	init_rx_dac();

@@ -41,9 +41,9 @@ bool blocking_queue_take(uint8_t* value) {
 		}
 	}
 
-	int diff = time_get_ns() - last_push;
+	float ms = (time_get_ns() - last_push)/100000.0f;
 	klog_info("taking item from blocking queue\n");
-	klog_info("time elapsed between add and take: %d ns\n", diff);
+	klog_info("time elapsed between add and take: %.3f ms\n", ms);
 
 	size_t nbytes = 1;
 	if (kfifo_out(&fifo, value, nbytes) != nbytes) {

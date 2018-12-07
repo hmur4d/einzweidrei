@@ -627,6 +627,7 @@ int test_main(int argc, char ** argv) {
 	
 	//sync_dds(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
 
+
 	rx_adc_write(spi_adc_fd, 0x00, 0x1);
 	//16bits 1 waire
 	//rx_adc_write(spi_adc_fd, 0x46, 0x880C);
@@ -697,6 +698,9 @@ int test_main(int argc, char ** argv) {
 	//rx_adc_write(spi_adc_fd, 0x25, 0x40);
 	//rx_adc_write(spi_adc_fd, 0x45, 0x2);
 	//rx_adc_write(spi_adc_fd, 0xf, 0x0ff);
+
+
+
 	close(spi_adc_fd);
 	close(spi_dds_1_fd);
 

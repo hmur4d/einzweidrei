@@ -68,6 +68,18 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		log_info("Ram.id==RAM_REGISTER_FIFO_INTERRUPT_SELECTED half_full=%d, full=%d", sequence_params->number_half_full,sequence_params->number_full);
 		sequence_params_release(sequence_params);
 	}
+	if (ram.id == RAM_REGISTERS_SELECTED + RAM_REGISTER_DECFACTOR_SELECTED) {
+
+		sequence_params_t* sequence_params = sequence_params_acquire();
+		uint32_t value = *((uint32_t*)body);
+
+		sequence_params->decfactor = (value & 0xFF)+1;
+		float bit_growth = log10(sequence_params->decfactor) / log10(2) * 5;
+		float decimal_part = ceil(bit_growth) - bit_growth;
+		float rescale = pow(10, log10(2)*decimal_part);
+		log_info("Ram.id==RAM_REGISTER_DECFACTOR_SELECTED decfactor=%d, rescale needed= %.3f", sequence_params->decfactor, rescale);
+		sequence_params_release(sequence_params);
+	}
 	if (ram.id >= RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED && ram.id<=RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX3_SELECTED) {
 
 		int rx_channel = ram.id - (RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED);
