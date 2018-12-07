@@ -32,18 +32,16 @@ static void rx_adc_write(char addr, short data) {
 
 static void init_rx_mapping() {
 
-	//OUT1A	LSB_IN3
-	//OUT1B	MSB_IN3
-	//OUT2A	LSB_IN4
-	//OUT2B	MSB_IN4
-	//OUT3A	LSB_IN1
-	//OUT3B	MSB_IN1
-	//OUT4A	LSB_IN2
-	//OUT4B	MSB_IN2
+	//OUT1A	MSB_IN3
+	//OUT1B	LSB_IN3
+	//OUT2A	MSB_IN4
+	//OUT2B	lSB_IN4
+	//OUT3A	MSB_IN1
+	//OUT3B	LSB_IN1
+	//OUT4A	MSB_IN2
+	//OUT4B	LSB_IN2
 
-	//rx_adc_write(0x50, 0x8745);
-	//rx_adc_write(0x51, 0x8016);
-	//rx_adc_write(0x52, 0x8023);
+
 	rx_adc_write(0x50, 0x8654);
 	rx_adc_write(0x51, 0x8107);
 	rx_adc_write(0x52, 0x8032);
