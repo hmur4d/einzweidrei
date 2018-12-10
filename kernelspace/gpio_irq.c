@@ -34,10 +34,8 @@ static gpio_irq_t* find_gpio_irq(int irq) {
 }
 
 static irqreturn_t forward_irq_to_handler(int irq, void *dev_id) {
-	klog_debug("Interrupt happened at irq=%d\n", irq);
-
 	if (gpio_irq_handler == NULL) {
-		klog_warning("No gpio_irq_handler handler! Ignoring...\n");
+		klog_warning("No gpio_irq_handler for irq=%d! Ignoring...\n", irq);
 		return IRQ_HANDLED;
 	}
 
@@ -47,6 +45,7 @@ static irqreturn_t forward_irq_to_handler(int irq, void *dev_id) {
 		return IRQ_HANDLED;
 	}
 	
+	klog_debug("Interrupt happened: %s\n", gpioirq->name);
 	gpio_irq_handler(gpioirq);
 	return IRQ_HANDLED;
 }
