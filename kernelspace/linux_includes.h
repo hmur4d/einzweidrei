@@ -28,5 +28,6 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <linux/gpio.h>
 #include <linux/irq.h>
 #include <linux/interrupt.h>
+#include <linux/delay.h>
 
 #endif

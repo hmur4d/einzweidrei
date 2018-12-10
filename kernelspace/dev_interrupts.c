@@ -1,6 +1,6 @@
 #include "dev_interrupts.h"
 #include "dynamic_device.h"
-#include "blocking_queue.h"
+#include "interrupt_queue.h"
 #include "gpio_irq.h"
 #include "config.h"
 #include "klog.h"
@@ -34,7 +34,7 @@ static int device_open(struct inode *inode, struct file *filp) {
 		return -ERESTARTSYS;
 
 	klog_info("got semaphore, emptying queue\n");
-	blocking_queue_reset();
+	interrupt_queue_reset();
 	if (opened_callback != NULL && !opened_callback())
 		return -EINVAL;
 	
@@ -55,18 +55,16 @@ static int device_release(struct inode *inode, struct file *filp) {
 
 //blocking read, one char at a time
 static ssize_t device_read(struct file *filp, char __user *user_buffer, size_t count, loff_t *position) {
-	klog_info("/dev/interrupt read called at offset=%i, read bytes count=%u\n", (int)*position, (uint)count);
-
-	if (filp->f_flags & O_NONBLOCK && blocking_queue_is_empty()) {
+	if (filp->f_flags & O_NONBLOCK && interrupt_queue_is_empty()) {
 		//the caller could have set the O_NONBLOCK attribute, we must honor it.
 		klog_warning("read with O_NONBLOCK on an empty file\n");
 		return -EAGAIN;
 	}
 
 	uint8_t value;
-	if (!blocking_queue_take(&value)) {
-		klog_error("Unable to get interrupt from blocking queue!\n");
-		return -EFAULT;
+	if (!interrupt_queue_take(&value)) {
+		//empty queue, this is normal, userspace should read again
+		return 0;
 	}
 
 	//force interrupts to be read one by one

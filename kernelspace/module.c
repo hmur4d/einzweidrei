@@ -12,7 +12,7 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 #include "linux_includes.h"
 #include "config.h"
 #include "klog.h"
-#include "blocking_queue.h"
+#include "interrupt_queue.h"
 #include "gpio_irq.h"
 #include "dev_interrupts.h"
 #include "../common/interrupt_codes.h"
@@ -46,12 +46,12 @@ static void publish_interrupt(gpio_irq_t* gpioirq) {
 		return;
 	}
 
-	if (!blocking_queue_add(gpioirq->code)) {
+	if (!interrupt_queue_add(gpioirq->code)) {
 		failure = true;
 		klog_error("Unable to add interrupt 0x%x (%s)!\n", gpioirq->code, gpioirq->name);
 		klog_error("Stopping interruption handling.\n");
-		blocking_queue_reset();
-		blocking_queue_add(INTERRUPT_FAILURE);
+		interrupt_queue_reset();
+		interrupt_queue_add(INTERRUPT_FAILURE);
 	}
 }
 

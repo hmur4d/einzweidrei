@@ -11,7 +11,7 @@ include $(BASEDIR)/make-config/kernel.mk
 # we need to specify all files here, for multifile module
 # for some reason, using wildcards and filter-out ".mod.c" doesn't work in this context
 obj-m := modcameleon.o
-modcameleon-objs := dynamic_device.o blocking_queue.o gpio_irq.o dev_interrupts.o hps2fpga.o module.o
+modcameleon-objs := dynamic_device.o interrupt_queue.o gpio_irq.o dev_interrupts.o hps2fpga.o module.o
 
 CFLAGS_MODULE += -fno-pic -Wno-declaration-after-statement
 
