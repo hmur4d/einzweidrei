@@ -26,7 +26,13 @@ static void* interrupt_reader_thread(void* arg) {
 	log_info("Starting reading interrupts");
 
 	uint8_t code;
-	while (read(interrupts_fd, &code, 1) == 1) {
+	ssize_t nread;
+	while ( (nread = read(interrupts_fd, &code, 1)) >= 0) {
+		if (nread == 0) {
+			//no interrupt, ask again immediately, kernel will wait if needed
+			continue;
+		}
+
 		log_debug("Read interrupt: 0x%x", code);
 		if (handler == NULL) {
 			log_error("No interrupt handler defined! Ignoring interrupts.");
