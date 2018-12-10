@@ -1,58 +1,64 @@
 #include "blocking_queue.h"
 #include "klog.h"
 
-static DEFINE_KFIFO(fifo, int8_t, FIFO_SIZE);
-static DEFINE_KFIFO(fifo_timestamps, u64, FIFO_SIZE);
+#define NO_VALUE 255
+
+//use a ring buffer
+int size = 0;
+int next_read = 0;
+int next_write = 0;
+int8_t values[FIFO_SIZE];
+ktime_t timestamps[FIFO_SIZE];
+
 static DECLARE_WAIT_QUEUE_HEAD(waitqueue);
 
-static u64 time_get_ns(void) {
-	return ktime_to_ns(ktime_get());
-}
-
 void blocking_queue_reset(void) {
-	kfifo_reset(&fifo);
-	kfifo_reset(&fifo_timestamps);
+	size = 0;
+	next_read = 0;
+	next_write = 0;
 }
 
 bool blocking_queue_is_empty(void) {
-	return kfifo_is_empty(&fifo);
+	return size == 0;
 }
 
 bool blocking_queue_add(uint8_t value) {
-	u64 now = time_get_ns();
-	if (!kfifo_put(&fifo, value) || !kfifo_put(&fifo_timestamps, now)) {
-		klog_warning("Unable to add item to blocking queue\n");
-		klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
+	if (size + 1 == FIFO_SIZE) {
+		klog_warning("Unable to add item to blocking queue, size=%d\n", size);
 		return false;
 	}
 
-	klog_info("added item to blocking queue, now = %llu\n", now);
-	//klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
+	timestamps[next_write] = ktime_get();
+	values[next_write++] = value;
+	size++;
+	if (next_write >= FIFO_SIZE) {
+		next_write = 0;
+	}
 
+
+	klog_info("added item to blocking queue, size=%d / %d\n", size, FIFO_SIZE);
 	wake_up_interruptible(&waitqueue);
 	return true;
 }
 
 bool blocking_queue_take(uint8_t* value) {
-	if (kfifo_is_empty(&fifo)) {
+	if (size == 0) {
 		//let's wait until there's something in the fifo
-		if (wait_event_interruptible(waitqueue, !kfifo_is_empty(&fifo))) {
+		if (wait_event_interruptible(waitqueue, size != 0)) {
 			return false;
 		}
 	}
 
-	u64 now = time_get_ns();
-	klog_info("taking item from blocking queue, now=%llu\n", now);
+	ktime_t timestamp = timestamps[next_read];
+	*value = values[next_read++];
+	size--;
+	if (next_read >= FIFO_SIZE)
+		next_read = 0;
+	
+	ktime_t now = ktime_get();
+	ktime_t delta = ktime_sub(now, timestamp);
+	u64 delta_ns = ktime_to_ns(delta);
+	klog_info("took item to blocking queue, size=%d / %d, took %llu ns\n", size, FIFO_SIZE, delta_ns);
 
-	u64 timestamp = 0;
-	if (!kfifo_get(&fifo, value) || !kfifo_get(&fifo_timestamps, &timestamp)) {
-		klog_error("kfifo_get failed!\n");
-		return false;
-	}
-
-	long diff = now - timestamp;
-	klog_info("time elapsed between add and take: %ld ns\n", diff);
-
-	//klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
 	return true;
 }
