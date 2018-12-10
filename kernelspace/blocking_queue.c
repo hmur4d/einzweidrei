@@ -2,15 +2,16 @@
 #include "klog.h"
 
 static DEFINE_KFIFO(fifo, int8_t, FIFO_SIZE);
+static DEFINE_KFIFO(fifo_timestamps, u64, FIFO_SIZE);
 static DECLARE_WAIT_QUEUE_HEAD(waitqueue);
-static long last_push = 0;
 
-static long time_get_ns(void) {
+static u64 time_get_ns(void) {
 	return ktime_to_ns(ktime_get());
 }
 
 void blocking_queue_reset(void) {
 	kfifo_reset(&fifo);
+	kfifo_reset(&fifo_timestamps);
 }
 
 bool blocking_queue_is_empty(void) {
@@ -18,17 +19,16 @@ bool blocking_queue_is_empty(void) {
 }
 
 bool blocking_queue_add(uint8_t value) {
-	if (kfifo_in(&fifo, &value, 1) != 1) {
+	u64 now = time_get_ns();
+	if (!kfifo_put(&fifo, value) || !kfifo_put(&fifo_timestamps, now)) {
 		klog_warning("Unable to add item to blocking queue\n");
 		klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
 		return false;
 	}
 
-	klog_info("added item to blocking queue\n");
-	klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
+	klog_info("added item to blocking queue, now = %llu\n", now);
+	//klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
 
-
-	last_push = time_get_ns();
 	wake_up_interruptible(&waitqueue);
 	return true;
 }
@@ -41,16 +41,18 @@ bool blocking_queue_take(uint8_t* value) {
 		}
 	}
 
-	int diff = time_get_ns() - last_push;
-	klog_info("taking item from blocking queue\n");
-	klog_info("time elapsed between add and take: %d ns\n", diff);
+	u64 now = time_get_ns();
+	klog_info("taking item from blocking queue, now=%llu\n", now);
 
-	size_t nbytes = 1;
-	if (kfifo_out(&fifo, value, nbytes) != nbytes) {
-		klog_error("kfifo_out failed! nbytes=%d", nbytes);
+	u64 timestamp = 0;
+	if (!kfifo_get(&fifo, value) || !kfifo_get(&fifo_timestamps, &timestamp)) {
+		klog_error("kfifo_get failed!\n");
 		return false;
 	}
 
-	klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
+	long diff = now - timestamp;
+	klog_info("time elapsed between add and take: %ld ns\n", diff);
+
+	//klog_info("queue size: %d / %d\n", kfifo_len(&fifo), kfifo_size(&fifo));
 	return true;
 }
