@@ -9,8 +9,7 @@ It will not block when trying to add a value to a full queue, but will report an
 
 #include "linux_includes.h"
 
-//must be power of 2
-#define FIFO_SIZE 16
+#define QUEUE_CAPACITY 16
 
 //Clears the content of the queue.
 void blocking_queue_reset(void);
