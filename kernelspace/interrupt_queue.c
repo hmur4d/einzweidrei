@@ -45,7 +45,7 @@ bool interrupt_queue_take(uint8_t* value) {
 		empty_takes++;
 
 		//select a waiting strategy depending of the queue activity.
-		if (empty_takes < 100000) {
+		if (empty_takes < 500000) {
 			//busy, return early to limit latency
 			return false;
 		} else if (empty_takes < 1000000) {
