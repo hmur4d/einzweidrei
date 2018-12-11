@@ -93,17 +93,31 @@ static bool sequence_done(uint8_t code) {
 //--
 
 static bool send_acq_buffer(int32_t* from, int size) {
+	struct timespec tstart = { 0,0 }, tend = { 0,0 };
 
 	int nbytes = size * sizeof(int32_t);
-	int32_t* buffer = malloc(nbytes);
+	int32_t* buffer;
+	
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+	buffer = malloc(nbytes);
 	if (buffer == NULL) {
 		log_error_errno("Unable to malloc buffer of %d bytes", nbytes);
 		return false;
 	}
 
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	log_info("malloc: %.3f ms",
+		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
 
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
 	memcpy(buffer, from, nbytes);
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	log_info("memcpy (%d bytes): %.3f ms", nbytes,
+		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
 
+
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
 	message_t* message = create_message_with_body(MSG_ACQU_TRANSFER, buffer, nbytes);
 	if (message == NULL) {
 		free(buffer);
@@ -113,16 +127,22 @@ static bool send_acq_buffer(int32_t* from, int size) {
 	message->header.param1 = 0; //address?
 	message->header.param2 = 0; //address?
 	message->header.param6 = 0; //last transfert time
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	log_info("create message: %.3f ms",
+		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
+
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
 
 	bool res= send_async(message);
-	
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	log_info("send async: %.3f ms",
+		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
+
 
 	return res;
 }
 
 static bool acquisition_half_full(uint8_t code) {
-	struct timespec tstart = { 0,0 }, tend = { 0,0 };
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
 	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
 	sequence_params_t* sequence_params = sequence_params_acquire();
 	int size =  sequence_params->number_half_full+1;
@@ -131,14 +151,10 @@ static bool acquisition_half_full(uint8_t code) {
 	shared_memory_t* mem = shared_memory_acquire();
 	bool result = send_acq_buffer(mem->rxdata, size);
 	shared_memory_release(mem);
-	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("half full took ms = %.3f", (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
 	return result;
 }
 
 static bool acquisition_full(uint8_t code) {
-	struct timespec tstart = { 0,0 }, tend = { 0,0 };
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
 	log_info("Received acquisition_full interrupt, code=0x%x", code);
 	sequence_params_t* sequence_params = sequence_params_acquire();
 	int size = sequence_params->number_half_full+1;
@@ -147,8 +163,6 @@ static bool acquisition_full(uint8_t code) {
 	shared_memory_t* mem = shared_memory_acquire();
 	bool result = send_acq_buffer(mem->rxdata+size, size);
 	shared_memory_release(mem);
-	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("full took ms = %.3f", (tend.tv_sec - tstart.tv_sec)*1000 + (tend.tv_nsec - tstart.tv_nsec)/1000000.0f);
 	return result;
 }
 
