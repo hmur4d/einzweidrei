@@ -10,6 +10,8 @@ endif
 ifeq '$(VS_CONFIG)' 'Debug'
 	CFLAGS += -g
 	LDFLAGS += -g
+else
+	CFLAGS += -O3
 endif
 
 
