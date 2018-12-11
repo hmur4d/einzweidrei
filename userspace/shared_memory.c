@@ -138,14 +138,14 @@ bool shared_memory_init(const char* memory_file) {
 		return false;
 	}
 
-	sharedmem.rxdata = (int32_t*)mmap(NULL, RX_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, RX_INTERFACE_BASE);
+	sharedmem.rxdata = (int32_t*)mmap(NULL, RX_INTERFACE_SPAN, PROT_READ, MAP_SHARED, fd, RX_INTERFACE_BASE);
 	if (sharedmem.rxdata == MAP_FAILED) {
 		log_error_errno("Unable to mmap RX_INTERFACE (hps2fpga bridge");
 		shared_memory_munmap_and_close();
 		return false;
 	}
 
-	sharedmem.lock_rxdata = (int32_t*)mmap(NULL, LOCK_RX_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, LOCK_RX_INTERFACE_BASE);
+	sharedmem.lock_rxdata = (int32_t*)mmap(NULL, LOCK_RX_INTERFACE_SPAN, PROT_READ, MAP_SHARED, fd, LOCK_RX_INTERFACE_BASE);
 	if (sharedmem.lock_rxdata == MAP_FAILED) {
 		log_error_errno("Unable to mmap LOCK_RX_INTERFACE (hps2fpga bridge");
 		shared_memory_munmap_and_close();
