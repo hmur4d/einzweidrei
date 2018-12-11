@@ -107,9 +107,11 @@ static void write_log(const char* level, const char* srcfile, const char* functi
 	va_list args_stdout, args_file;
 	va_copy(args_stdout, args);
 	va_copy(args_file, args);
-
+	
+	pthread_mutex_lock(&mutex);
 	write_log_to(stdout, level, srcfile, function, line, &timeinfo, errcode, format, args_stdout);
 	write_log_to(logfile, level, srcfile, function, line, &timeinfo, errcode, format, args_file);
+	pthread_mutex_unlock(&mutex);
 
 	va_end(args_stdout);
 	va_end(args_file);
@@ -119,10 +121,6 @@ static void write_log(const char* level, const char* srcfile, const char* functi
 Format & write the log message to any file structure.
 */
 static void write_log_to(FILE* fp, const char* level, const char* srcfile, const char* function, int line, const struct tm* timeinfo, int errcode, const char* format, va_list args) {
-	va_list args_copy;
-	va_copy(args_copy, args);
-
-	pthread_mutex_lock(&mutex);
 
 	//[level][day time][file, function():line]
 	fprintf(fp, "[%-5.5s][%02d/%02d/%04d %02d:%02d:%02d][%s, %s():%d]\n",
@@ -137,7 +135,4 @@ static void write_log_to(FILE* fp, const char* level, const char* srcfile, const
 	}
 
 	fprintf(fp, "\n\n");
-	fflush(fp);
-
-	pthread_mutex_unlock(&mutex);
 }
