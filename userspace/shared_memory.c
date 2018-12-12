@@ -87,17 +87,31 @@ bool shared_memory_init(const char* memory_file) {
 		.bit_offset = 0,
 		.name = "dds_ioupdate",
 	};
+	sharedmem.rx_bitsleep_rst = (property_t) {
+		.read_ptr = NULL,
+			.write_ptr = sharedmem.lwbridge + 16380,
+			.bit_size = 8,
+			.bit_offset = 0,
+			.name = "rx_bitsleep_rst",
+	};
+	sharedmem.dds_reset = (property_t) {
+		.read_ptr = NULL,
+			.write_ptr = sharedmem.lwbridge + 16380,
+			.bit_size = 1,
+			.bit_offset = 8,
+			.name = "dds_reset",
+	};
 	sharedmem.rx_bitsleep_ctr = (property_t) {
 		.read_ptr = NULL,
 		.write_ptr = sharedmem.lwbridge + 16381,
-		.bit_size = 4,
+		.bit_size = 8,
 		.bit_offset = 0,
 		.name = "rx_bitsleep_ctr",
 	};
 	sharedmem.rx_bit_aligned = (property_t) {
 		.read_ptr = sharedmem.lwbridge + 16379,
 		.write_ptr = NULL,
-		.bit_size = 4,
+		.bit_size = 8,
 		.bit_offset = 0,
 		.name = "rx_bit_aligned",
 	};
@@ -210,7 +224,7 @@ int32_t read_property(property_t prop)
 	int32_t value = 0;
 	if (prop.read_ptr != NULL) {
 		value = ((*prop.read_ptr)>>prop.bit_offset) & (uint32_t)(pow(2,prop.bit_size)-1);
-		log_info("Read property : %s = %d", prop.name, value);
+		//log_info("Read property : %s = %d", prop.name, value);
 	}
 	else {
 		log_error("Property '%s' is not an input!", prop.name);
@@ -226,7 +240,7 @@ void write_property(property_t prop, int32_t value)
 		uint32_t umask = ~mask;
 		int previous = (*prop.write_ptr) & umask;
 		*prop.write_ptr = previous | ((value << prop.bit_offset) & mask);
-		log_info("Write property : %s = %d", prop.name, value);
+		//log_info("Write property : %s = %d", prop.name, value);
 	}
 	else {
 		log_error("Property '%s' is not an output!",prop.name);

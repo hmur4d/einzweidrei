@@ -45,65 +45,66 @@ static void init_rx_mapping() {
 	rx_adc_write(0x50, 0x8654);
 	rx_adc_write(0x51, 0x8107);
 	rx_adc_write(0x52, 0x8032);
+
 }
 
 static int init_rx_adc(shared_memory_t * mem) {
-	
+
+	//Reset
 	rx_adc_write( 0x00, 0x1);
-	rx_adc_write( 0x46, 0x880C);
+
+	//16bits 1 wire
+	//rx_adc_write(spi_adc_fd, 0x46, 0x880C);
+
+	//16bits 2 wire
+	rx_adc_write( 0x46, 0x880D);
+
+	//14bits 2 wire
+	//rx_adc_write( 0x46, 0x842D);
+	//rx_adc_write( 0xB3, 0x8001);
+
+	//byte wise
+	rx_adc_write( 0x28, 0x8000);
+	rx_adc_write( 0x57, 0x0000);
+	rx_adc_write( 0x38, 0x0000); //haflrate
+
+	//enable sync pattern for alignement proc
 	rx_adc_write( 0x45, 0x2);
+
+	//reset bit sleep increments
+	write_property(mem->rx_bitsleep_rst, 0xFF);
+	write_property(mem->rx_bitsleep_rst, 0);
 
 	int nb_try = 100;
 	int cpt = 0;
-	while (cpt++<nb_try) {
-		if ((read_property(mem->rx_bit_aligned) & 1) == 1) break;
-		write_property(mem->rx_bitsleep_ctr, 1);
-		usleep(50);
-		write_property(mem->rx_bitsleep_ctr, 0);
-		log_info("current aligned 1, %d \n", read_property(mem->rx_bit_aligned));
+	int error = 0;
+	for (int i = 0; i <= 7; i++) {
+		cpt = 0;
+		printf("rx lvds %d started ", i);
+		while (cpt++<nb_try) {
+			usleep(1);
+			if ((read_property(mem->rx_bit_aligned) & 1 << i) == (1 << i)) {
+				printf("success!\n");
+				break;
+			}
+			write_property(mem->rx_bitsleep_ctr, 1<<i);
+			usleep(1);
+			write_property(mem->rx_bitsleep_ctr, 0);
+			printf(".");
+		}
+		if (cpt++ >= nb_try) {
+			printf("failure :-<\n");
+			error -= 1;
+		}
 	}
-	if (cpt == nb_try) {
-		log_error("unable to aligned adc channel 1");
-		return -1;
+	write_property(mem->rx_bitsleep_ctr, 0);
+	if (error == 0) {
+		log_info("Success, all rx channels are aligned!\n");
 	}
-	cpt = 0;
-	while (cpt++<nb_try) {
-		if ((read_property(mem->rx_bit_aligned) & 2) == 2) break;
-		write_property(mem->rx_bitsleep_ctr, 1);
-		usleep(50);
-		write_property(mem->rx_bitsleep_ctr, 0);
-		log_info("current aligned 2, %d \n", read_property(mem->rx_bit_aligned));
-	}
-	if (cpt == nb_try) {
-		log_error("unable to aligned adc channel 2");
-		return -2;
-	}
-	cpt = 0;
-	while (cpt++<nb_try) {
-		if ((read_property(mem->rx_bit_aligned) & 4) == 4) break;
-		write_property(mem->rx_bitsleep_ctr, 1);
-		usleep(50);
-		write_property(mem->rx_bitsleep_ctr, 0);
-		log_info("current aligned 3, %d \n", read_property(mem->rx_bit_aligned));
-	}
-	if (cpt == nb_try) {
-		log_error("unable to aligned adc channel 3");
-		return -3;
-	}
-	cpt = 0;
-	while (cpt++<nb_try) {
-		if ((read_property(mem->rx_bit_aligned) & 8) == 8) break;
-		write_property(mem->rx_bitsleep_ctr, 1);
-		usleep(50);
-		write_property(mem->rx_bitsleep_ctr, 0);
-		log_info("current aligned 4, %d \n", read_property(mem->rx_bit_aligned));
-	}
-	if (cpt == nb_try) {
-		log_error("unable to aligned adc channel 4");
-		return -4;
-	}
+	//disable sync pattern, alignement finished
 	rx_adc_write(0x45, 0x00);
-	return 0;
+
+	return error;
 
 }
 
@@ -117,6 +118,7 @@ void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 }
 
 void hw_receiver_init() {
+	log_info("hw_receiver_init, started");
 
 	spi_rx_adc = (spi_t) {
 		.dev_path = "/dev/spidev32766.1",
@@ -142,7 +144,7 @@ void hw_receiver_init() {
 	spi_open(&spi_rx_dac);
 
 	shared_memory_t * mem = shared_memory_acquire();
-	//init_rx_adc(mem);
+	init_rx_adc(mem);
 	init_rx_mapping();
 	shared_memory_release(mem);
 	
@@ -150,5 +152,6 @@ void hw_receiver_init() {
 	
 	spi_close(&spi_rx_dac);
 	spi_close(&spi_rx_adc);
+	log_info("hw_receiver_init, done");
 }
 

@@ -23,11 +23,7 @@ typedef struct {
 
 } property_t;
 
-int* ioupdate_ptr;
-int* dds_sel_ptr;
-int* rx_bit_aligned_ptr;
-int* rx_bitsleep_ctr_ptr;
-int* tx_att_ptr;
+
 //Used to expose typed memory blocks
 typedef struct {
 
@@ -37,9 +33,11 @@ typedef struct {
 	property_t control;
 	property_t dds_sel;
 	property_t dds_ioupdate;
+	property_t dds_reset;
 
 	property_t rx_bit_aligned;
 	property_t rx_bitsleep_ctr;
+	property_t rx_bitsleep_rst;
 	property_t tx_att;
 
 	int32_t* lwbridge;
