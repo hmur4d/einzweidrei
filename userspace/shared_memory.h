@@ -38,7 +38,6 @@ typedef struct {
 	property_t rx_bit_aligned;
 	property_t rx_bitsleep_ctr;
 	property_t rx_bitsleep_rst;
-	property_t tx_att;
 
 	int32_t* lwbridge;
 	int32_t* rams;

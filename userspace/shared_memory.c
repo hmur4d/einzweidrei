@@ -115,13 +115,6 @@ bool shared_memory_init(const char* memory_file) {
 		.bit_offset = 0,
 		.name = "rx_bit_aligned",
 	};
-	sharedmem.tx_att = (property_t) {
-		.read_ptr = NULL,
-		.write_ptr = sharedmem.lwbridge + 16379,
-		.bit_size = 32,
-		.bit_offset = 0,
-		.name = "tx_att",
-	};
 	sharedmem.lock_sweep_on_off = (property_t) {
 		.read_ptr = NULL,
 		.write_ptr = sharedmem.lwbridge + 16376,

@@ -39,141 +39,94 @@ static void dds_write_n_verify(property_t ioupdate, uint8_t address, uint32_t da
 	dds_write(address, data);
 	ioupdate_pulse(ioupdate);
 	int rd_data = dds_read(address);
-	if (rd_data != data) log_debug("ERROR DDS WR : wr - %8x but rd - %8x ", data, rd_data);
+	if (rd_data != data) log_error("ERROR DDS WR : wr - %8x but rd - %8x ", data, rd_data);
+
+}
+void hw_all_dds_dac_cal(property_t ioupdate, property_t dds_sel) {
+	for (int i = 1; i <= 4; i++) {
+		write_property(dds_sel, i);
+		usleep(2);
+		//set DAC_CAL 1 reg 0x03
+		dds_write_n_update(ioupdate, 0x03, 0x01052120);
+		//DAC_CAL  finishes after 16 cycles of SYNC, so 12.8ns * 16 = 205ns 
+		usleep(2);
+		//set DAC_CAL 0
+		dds_write_n_update(ioupdate, 0x03, 0x00052120);
+	}
+}
+
+void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel) {
+	write_property(dds_sel, 1);
+	usleep(2);
+	//set CAL_W_SYNC=1 and SYNC IN DELAY
+	dds_write_n_update(ioupdate, 0x1B, 0x00000840);
+	write_property(dds_sel, 2);
+	usleep(2);
+	//set CAL_W_SYNC=1 and SYNC IN DELAY
+	dds_write_n_update(ioupdate, 0x1B, 0x00000840);
+	write_property(dds_sel, 3);
+	usleep(2);
+	//set CAL_W_SYNC=1 and SYNC IN DELAY
+	dds_write_n_update(ioupdate, 0x1B, 0x00000840);
+	write_property(dds_sel, 4);
+	usleep(2);
+	//set CAL_W_SYNC=1 and SYNC IN DELAY
+	dds_write_n_update(ioupdate, 0x1B, 0x00000840);
+
 
 }
 
+void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
+	for (int i = 1; i <= 3; i++) {
+		write_property(dds_sel, i);
+		usleep(2);
+		//set 3wire, OSK enable, sine output enable
+		dds_write_n_verify(ioupdate, 0x00, 0x0001010A);
+		//set SYNC_CLK enable, Matched latency, parallel_data_port_enable
+		dds_write_n_verify(ioupdate, 0x01, 0x00408B00);
+		log_info("DDS %d configured", i);
+	}
+
+	write_property(dds_sel, 4);
+	usleep(2);
+	//set 3wire, OSK enable, sine output enable
+	dds_write_n_verify(ioupdate, 0x00, 0x0001010A);
+	//set SYNC_CLK enable, Matched latency, parallel_data_port_enable
+	dds_write_n_verify(ioupdate, 0x01, 0x00808800);
+
+	dds_write_n_verify(ioupdate, 0x13, 0x8ce703af);
+	dds_write_n_verify(ioupdate, 0x14, 0xffff0000);
+
+	log_info("DDS %d configured", 4);
+}
+
+
 static void dds_sync(shared_memory_t *mem) {
 
-	int i;
-	log_debug("sync dds start");
-	int rd_data;
-	//int ready;
 
-	/*
-	//master reset
-	IOWR(BUS_IOUPDATE_BASE, 0, 0x04);
-	delay();
-	IOWR(BUS_IOUPDATE_BASE, 0, 0x00);
-	*/
+	log_info("DDS syncing started");
+	//reset dds
+	write_property(mem->dds_reset, 1);
+	usleep(2);
+	write_property(mem->dds_reset, 0);
 
-	//dac cal
-	//toggle bit 24
-	for (i = 1; i <= 4; i++) {
-		write_property(mem->dds_sel, i);
+	//DAC CAL
+	hw_all_dds_dac_cal(mem->dds_ioupdate,mem->dds_sel);
+	//CAL_W_SYNC
+	hw_all_dds_cal_w_sync(mem->dds_ioupdate, mem->dds_sel);
+	//DAC CAL
+	hw_all_dds_dac_cal(mem->dds_ioupdate, mem->dds_sel);
+	//normal config
+	hw_all_dds_parallel_config(mem->dds_ioupdate, mem->dds_sel);
+	//end HPS control on DDS
+	write_property(mem->dds_sel, 0);
 
-		usleep(50);
-		/*
-		if (i == 4) {
-		while (1) {
-		ready = IORD(PIO_IN_PLL_BASE, 0);
-		printf("spi ready? %x \n", ready);
-		if ((ready & 0x04) == 4) break;
-		}
-		}
-		*/
-
-		//set 3 wire SPI MSBfirst
-		dds_write_n_verify(mem->dds_ioupdate, 0x00, 0x0101010A);
-
-		//set pll		open pll_en feedback divider 2.5ghs --input 25M
-		//dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x02, 0x0004321C);
-
-		//set pll		open pll_en feedback divider 2.5ghs --input 250M
-		//dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x02, 0x0004051C);
-
-		dds_write_n_verify(mem->dds_ioupdate, 0x03, 0x01052120);
-		usleep(200);
-		dds_write_n_verify(mem->dds_ioupdate, 0x03, 0x00052120);
-		log_debug("sync dds: dac cal dds %d \n", i);
-
-		//re_lock
-		dds_write_n_verify(mem->dds_ioupdate, 0x00, 0x0001010A);
-		usleep(50);
-		dds_write_n_verify(mem->dds_ioupdate, 0x00, 0x0101010A);
-		rd_data = dds_read( 0x1B);
-		if ((rd_data & 0x01000000) == 0x01000000)
-			log_debug("sync dds: PLL dds %d LOCKED = %04x \n", i, rd_data);
-		else
-			log_debug("sync dds: PLL dds %d NOT LOCKED = %04x \n", i, rd_data);
-
-	}
-
-	//sync out master
-	log_debug("\n sync dds: syncout_en dds 1 \n");
-	write_property(mem->dds_sel, 1);
-	//set 3 wire SPI MSBfirst
-	dds_write_n_verify(mem->dds_ioupdate, 0x00, 0x0101010A);
-	dds_write_n_verify(mem->dds_ioupdate, 0x01, 0x00400B00); //syncout en, syncout out, profile mode
-	//	dds_write(0x01,0x00400800); //syncout en, syncout out, profile mode
-
-
-	/*
-	//cal with sync bit set
-	for (i = 1; i <= 4; i++) {
-	printf("sync dds : cal with sync dds %d \n", i);
-	*dds_sel_ptr = i;
-	delay();
-	//set 3 wire SPI MSBfirst, vco cal disable
-	dds_wr_n_ver(ioupdate_ptr, spi_fd, 0x00, 0x0101010A);
-	dds_wr_n_upd(ioupdate_ptr, spi_fd, 0x1B, 0x00000840);
-	}
-	*/
-
-	log_debug("sync dds : cal with sync dds %d \n", i);
-	write_property(mem->dds_sel, 1);
-	usleep(50);
-	//set 3 wire SPI MSBfirst, vco cal disable
-	dds_write_n_verify(mem->dds_ioupdate, 0x00, 0x0101010A);
-	dds_write_n_update(mem->dds_ioupdate, 0x1B, 0x00000840);
-	write_property(mem->dds_sel, 2);
-	usleep(50);
-	//set 3 wire SPI MSBfirst, vco cal disable
-	dds_write_n_verify(mem->dds_ioupdate,  0x00, 0x0101010A);
-	dds_write_n_update(mem->dds_ioupdate,  0x1B, 0x00000843);
-
-	write_property(mem->dds_sel, 3);
-	usleep(50);
-	//set 3 wire SPI MSBfirst, vco cal disable
-	dds_write_n_verify(mem->dds_ioupdate,  0x00, 0x0101010A);
-	dds_write_n_update(mem->dds_ioupdate,  0x1B, 0x00000842);
-
-	write_property(mem->dds_sel, 4);
-	usleep(50);
-	//set 3 wire SPI MSBfirst, vco cal disable
-	dds_write_n_verify(mem->dds_ioupdate,  0x00, 0x0101010A);
-	dds_write_n_update(mem->dds_ioupdate,  0x1B, 0x00000840);
-
-
-
-
-	//dac cal
-	//toggle bit 24
-	for (i = 1; i <= 4; i++) {
-		write_property(mem->dds_sel, i);
-		usleep(50);
-		//set 3 wire SPI MSBfirst
-		dds_write_n_verify(mem->dds_ioupdate,  0x00, 0x0001010A);
-		dds_write_n_verify(mem->dds_ioupdate,  0x03, 0x01052120);
-		usleep(100);
-		dds_write_n_verify(mem->dds_ioupdate,  0x03, 0x00052120);
-		log_debug("sync dds: 2nd dac_cal dds %d \n", i);
-
-		//re_lock
-		dds_write_n_verify(mem->dds_ioupdate,  0x00, 0x0001010A);
-		dds_write_n_verify(mem->dds_ioupdate,  0x00, 0x0101010A);
-
-		rd_data = dds_read(0x1B);
-		if ((rd_data & 0x01000000) == 0x01000000)
-			log_debug("sync dds: final PLL dds %d LOCKED = %04x \n", i, rd_data);
-		else
-			log_debug("sync dds: final PLL dds %d NOT LOCKED = %04x \n", i, rd_data);
-
-	}
+	log_info("DDS syncing done");
 
 }
 
 void hw_transmitter_init() {
+	log_info("hw_transmitter_init started");
 	spi_dds = (spi_t) {
 		.dev_path = "/dev/spidev32766.0",
 			.fd = -1,
@@ -191,6 +144,6 @@ void hw_transmitter_init() {
 	spi_close(&spi_dds);
 
 	shared_memory_release(mem);
-
+	log_info("hw_transmitter_init done");
 }
 

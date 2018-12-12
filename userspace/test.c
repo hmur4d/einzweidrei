@@ -483,13 +483,6 @@ void rx_dac_wr(int spi_fd, char cmd, char addr, short data)
 		pabort("can't write to RX DAC");
 }
 
-void init_rx_dac(int spi_fd)
-{
-	rx_dac_wr(spi_fd, CMD_INTERNAL_REFERENCE_SETUP, ADDR_CMD_ALL_DACS, INTERNAL_REFERENCE_ON);
-	rx_dac_wr(spi_fd, CMD_LDAC_REGISTER_SETUP, 0, LDAC_TRANSPARENT_DAC_A + LDAC_TRANSPARENT_DAC_B + LDAC_TRANSPARENT_DAC_C + LDAC_TRANSPARENT_DAC_D);
-	rx_dac_wr(spi_fd, CMD_WRITE_TO_INPUT_REGISTER_N, ADDR_CMD_ALL_DACS, 0);
-}
-
 
 void write_wm8804(int spi_fd, char addr, char wr_data) {
 
@@ -578,10 +571,10 @@ int test_main(int argc, char ** argv) {
 	ioupdate_ptr = (int *)(lwbus_ptr + 16383);
 	offset = (int *)(lwbus_ptr + 1);
 
-	*rx_bitsleep_rst_ptr = 0;
+
 
 	
-	init_rx_dac(spi_rx_dac_fd);
+
 
 	
 	write_wm8804(spi_wm1_fd, 0x1E, 2); //power up
@@ -593,113 +586,14 @@ int test_main(int argc, char ** argv) {
 	printf("read from wm : %x \n", wm_rd);
 	
 
-	//printf("percent gain rx? \n");
-	//scanf("%d", &i);
-	i = 40;
-	f = i * 655.35;
-	rx_dac_wr(spi_rx_dac_fd, CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, ADDR_CMD_DAC_A, (int)f);
-	rx_dac_wr(spi_rx_dac_fd, CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, ADDR_CMD_DAC_B, (int)f);
-	rx_dac_wr(spi_rx_dac_fd, CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, ADDR_CMD_DAC_C, (int)f);
+
 	
 
 	*lock_control_ptr = 0;  //lock deactivaeted
 	 
-	//-----------------------------------------------//
-	printf("DDS SYNCING start \n");
-	//reset dds
-	*rx_bitsleep_rst_ptr =1 << 8;
-	usleep(2); 
-	*rx_bitsleep_rst_ptr = 0;
-
-	//DAC CAL
-	all_dds_dac_cal(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
-	//CAL_W_SYNC
-	all_dds_cal_w_sync(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
-	//DAC CAL
-	all_dds_dac_cal(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
-	//normal config
-	all_dds_parallel_config(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
-	//end HPS control on DDS
-	*dds_sel_ptr = 0;
-
-	printf("DDS SYNCING end \n");
-	//-----------------------------------------------//
 	
-	//sync_dds(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
 
-
-	rx_adc_write(spi_adc_fd, 0x00, 0x1);
-	//16bits 1 waire
-	//rx_adc_write(spi_adc_fd, 0x46, 0x880C);
 	
-	//16bits 2 waire
-	rx_adc_write(spi_adc_fd, 0x46, 0x880D);
-	//14bits 2 waire
-	//rx_adc_write(spi_adc_fd, 0x46, 0x842D);
-	//rx_adc_write(spi_adc_fd, 0xB3, 0x8001);
-	//byte wise
-	rx_adc_write(spi_adc_fd, 0x28, 0x8000);
-	rx_adc_write(spi_adc_fd, 0x57, 0x0000);
-	rx_adc_write(spi_adc_fd, 0x38, 0x0000); //haflrate
-	rx_adc_write(spi_adc_fd, 0x45, 0x2);
-
-	for (i = 0; i <= 7; i++) {
-		while (1) {
-			usleep(1);
-			if ((*rx_bit_aligned_ptr & 1<<i) == 1 << i) break;
-			*rx_bitsleep_ctr_ptr = 1 << i;
-			usleep(1);
-			*rx_bitsleep_ctr_ptr = 0;
-			printf("current aligned %d, %d \n",i, *rx_bit_aligned_ptr);
-		}
-	}
-	
-	*rx_bitsleep_ctr_ptr = 0;
-	printf("current aligned %d \n", *rx_bit_aligned_ptr);
-	//while (1);
-	rx_adc_write(spi_adc_fd, 0x45, 0x00);
-	//rx_adc_write(spi_adc_fd, 0x45, 0x02);
-
-	//pdn 
-	//rx_adc_write(spi_adc_fd, 0x0f, 0xFD);
-	
-	//rx_adc_write(spi_adc_fd, 0x14, 0x000F); //lfns
-	//sync_dds(ioupdate_ptr, dds_sel_ptr, spi_dds_1_fd);
-
-	/*
-		*dds_sel_ptr = 1;
-		i = 60000;
-		f = i * 1.717986918 * 1000;
-		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
-		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800); //match latency
-		//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0B, 0x1fffffff);
-		//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0C, 0x0fff0000);
-
-		*dds_sel_ptr = 2;
-		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
-		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800); //match latency  0x00808800
-
-		*dds_sel_ptr = 3;
-		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A);
-		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800); //match latency dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00408800);
-
-		*dds_sel_ptr = 4;
-		i = 42949672;
-		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x00, 0x0101010A); //osk enavle
-		dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x01, 0x00808800);
-		//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0B, i);
-		//dds_wr_n_ver(ioupdate_ptr, spi_dds_1_fd, 0x0C, 0x001ff0000);
-
-		//enable 
-		*dds_sel_ptr = 0;
-		//v3
-	*/
-
-	//rx_adc_write(spi_adc_fd, 0x25, 0x40);
-	//rx_adc_write(spi_adc_fd, 0x45, 0x2);
-	//rx_adc_write(spi_adc_fd, 0xf, 0x0ff);
-
-
 
 	close(spi_adc_fd);
 	close(spi_dds_1_fd);
