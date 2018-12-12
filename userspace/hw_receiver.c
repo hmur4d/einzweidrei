@@ -84,7 +84,7 @@ static int init_rx_adc(shared_memory_t * mem) {
 		while (cpt++<nb_try) {
 			usleep(1);
 			if ((read_property(mem->rx_bit_aligned) & 1 << i) == (1 << i)) {
-				printf("success!\n");
+				printf(" success!\n");
 				break;
 			}
 			write_property(mem->rx_bitsleep_ctr, 1<<i);
@@ -93,7 +93,7 @@ static int init_rx_adc(shared_memory_t * mem) {
 			printf(".");
 		}
 		if (cpt++ >= nb_try) {
-			printf("failure :-<\n");
+			printf(" failure :-<\n");
 			error -= 1;
 		}
 	}
