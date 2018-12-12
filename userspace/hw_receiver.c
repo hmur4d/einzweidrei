@@ -27,6 +27,7 @@ static void init_rx_dac()
 static void rx_adc_write(char addr, short data) {
 	char tx_buff[3] = { addr,data >> 8,data };
 	char rx_buff[3];
+	printf("Write ADC register 0x%X = 0x%X\n", addr, data);
 	spi_send(spi_rx_adc, tx_buff, rx_buff);
 }
 
@@ -41,11 +42,57 @@ static void init_rx_mapping() {
 	//OUT4A	MSB_IN2
 	//OUT4B	LSB_IN2
 
-
+	//mapping
 	rx_adc_write(0x50, 0x8654);
 	rx_adc_write(0x51, 0x8107);
 	rx_adc_write(0x52, 0x8032);
 
+
+
+	//test pattern
+	int patternA = 32767;
+	int patternB = 0;
+	int test_ramp = 0x40;
+	int test_dualPattern = 0x20;
+	int test_singlePattern = 0x10;
+	int test_disabled = 0x0;
+	int test = test_disabled;
+
+	int reg25 = test + (((patternB >> 14) & 0x3) << 2) + (((patternA >> 14) & 0x3));
+	int reg26 = (patternA & 0x3FFF) << 2;
+	int reg27 = (patternB & 0x3FFF) << 2;
+	rx_adc_write(0x25, reg25);
+	rx_adc_write(0x26, reg26);
+	rx_adc_write(0x27, reg27);
+
+	//byte wise
+	rx_adc_write(0x28, 0x0000);//0=byte wise
+
+	//digital gain
+	rx_adc_write(0x2A, 0x0000);//+12dB on each ch 0xC
+	rx_adc_write(0x2C, 0x0000);//0x0055=OUTxA/B from INx, NO avg on all ch
+	rx_adc_write(0x29, 0x0000);//0=No DIG FILTER, No AVG mode
+
+	//output rate
+	rx_adc_write(0x38, 0x0000);//0=1x sample rate
+
+	//Serialization
+	int en_ser = 0x8000;
+	int ser_18b =    0x1000;
+	int ser_16b =    0x800;
+	int ser_14b =    0x400;
+	int pad_two_0s = 0x20;
+	int msb_first = 0x8;
+	int complement_2 = 0x4;
+	int wire_2x = 0x1;
+
+	rx_adc_write(0x46, en_ser + ser_16b + msb_first+ complement_2+wire_2x);
+
+	rx_adc_write(0xB3, 0x0);//0=16bit mode
+
+	rx_adc_write(0xB3, 0x0);//0=16bit mode
+
+	rx_adc_write(0x9, 0x400);//0=internal clamp disabled, 0x400 enabled
 }
 
 static int init_rx_adc(shared_memory_t * mem) {
@@ -63,10 +110,6 @@ static int init_rx_adc(shared_memory_t * mem) {
 	//rx_adc_write( 0x46, 0x842D);
 	//rx_adc_write( 0xB3, 0x8001);
 
-	//byte wise
-	rx_adc_write( 0x28, 0x8000);
-	rx_adc_write( 0x57, 0x0000);
-	rx_adc_write( 0x38, 0x0000); //haflrate
 
 	//enable sync pattern for alignement proc
 	rx_adc_write( 0x45, 0x2);

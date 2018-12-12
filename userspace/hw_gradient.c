@@ -16,8 +16,8 @@ void hw_write_wm8804(char addr, char wr_data) {
 char hw_read_wm8804(char addr) {
 
 	char tx_buff[2] = { 0x80 | addr,0 };
-
 	char rx_buff[2] = { 0,0 };
+
 	spi_send(spi_wm, tx_buff, rx_buff);
 
 	return rx_buff[1];
@@ -42,7 +42,9 @@ void hw_gradient_init() {
 	hw_write_wm8804(0x12, 6); // not audio no copyright
 	hw_write_wm8804(0x16, 2); // not audio no copyright
 	hw_write_wm8804(0x08, 0x38); // for the RX : no hold
+
 	char wm_rd = hw_read_wm8804(0);
+
 	log_info("read from wm : %x \n", wm_rd);
 
 	spi_close(&spi_wm);
