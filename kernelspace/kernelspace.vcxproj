@@ -91,6 +91,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dev_interrupts.c" />
+    <ClCompile Include="dev_rxdata.c" />
     <ClCompile Include="dynamic_device.c" />
     <ClCompile Include="gpio_irq.c" />
     <ClCompile Include="hps2fpga.c" />
@@ -100,6 +101,7 @@
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="dev_interrupts.h" />
+    <ClInclude Include="dev_rxdata.h" />
     <ClInclude Include="dynamic_device.h" />
     <ClInclude Include="gpio_irq.h" />
     <ClInclude Include="hps2fpga.h" />

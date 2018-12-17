@@ -15,6 +15,7 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 #include "interrupt_queue.h"
 #include "gpio_irq.h"
 #include "dev_interrupts.h"
+#include "dev_rxdata.h"
 #include "../common/interrupt_codes.h"
 #include "hps2fpga.h"
 
@@ -60,6 +61,10 @@ int __init mod_init(void) {
 		return -ENOMSG;
 	}
 
+	if (!dev_rxdata_create()) {
+		return -ENOMSG;
+	}
+
 	set_gpio_irq_handler(publish_interrupt);
 	//Note: IRQs are registered only when /dev/interrupts is opened
 
@@ -74,6 +79,7 @@ int __init mod_init(void) {
 void __exit mod_exit(void) {
 	dev_interrupts_destroy();
 	disable_gpio_irqs();
+	dev_rxdata_destroy();
 	klog_info("Module unloaded successfully!\n");
 }
 
