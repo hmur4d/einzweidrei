@@ -65,29 +65,23 @@ static int dev_rxdata_release(struct inode *inode, struct file *filp) {
 	return 0;
 }
 
-//for now, only send address, not content
 static ssize_t dev_rxdata_read(struct file *filp, char __user *user_buffer, size_t count, loff_t *position) {
-	if (*position != 0) {
-		klog_error("Unable to read from a position other than zero, sending EOF: %d\n", *position);
-		return 0;
+	if (*position >= MAX_RXDATA_BYTES) {
+		return 0; //EOF
 	}
 	
-	if (count < 4) {
-		klog_error("Unable to copy less than 4 bytes to userspace!: %d\n", count);
-		return -EINVAL;
+	ssize_t nbytes = count;
+	if (*position + count > MAX_RXDATA_BYTES) {
+		nbytes = MAX_RXDATA_BYTES - *position;
 	}
 
-	uint8_t addr[4];
-	addr[0] = reserved_memory_addr;
-	addr[1] = reserved_memory_addr >> 8;
-	addr[2] = reserved_memory_addr >> 16;
-	addr[3] = reserved_memory_addr >> 24;
-
-	ssize_t nbytes = 4;
-	if (copy_to_user(user_buffer, addr, nbytes)) {
-		klog_error("Unable to copy address 0x%lx to userspace!\n", reserved_memory_addr);
+	void* ptr = ((void*)reserved_memory) + *position;
+	if (copy_to_user(user_buffer, ptr, nbytes)) {
+		klog_error("Unable to copy from address 0x%p to userspace!\n", ptr);
 		return -EFAULT;
 	}
+
+	//klog_info("copied from 0x%p to userspace, pos=%lld, count=%d, nbytes=%d\n", ptr, *position, count, nbytes);
 	
 	*position += nbytes;
 	return nbytes;

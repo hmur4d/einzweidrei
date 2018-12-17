@@ -8,24 +8,23 @@
 
 //25,488 to read 4194304 bytes with mmap + mcopy
 
-void test_mmap_devmem(uint32_t addr, uint32_t size, int print_count) {
-	char* memory_file = "/dev/mem";
-	int fd = open(memory_file, O_RDWR | O_SYNC);
+void test_read_rxdata_full(uint32_t size, int print_count) {
+	char* rxdata_file = "/dev/rxdata";
+	int fd = open(rxdata_file, O_RDONLY);
 	if (fd < 0) {
-		log_error_errno("Unable to open shared memory (%s)", memory_file);
+		log_error_errno("Unable to open rxdata (%s)", rxdata_file);
 		return;
 	}
 
 	int nbytes = size;
 	int32_t* buffer = malloc(size);
 
-	int32_t* rxdata = (int32_t*)mmap(NULL, size, PROT_READ, MAP_SHARED, fd, addr);
 	struct timespec tstart = { 0,0 }, tend = { 0,0 };
 
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
-	memcpy(buffer, rxdata, nbytes);
+	read(fd, buffer, nbytes);
 	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("memcpy (%d bytes): %.3f ms", nbytes,
+	log_info("read (%d bytes): %.3f ms", nbytes,
 		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
 
 	for (int i = 0; i < print_count; i++) {
@@ -33,21 +32,44 @@ void test_mmap_devmem(uint32_t addr, uint32_t size, int print_count) {
 	}
 
 	free(buffer);
-	munmap(rxdata, size);
 	close(fd);
 }
 
-uint32_t read_rxdata_addr() {
-	int fd = open("/dev/rxdata", O_RDONLY);
-	int nbytes = 4;
-	uint8_t buffer[nbytes];
-	if (read(fd, buffer, nbytes) != nbytes) {
-		log_error_errno("Error while reading rxdata address");
-		return 0;
+
+void test_read_rxdata_partial(int nwords) {
+	char* rxdata_file = "/dev/rxdata";
+	int fd = open(rxdata_file, O_RDONLY);
+	if (fd < 0) {
+		log_error_errno("Unable to open rxdata (%s)", rxdata_file);
+		return;
 	}
 
-	uint32_t address = buffer[0] + (buffer[1] << 8) + (buffer[2] << 16) + (buffer[3] << 24);
-	return address;
+	int nbytes = nwords * sizeof(int32_t);
+	int32_t* buffer = malloc(nbytes);
+
+	struct timespec tstart = { 0,0 }, tend = { 0,0 };
+
+	int start = 0;
+	while (true) {
+		printf("type enter to read %d words\n", nwords);
+		fflush(stdout);
+		getchar();
+
+		clock_gettime(CLOCK_MONOTONIC, &tstart);
+		int nread = read(fd, buffer, nbytes);
+		clock_gettime(CLOCK_MONOTONIC, &tend);
+		log_info("read (%d bytes): %.3f ms", nread,
+			(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
+
+		for (int i = 0; i < nwords; i++) {
+			printf("%d: %d\n", i+start, buffer[i]);
+		}
+
+		start += nwords;
+	}
+
+	free(buffer);
+	close(fd);
 }
 
 int test_main(int argc, char ** argv) {
@@ -62,17 +84,12 @@ int test_main(int argc, char ** argv) {
 		return 1;
 	}
 
-	log_info("reading rxdata address...");
-	uint32_t addr = read_rxdata_addr();
-	log_info("- address = 0x%x", addr);
+	printf("type enter to read full data\n");
+	fflush(stdout);
+	getchar();
+	test_read_rxdata_full(MAX_RXDATA_BYTES, 100);
 
-	while(true) {
-		printf("type enter to read data\n");
-		fflush(stdout);
-		getchar();
-		test_mmap_devmem(addr, MAX_RXDATA_BYTES, 100);
-	}
-	
+	test_read_rxdata_partial(10);
 
 	return 0;
 }
