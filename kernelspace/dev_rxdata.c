@@ -4,7 +4,8 @@
 #include "klog.h"
 
 #define MAX_RXDATA_BYTES 4194304
-#define RXDATA_SIZE_REG_ADDR 0xff20ffd8
+#define RXDATA_ADDR_REG 0xff20ffd8
+#define LOCKDATA_ADDR_REG 0xff20ffd4
 
 static int dev_rxdata_open(struct inode *inode, struct file *filp);
 static int dev_rxdata_release(struct inode *inode, struct file *filp);
@@ -19,40 +20,44 @@ static struct file_operations device_fops = {
 	.read = dev_rxdata_read,
 };
 
-static dynamic_device_t device;
-static uint reserved_order;
-static ulong reserved_memory;
-static ulong reserved_memory_addr;
+typedef struct {
+	uint pages_order;
+	ulong addr_logical;
+	ulong addr_physical;
+} reserved_memory_t;
 
-static bool reserve_rxdata_memory(void) {
+static dynamic_device_t device;
+static reserved_memory_t rxdata;
+
+static bool reserve_memory(int nbytes, reserved_memory_t* memory) {
 	//allocate free memory, reserve it
-	reserved_order = get_order(MAX_RXDATA_BYTES);
-	reserved_memory = __get_free_pages(GFP_KERNEL, reserved_order);
-	if (reserved_memory == 0) {
+	memory->pages_order = get_order(nbytes);
+	memory->addr_logical = __get_free_pages(GFP_KERNEL, memory->pages_order);
+	if (memory->addr_logical == 0) {
 		return false;
 	}
 
 	//convert to physical address
-	reserved_memory_addr = __pa(reserved_memory);
-	klog_info("reserved memory: order=%d, logical=0x%lx, physical=0x%lx", reserved_order, reserved_memory, reserved_memory_addr);
+	memory->addr_physical = __pa(memory->addr_logical);
 
-	//send address to fpga
-	void* control_ptr = ioremap(RXDATA_SIZE_REG_ADDR, 4);
-	if (control_ptr == 0) {
-		klog_error("Error while remapping control_addr (0x%x)\n", RXDATA_SIZE_REG_ADDR);
-		return false;
-	}
-
-	iowrite32(reserved_memory_addr, control_ptr);
-	iounmap(control_ptr);
-
+	klog_info("reserved memory: logical=0x%lx, physical=0x%lx", memory->addr_logical, memory->addr_physical);
 	return true;
 }
 
-static void free_rxdata_memory(void) {
-	if (reserved_memory != 0) {
-		free_pages(reserved_memory, reserved_order);
+static bool write_address_to_fpga(phys_addr_t register_addr, reserved_memory_t* memory) {
+	void* ptr = ioremap(register_addr, 4);
+	if (ptr == 0) {
+		klog_error("Error while remapping register_addr (0x%x)\n", register_addr);
+		return false;
 	}
+
+	iowrite32(memory->addr_physical, ptr);
+	iounmap(ptr);
+	return true;
+}
+
+static void free_memory(reserved_memory_t* memory) {
+	free_pages(memory->addr_logical, memory->pages_order);
 }
 
 //-- 
@@ -93,7 +98,7 @@ static ssize_t dev_rxdata_read(struct file *filp, char __user *user_buffer, size
 		nbytes = MAX_RXDATA_BYTES - *offset;
 	}
 
-	void* ptr = ((void*)reserved_memory) + *offset;
+	void* ptr = ((void*)rxdata.addr_logical) + *offset;
 	if (copy_to_user(user_buffer, ptr, nbytes)) {
 		klog_error("Unable to copy from address 0x%p to userspace!\n", ptr);
 		return -EFAULT;
@@ -109,7 +114,7 @@ static ssize_t dev_rxdata_read(struct file *filp, char __user *user_buffer, size
 //--
 
 bool dev_rxdata_create(void) {
-	if (!reserve_rxdata_memory()) {
+	if (!reserve_memory(MAX_RXDATA_BYTES, &rxdata) || !write_address_to_fpga(RXDATA_ADDR_REG, &rxdata)) {
 		return false;
 	}
 
@@ -122,6 +127,6 @@ bool dev_rxdata_create(void) {
 }
 
 void dev_rxdata_destroy(void) {
-	free_rxdata_memory();
+	free_memory(&rxdata);
 	unregister_device(&device);
 }
