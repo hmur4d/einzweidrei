@@ -10,8 +10,10 @@
 #include "clientgroup.h"
 #include "sequence_params.h"
 
+#define RXDATA_FILE "/dev/rxdata"
 
 static bool initialized = false;
+static int data_fd;
 static pthread_mutex_t client_mutex;
 static clientsocket_t* client = NULL;
 
@@ -92,32 +94,26 @@ static bool sequence_done(uint8_t code) {
 
 //--
 
-static bool send_acq_buffer(int32_t* from, int size) {
-	struct timespec tstart = { 0,0 }, tend = { 0,0 };
-
-	int nbytes = size * sizeof(int32_t);
-	int32_t* buffer;
-	
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
-
-	buffer = malloc(nbytes);
+static bool send_acq_buffer(off_t offset, int nbytes) {
+	int32_t* buffer = malloc(nbytes);
 	if (buffer == NULL) {
 		log_error_errno("Unable to malloc buffer of %d bytes", nbytes);
 		return false;
 	}
 
+	struct timespec tstart = { 0,0 }, tend = { 0,0 };
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+	if (lseek(data_fd, offset, SEEK_SET) < 0) {
+		log_error_errno("unable to lseek to %d", offset);
+		return false;
+	}
+
+	read(data_fd, buffer, nbytes);
 	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("malloc: %.3f ms",
+	log_info("read sequencer data (%d bytes): %.3f ms", nbytes,
 		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
 
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
-	memcpy(buffer, from, nbytes);
-	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("memcpy (%d bytes): %.3f ms", nbytes,
-		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
-
-
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
 	message_t* message = create_message_with_body(MSG_ACQU_TRANSFER, buffer, nbytes);
 	if (message == NULL) {
 		free(buffer);
@@ -127,43 +123,27 @@ static bool send_acq_buffer(int32_t* from, int size) {
 	message->header.param1 = 0; //address?
 	message->header.param2 = 0; //address?
 	message->header.param6 = 0; //last transfert time
-	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("create message: %.3f ms",
-		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
-
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
-
-	bool res= send_async(message);
-	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("send async: %.3f ms",
-		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
-
-
-	return res;
+	return send_async(message);
 }
 
 static bool acquisition_half_full(uint8_t code) {
 	log_info("Received acquisition_half_full interrupt, code=0x%x", code);
 	sequence_params_t* sequence_params = sequence_params_acquire();
-	int size =  sequence_params->number_half_full+1;
+	int nwords = sequence_params->number_half_full + 1;
 	sequence_params_release(sequence_params);
 
-	shared_memory_t* mem = shared_memory_acquire();
-	bool result = send_acq_buffer(mem->rxdata, size);
-	shared_memory_release(mem);
-	return result;
+	int nbytes = nwords * sizeof(int32_t);
+	return send_acq_buffer(0, nbytes);
 }
 
 static bool acquisition_full(uint8_t code) {
 	log_info("Received acquisition_full interrupt, code=0x%x", code);
 	sequence_params_t* sequence_params = sequence_params_acquire();
-	int size = sequence_params->number_half_full+1;
+	int nwords = sequence_params->number_half_full + 1;
 	sequence_params_release(sequence_params);
 
-	shared_memory_t* mem = shared_memory_acquire();
-	bool result = send_acq_buffer(mem->rxdata+size, size);
-	shared_memory_release(mem);
-	return result;
+	int nbytes = nwords * sizeof(int32_t);
+	return send_acq_buffer(nbytes, nbytes);
 }
 
 //--
@@ -172,6 +152,13 @@ bool sequencer_interrupts_init() {
 	log_debug("Creating interrupts mutex");
 	if (pthread_mutex_init(&client_mutex, NULL) != 0) {
 		log_error("Unable to init mutex");
+		return false;
+	}
+
+	log_info("Opening %s", RXDATA_FILE);
+	data_fd = open(RXDATA_FILE, O_RDONLY);
+	if (data_fd < 0) {
+		log_error_errno("Unable to open (%s)", RXDATA_FILE);
 		return false;
 	}
 
@@ -186,6 +173,11 @@ bool sequencer_interrupts_destroy() {
 	}
 
 	sequencer_interrupts_set_client(NULL);
+
+	if (close(data_fd) < 0) {
+		log_error_errno("Unable to close data file");
+		return false;
+	}
 
 	log_debug("Destroying interrupts mutex");
 	if (pthread_mutex_destroy(&client_mutex) != 0) {

@@ -21,16 +21,6 @@ static bool shared_memory_munmap_and_close() {
 		return false;
 	}
 
-	if (sharedmem.rxdata != MAP_FAILED && munmap(sharedmem.rxdata, RX_INTERFACE_SPAN) != 0) {
-		log_error_errno("Unable to munmap RX_INTERFACE (hps2fpga bridge)");
-		return false;
-	}
-
-	if (sharedmem.lock_rxdata != MAP_FAILED && munmap(sharedmem.lock_rxdata, LOCK_RX_INTERFACE_SPAN) != 0) {
-		log_error_errno("Unable to munmap LOCK_RX_INTERFACE (hps2fpga bridge)");
-		return false;
-	}
-
 	if (close(fd) != 0) {
 		log_error_errno("Unable to close shared memory file");
 		return false;
@@ -56,8 +46,6 @@ bool shared_memory_init(const char* memory_file) {
 
 	sharedmem.lwbridge = MAP_FAILED;
 	sharedmem.rams = MAP_FAILED;
-	sharedmem.rxdata = MAP_FAILED;
-	sharedmem.lock_rxdata = MAP_FAILED;
 
 	sharedmem.lwbridge = (int32_t*)mmap(NULL, CONTROL_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, CONTROL_INTERFACE_BASE);
 	if (sharedmem.lwbridge == MAP_FAILED) {
@@ -141,20 +129,6 @@ bool shared_memory_init(const char* memory_file) {
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
 	if (sharedmem.rams == MAP_FAILED) {
 		log_error_errno("Unable to mmap MEM_INTERFACE (hps2fpga bridge");
-		shared_memory_munmap_and_close();
-		return false;
-	}
-
-	sharedmem.rxdata = (int32_t*)mmap(NULL, RX_INTERFACE_SPAN, PROT_READ, MAP_SHARED, fd, RX_INTERFACE_BASE);
-	if (sharedmem.rxdata == MAP_FAILED) {
-		log_error_errno("Unable to mmap RX_INTERFACE (hps2fpga bridge");
-		shared_memory_munmap_and_close();
-		return false;
-	}
-
-	sharedmem.lock_rxdata = (int32_t*)mmap(NULL, LOCK_RX_INTERFACE_SPAN, PROT_READ, MAP_SHARED, fd, LOCK_RX_INTERFACE_BASE);
-	if (sharedmem.lock_rxdata == MAP_FAILED) {
-		log_error_errno("Unable to mmap LOCK_RX_INTERFACE (hps2fpga bridge");
 		shared_memory_munmap_and_close();
 		return false;
 	}

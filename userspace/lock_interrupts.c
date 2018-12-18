@@ -9,7 +9,10 @@
 #include "config.h"
 #include "clientgroup.h"
 
+#define LOCKDATA_FILE "/dev/lockdata"
+
 static bool initialized = false;
+static int data_fd;
 static pthread_mutex_t client_mutex;
 static clientsocket_t* client = NULL;
 
@@ -39,28 +42,28 @@ static bool send_async(message_t* message) {
 }
 
 
-static bool send_acq_buffer(int32_t* from, int size,int isFull) {
-	int nbytes = size*sizeof(int32_t);
+static bool send_acq_buffer(off_t offset, int nbytes, int isFull) {
 	int32_t* buffer = malloc(nbytes);
 	if (buffer == NULL) {
 		log_error_errno("Unable to malloc buffer of %d bytes", nbytes);
 		return false;
 	}
-
-	long sec_to_ns = 1000000000;
+	
 	struct timespec tstart = { 0,0 }, tend = { 0,0 };
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
-	memcpy(buffer, from, nbytes);
-	clock_gettime(CLOCK_MONOTONIC, &tend);
 
-	log_debug("memcpy from 0x%x (%d) with %d bytes took %f ns",
-		from, from, nbytes,
-		((double)tend.tv_sec*sec_to_ns + (double)tend.tv_nsec) -
-		((double)tstart.tv_sec*sec_to_ns + (double)tstart.tv_nsec));
+	if (lseek(data_fd, offset, SEEK_SET) < 0) {
+		log_error_errno("unable to lseek to %d", offset);
+		return false;
+	}
+
+	read(data_fd, buffer, nbytes);
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	log_info("read lock data (%d bytes): %.3f ms", nbytes,
+		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
 
 	message_t* message = create_message_with_body(MSG_LOCK_SCAN_DONE, buffer, nbytes);
 	if (message == NULL) {
-		log_error("unable to allow message");
 		free(buffer);
 		return false;
 	}
@@ -70,26 +73,19 @@ static bool send_acq_buffer(int32_t* from, int size,int isFull) {
 	message->header.param6 = 0; //last transfert time
 	return send_async(message);
 }
+
 //-- lock interrupt function
 
 static bool lock_acquisition_half_full(uint8_t code) {
 	log_debug("Received acquisition_half_full interrupt, code=0x%x", code);
-	int word_count = 2048/sizeof(int32_t);
-
-	shared_memory_t* mem = shared_memory_acquire();
-	bool result = send_acq_buffer(mem->lock_rxdata, word_count,0);
-	shared_memory_release(mem);
-	return result;
+	int bytes_count = 2048;
+	return send_acq_buffer(0, bytes_count, 0);
 }
 
 static bool lock_acquisition_full(uint8_t code) {
 	log_debug("Received lock_acquisition_full interrupt, code=0x%x", code);
-	int word_count = 2048 / sizeof(int32_t);
-
-	shared_memory_t* mem = shared_memory_acquire();
-	bool result = send_acq_buffer(mem->lock_rxdata + word_count, word_count,1);
-	shared_memory_release(mem);
-	return result;
+	int bytes_count = 2048;
+	return send_acq_buffer(bytes_count, bytes_count, 1);
 }
 
 //--
@@ -97,6 +93,13 @@ bool lock_interrupts_init() {
 	log_debug("Creating lock interrupts mutex");
 	if (pthread_mutex_init(&client_mutex, NULL) != 0) {
 		log_error("Unable to init mutex");
+		return false;
+	}
+
+	log_info("Opening %s", LOCKDATA_FILE);
+	data_fd = open(LOCKDATA_FILE, O_RDONLY);
+	if (data_fd < 0) {
+		log_error_errno("Unable to open (%s)", LOCKDATA_FILE);
 		return false;
 	}
 
@@ -111,6 +114,11 @@ bool lock_interrupts_destroy() {
 	}
 
 	lock_interrupts_set_client(NULL);
+
+	if (close(data_fd) < 0) {
+		log_error_errno("Unable to close data file");
+		return false;
+	}
 
 	log_debug("Destroying lock interrupts mutex");
 	if (pthread_mutex_destroy(&client_mutex) != 0) {
