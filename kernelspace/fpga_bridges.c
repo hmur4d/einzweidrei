@@ -1,4 +1,4 @@
-#include "hps2fpga.h"
+#include "fpga_bridges.h"
 #include "klog.h"
 
 /*
