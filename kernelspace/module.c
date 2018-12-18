@@ -17,7 +17,7 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 #include "interrupt_queue.h"
 #include "gpio_irq.h"
 #include "dev_interrupts.h"
-#include "dev_rxdata.h"
+#include "dev_data.h"
 #include "fpga_bridges.h"
 
 MODULE_LICENSE("GPL");
@@ -62,12 +62,12 @@ int __init mod_init(void) {
 		return -ENOMSG;
 	}
 
-	if (!dev_rxdata_create()) {
+	if (!dev_rxdata_create() || !dev_lockdata_create()) {
 		return -ENOMSG;
 	}
 
 	set_gpio_irq_handler(publish_interrupt);
-	//Note: IRQs are registered only when /dev/interrupts is opened
+	//NOTE: IRQs are registered only when /dev/interrupts is opened, see dev_interrupts_opened()
 
 	if (!dev_interrupts_create(dev_interrupts_opened, dev_interrupts_closed)) {
 		return -ENOMSG;
@@ -81,6 +81,7 @@ void __exit mod_exit(void) {
 	dev_interrupts_destroy();
 	disable_gpio_irqs();
 	dev_rxdata_destroy();
+	dev_lockdata_destroy();
 	klog_info("Module unloaded successfully!\n");
 }
 
