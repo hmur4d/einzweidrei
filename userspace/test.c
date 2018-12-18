@@ -36,7 +36,11 @@ void test_read_rxdata_full(uint32_t size, int print_count) {
 }
 
 
-void test_read_rxdata_partial(int nwords) {
+void test_read_rxdata_partial(int nwords, int print_count) {
+	struct timespec tstart = { 0,0 }, tend = { 0,0 };
+
+	clock_gettime(CLOCK_MONOTONIC, &tstart);
+
 	char* rxdata_file = "/dev/rxdata";
 	int fd = open(rxdata_file, O_RDONLY);
 	if (fd < 0) {
@@ -44,28 +48,35 @@ void test_read_rxdata_partial(int nwords) {
 		return;
 	}
 
+	clock_gettime(CLOCK_MONOTONIC, &tend);
+	log_info("open rxdata: %.3f ms", 
+		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
+
+
 	int nbytes = nwords * sizeof(int32_t);
 	int32_t* buffer = malloc(nbytes);
 
-	struct timespec tstart = { 0,0 }, tend = { 0,0 };
 
-	int start = 0;
 	while (true) {
 		printf("type enter to read %d words\n", nwords);
 		fflush(stdout);
 		getchar();
 
 		clock_gettime(CLOCK_MONOTONIC, &tstart);
-		int nread = read(fd, buffer, nbytes);
-		clock_gettime(CLOCK_MONOTONIC, &tend);
-		log_info("read (%d bytes): %.3f ms", nread,
-			(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
-
-		for (int i = 0; i < nwords; i++) {
-			printf("%d: %d\n", i+start, buffer[i]);
+		if (lseek(fd, 0, SEEK_SET) < 0) {
+			log_error_errno("unable to lseek to 0");
+			close(fd);
+			return;
 		}
 
-		start += nwords;
+		int nread = read(fd, buffer, nbytes);
+		clock_gettime(CLOCK_MONOTONIC, &tend);
+		log_info("read+seek (%d bytes): %.3f ms", nread,
+			(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
+
+		for (int i = 0; i < print_count; i++) {
+			printf("%d: %d\n", i, buffer[i]);
+		}
 	}
 
 	free(buffer);
@@ -84,12 +95,14 @@ int test_main(int argc, char ** argv) {
 		return 1;
 	}
 
+	/*
 	printf("type enter to read full data\n");
 	fflush(stdout);
 	getchar();
 	test_read_rxdata_full(MAX_RXDATA_BYTES, 100);
+	*/
 
-	test_read_rxdata_partial(10);
+	test_read_rxdata_partial(1024*1024/4, 10); //1Mo
 
 	return 0;
 }
