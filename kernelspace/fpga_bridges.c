@@ -37,35 +37,38 @@ Bit		Name		Description										Access	Reset
 1		lwhps2fpga	Resets LWHPS2FPGA Bridge						RW		0x1
 0		hps2fpga	Resets HPS2FPGA Bridge							RW		0x1
 */
-#define I_RST_MGR_RSTMGR_ADDR 0xFFD0502C
+#define BRGMODRST_ADDR 0xFFD0502C
 
-bool enable_hps2fpga_bridge(void) {
-	klog_info("Enabling hps2fpga bridge...\n");
+//everything except the last 6 bits: f2ssdram2, f2ssdram1, f2ssdram0, fpga2hps, lwhps2fpga, hps2fpga
+#define BRGMODRST_MASK 0xFFFFFFC0; 
+
+
+bool enable_fpga_bridges(void) {
+	klog_info("Enabling FPGA bridges...\n");
 
 	//request_mem_region fails
 	//already reserved: ffd05000-ffd050ff : /sopc@0/rstmgr@0xffd05000 (cf /proc/iomem)
 	//continue without reserving memory region...
 	/*
-	struct resource* i_rst_mgr_rstmgr_region = request_mem_region(I_RST_MGR_RSTMGR_ADDR, 1, "i_rst_mgr_rstmgr");
+	struct resource* i_rst_mgr_rstmgr_region = request_mem_region(BRGMODRST_ADDR, 1, "brgmodrst");
 	*/
 
-	void* i_rst_mgr_rstmgr = ioremap(I_RST_MGR_RSTMGR_ADDR, 1);
-	if (i_rst_mgr_rstmgr == 0) {
-		klog_error("Error while remapping i_rst_mgr_rstmgr (0x%x)\n", I_RST_MGR_RSTMGR_ADDR);
+	void* brgmodrst_ptr = ioremap(BRGMODRST_ADDR, 1);
+	if (brgmodrst_ptr == 0) {
+		klog_error("Error while remapping brgmodrst (0x%x)\n", BRGMODRST_ADDR);
 		return false;
 	}
 
-	int brgmodrst = ioread32(i_rst_mgr_rstmgr);
-	int hps2fpga_mask = 0xFFFFFFFE; //everything except the hps2fpga bit
-	brgmodrst = brgmodrst & hps2fpga_mask;
-	iowrite32(brgmodrst, i_rst_mgr_rstmgr);
+	int brgmodrst = ioread32(brgmodrst_ptr);
+	brgmodrst = brgmodrst & BRGMODRST_MASK;
+	iowrite32(brgmodrst, brgmodrst_ptr);
 
-	iounmap(i_rst_mgr_rstmgr);
+	iounmap(brgmodrst_ptr);
 
 	/*
-	release_mem_region(I_RST_MGR_RSTMGR_ADDR, 1);
+	release_mem_region(BRGMODRST_ADDR, 1);
 	*/
 
-	klog_info("Enabling hps2fpga bridge: OK\n");
+	klog_info("Enabling FPGA bridges: OK\n");
 	return true;
 }

@@ -94,7 +94,7 @@
     <ClCompile Include="dev_rxdata.c" />
     <ClCompile Include="dynamic_device.c" />
     <ClCompile Include="gpio_irq.c" />
-    <ClCompile Include="hps2fpga.c" />
+    <ClCompile Include="fpga_bridges.c" />
     <ClCompile Include="interrupt_queue.c" />
     <ClCompile Include="module.c" />
   </ItemGroup>
@@ -104,7 +104,7 @@
     <ClInclude Include="dev_rxdata.h" />
     <ClInclude Include="dynamic_device.h" />
     <ClInclude Include="gpio_irq.h" />
-    <ClInclude Include="hps2fpga.h" />
+    <ClInclude Include="fpga_bridges.h" />
     <ClInclude Include="interrupt_queue.h" />
     <ClInclude Include="klog.h" />
     <ClInclude Include="linux_includes.h" />

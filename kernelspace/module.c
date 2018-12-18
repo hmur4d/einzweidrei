@@ -1,7 +1,8 @@
 /*
-This modules has two features:
-1. enable the hps2fpga bridge, making it available through /dev/mem
-2. gets interrupts from GPIO irqs and expose them through a char device.
+This modules has several features:
+1. enable the fpga bridges, making them available through /dev/mem
+2. reserve and expose a chunk of memory in sdram for acquisition data
+3. gets interrupts from GPIO irqs and expose them through a char device.
 
 Each time a GPIO irq happens, a corresponding interrupt code is put in a FIFO.
 The char device (/dev/interrupts) allows blocking reads, one char at a time. 
@@ -9,6 +10,7 @@ The bytes read from /dev/interrupts comes from the FIFO. When it is empty, the c
 It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast transmission to userspace.
 */
 
+#include "../common/interrupt_codes.h"
 #include "linux_includes.h"
 #include "config.h"
 #include "klog.h"
@@ -16,8 +18,7 @@ It resumes as soon as an interrupt code is in the FIFO, thus ensuring a fast tra
 #include "gpio_irq.h"
 #include "dev_interrupts.h"
 #include "dev_rxdata.h"
-#include "../common/interrupt_codes.h"
-#include "hps2fpga.h"
+#include "fpga_bridges.h"
 
 MODULE_LICENSE("GPL");
 
@@ -57,7 +58,7 @@ static void publish_interrupt(gpio_irq_t* gpioirq) {
 }
 
 int __init mod_init(void) {
-	if (!enable_hps2fpga_bridge()) {
+	if (!enable_fpga_bridges()) {
 		return -ENOMSG;
 	}
 
