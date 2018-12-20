@@ -10,10 +10,10 @@
 #define LOCKDATA_ADDR_REG 0xff20ffd4
 
 typedef struct {
-	uint max_bytes;
-	uint pages_order;
-	ulong addr_logical;
-	ulong addr_physical;
+	dynamic_device_t* owner;
+	size_t size;
+	void* addr_virtual;
+	dma_addr_t addr_dma;
 } reserved_memory_t;
 
 static dynamic_device_t rxdata_device;
@@ -24,19 +24,20 @@ static reserved_memory_t lockdata_mem;
 
 //-- memory management
 
-static bool reserve_memory(int nbytes, reserved_memory_t* memory) {
+static bool reserve_memory(dynamic_device_t* owner, size_t nbytes, reserved_memory_t* memory) {
 	//allocate free memory, reserve it
-	memory->max_bytes = nbytes;
-	memory->pages_order = get_order(nbytes);
-	memory->addr_logical = __get_free_pages(GFP_KERNEL, memory->pages_order);
-	if (memory->addr_logical == 0) {
+	memory->owner = owner;
+	memory->size = nbytes;
+	memory->addr_virtual = dma_alloc_coherent(owner->device, nbytes, &memory->addr_dma, GFP_KERNEL);
+	if (memory->addr_virtual == NULL) {
+		klog_error("dma_alloc_coherent failed");
 		return false;
 	}
 
 	//convert to physical address
-	memory->addr_physical = __pa(memory->addr_logical);
+	//memory->addr_physical = __pa(memory->addr_logical);
 
-	klog_info("reserved memory: logical=0x%lx, physical=0x%lx", memory->addr_logical, memory->addr_physical);
+	klog_info("reserved memory: virtual=0x%p, dma=0x%lx", memory->addr_virtual, (ulong)memory->addr_dma);
 	return true;
 }
 
@@ -47,13 +48,14 @@ static bool write_address_to_fpga(phys_addr_t register_addr, reserved_memory_t* 
 		return false;
 	}
 
-	iowrite32(memory->addr_physical, ptr);
+	//XXX use iowrite64?
+	iowrite32(memory->addr_dma, ptr);
 	iounmap(ptr);
 	return true;
 }
 
 static void free_memory(reserved_memory_t* memory) {
-	free_pages(memory->addr_logical, memory->pages_order);
+	dma_free_coherent(memory->owner->device, memory->size, memory->addr_virtual, memory->addr_dma);
 }
 
 //-- specific open functions, sets private data
@@ -84,7 +86,7 @@ static loff_t dev_anydata_llseek(struct file *filp, loff_t offset, int whence) {
 	}
 	else if (whence == SEEK_END) {
 		reserved_memory_t* mem = (reserved_memory_t*)filp->private_data;
-		position += mem->max_bytes;
+		position += mem->size;
 	}
 
 	if (position < 0) 
@@ -97,16 +99,16 @@ static loff_t dev_anydata_llseek(struct file *filp, loff_t offset, int whence) {
 static ssize_t dev_anydata_read(struct file *filp, char __user *user_buffer, size_t count, loff_t *offset) {
 	reserved_memory_t* mem = (reserved_memory_t*)filp->private_data;
 
-	if (*offset >= mem->max_bytes) {
+	if (*offset >= mem->size) {
 		return 0; //EOF
 	}
 	
 	ssize_t nbytes = count;
-	if (*offset + count > mem->max_bytes) {
-		nbytes = mem->max_bytes - *offset;
+	if (*offset + count > mem->size) {
+		nbytes = mem->size - *offset;
 	}
 
-	void* ptr = ((void*)mem->addr_logical) + *offset;
+	void* ptr = ((void*)mem->addr_virtual) + *offset;
 	if (copy_to_user(user_buffer, ptr, nbytes)) {
 		klog_error("Unable to copy from address 0x%p to userspace!\n", ptr);
 		return -EFAULT;
@@ -127,7 +129,7 @@ static struct file_operations rxdata_fops = {
 };
 
 bool dev_rxdata_create(void) {
-	if (!reserve_memory(MAX_RXDATA_BYTES, &rxdata_mem) || !write_address_to_fpga(RXDATA_ADDR_REG, &rxdata_mem)) {
+	if (!reserve_memory(&rxdata_device, MAX_RXDATA_BYTES, &rxdata_mem) || !write_address_to_fpga(RXDATA_ADDR_REG, &rxdata_mem)) {
 		return false;
 	}
 
@@ -153,7 +155,7 @@ static struct file_operations lockdata_fops = {
 };
 
 bool dev_lockdata_create(void) {
-	if (!reserve_memory(MAX_LOCKDATA_BYTES, &lockdata_mem) || !write_address_to_fpga(LOCKDATA_ADDR_REG, &lockdata_mem)) {
+	if (!reserve_memory(&lockdata_device, MAX_LOCKDATA_BYTES, &lockdata_mem) || !write_address_to_fpga(LOCKDATA_ADDR_REG, &lockdata_mem)) {
 		return false;
 	}
 
