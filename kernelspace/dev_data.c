@@ -33,10 +33,7 @@ static bool reserve_memory(dynamic_device_t* owner, size_t nbytes, reserved_memo
 		klog_error("dma_alloc_coherent failed");
 		return false;
 	}
-
-	//convert to physical address
-	//memory->addr_physical = __pa(memory->addr_logical);
-
+	
 	klog_info("reserved memory: virtual=0x%p, dma=0x%lx", memory->addr_virtual, (ulong)memory->addr_dma);
 	return true;
 }
@@ -48,7 +45,6 @@ static bool write_address_to_fpga(phys_addr_t register_addr, reserved_memory_t* 
 		return false;
 	}
 
-	//XXX use iowrite64?
 	iowrite32(memory->addr_dma, ptr);
 	iounmap(ptr);
 	return true;
