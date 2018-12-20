@@ -41,9 +41,8 @@ static bool send_async(message_t* message) {
 	return workqueue_submit(send_worker, message, cleanup_message);
 }
 
-
-static bool send_acq_buffer(off_t offset, int nbytes, int isFull) {
-	int32_t* buffer = malloc(nbytes);
+static bool send_lock_data(off_t offset, size_t nbytes, int isFull) {
+	int16_t* buffer = malloc(nbytes);
 	if (buffer == NULL) {
 		log_error_errno("Unable to malloc buffer of %d bytes", nbytes);
 		return false;
@@ -78,17 +77,18 @@ static bool send_acq_buffer(off_t offset, int nbytes, int isFull) {
 
 static bool lock_acquisition_half_full(uint8_t code) {
 	log_debug("Received acquisition_half_full interrupt, code=0x%x", code);
-	int bytes_count = 2048;
-	return send_acq_buffer(0, bytes_count, 0);
+	ssize_t bytes_count = 2048;
+	return send_lock_data(0, bytes_count, 0);
 }
 
 static bool lock_acquisition_full(uint8_t code) {
 	log_debug("Received lock_acquisition_full interrupt, code=0x%x", code);
-	int bytes_count = 2048;
-	return send_acq_buffer(bytes_count, bytes_count, 1);
+	ssize_t bytes_count = 2048;
+	return send_lock_data(bytes_count, bytes_count, 1);
 }
 
 //--
+
 bool lock_interrupts_init() {
 	log_debug("Creating lock interrupts mutex");
 	if (pthread_mutex_init(&client_mutex, NULL) != 0) {

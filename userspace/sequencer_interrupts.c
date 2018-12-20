@@ -94,7 +94,7 @@ static bool sequence_done(uint8_t code) {
 
 //--
 
-static bool send_acq_buffer(off_t offset, int nbytes) {
+static bool send_acq_data(off_t offset, size_t nbytes) {
 	int32_t* buffer = malloc(nbytes);
 	if (buffer == NULL) {
 		log_error_errno("Unable to malloc buffer of %d bytes", nbytes);
@@ -132,8 +132,8 @@ static bool acquisition_half_full(uint8_t code) {
 	int nwords = sequence_params->number_half_full + 1;
 	sequence_params_release(sequence_params);
 
-	int nbytes = nwords * sizeof(int32_t);
-	return send_acq_buffer(0, nbytes);
+	size_t nbytes = nwords * sizeof(int32_t);
+	return send_acq_data(0, nbytes);
 }
 
 static bool acquisition_full(uint8_t code) {
@@ -142,8 +142,8 @@ static bool acquisition_full(uint8_t code) {
 	int nwords = sequence_params->number_half_full + 1;
 	sequence_params_release(sequence_params);
 
-	int nbytes = nwords * sizeof(int32_t);
-	return send_acq_buffer(nbytes, nbytes);
+	size_t nbytes = nwords * sizeof(int32_t);
+	return send_acq_data(nbytes, nbytes);
 }
 
 //--
