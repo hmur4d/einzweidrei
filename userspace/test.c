@@ -83,6 +83,40 @@ void test_read_rxdata_partial(int nwords, int print_count) {
 	close(fd);
 }
 
+
+void test_read_lockdata_partial(int nwords, int print_count) {
+	char* lockdata_file = "/dev/lockdata";
+	int fd = open(lockdata_file, O_RDONLY);
+	if (fd < 0) {
+		log_error_errno("Unable to open lockdata (%s)", lockdata_file);
+		return;
+	}
+
+	int nbytes = nwords * sizeof(int64_t);
+	int64_t* buffer = malloc(nbytes);
+
+	while (true) {
+		printf("type enter to read %d words\n", nwords);
+		fflush(stdout);
+		getchar();
+
+		if (lseek(fd, 0, SEEK_SET) < 0) {
+			log_error_errno("unable to lseek to 0");
+			close(fd);
+			return;
+		}
+
+		read(fd, buffer, nbytes);
+		for (int i = 0; i < print_count; i++) {
+			printf("%x %llx\n", i, buffer[i]);
+		}
+	}
+
+	free(buffer);
+	close(fd);
+}
+
+
 int test_main(int argc, char ** argv) {
 	int loglevel = get_log_level();
 	if (!log_init(loglevel, LOG_FILE)) {
@@ -102,7 +136,9 @@ int test_main(int argc, char ** argv) {
 	test_read_rxdata_full(MAX_RXDATA_BYTES, 100);
 	*/
 
-	test_read_rxdata_partial(1024*1024/4, 10); //1Mo
+	//test_read_rxdata_partial(1024*1024/4, 10); //1Mo
+
+	test_read_lockdata_partial(10, 1);
 
 	return 0;
 }
