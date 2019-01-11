@@ -245,12 +245,11 @@ static void read_pio(clientsocket_t* client, header_t* header, const void* body)
 static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO implement this
 
-	uint32_t start_once = 3;
 
 	shared_memory_t* mem = shared_memory_acquire();
 	
-	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_once, start_once);
-	write_property(mem->control, start_once);
+	log_info("writing start sequence: 0x%x <- 0x%x (%d)", mem->control, SEQ_START, SEQ_START);
+	write_property(mem->control, SEQ_START);
 	shared_memory_release(mem);
 }
 
@@ -266,25 +265,20 @@ static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* b
 }
 
 static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
-	//TODO implement this
 
-	uint32_t start_repeat = 1;
 	
 	shared_memory_t* mem = shared_memory_acquire();
 	
-	log_info("writing start counting: 0x%x <- 0x%x (%d)", mem->control, start_repeat, start_repeat);
-	write_property(mem->control, start_repeat);
+	log_info("writing repeat sequence: 0x%x <- 0x%x (%d)", mem->control, SEQ_REPEAT, SEQ_REPEAT);
+	write_property(mem->control, SEQ_REPEAT);
 	shared_memory_release(mem);
 }
 
 static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const void* body) {
-	//TODO implement this
-
-	uint32_t stop_reset = 4;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	log_info("writing stop counting: 0x%x <- 0x%x (%d)", mem->control, stop_reset, stop_reset);
-	write_property(mem->control, stop_reset);
+	log_info("writing stop sequence: 0x%x <- 0x%x (%d)", mem->control, SEQ_STOP, SEQ_STOP);
+	write_property(mem->control, SEQ_STOP);
 	shared_memory_release(mem);
 }
 

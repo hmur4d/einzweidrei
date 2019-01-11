@@ -14,6 +14,11 @@ Shared memory, allows read/write access to FPGA memory
 #define ACQUISITION_BUFFER	0x40000
 #define ACQUISITION_BUFFER_SIZE	1 + 0xFFFF //in words of 4 bytes
 
+//controle const
+#define SEQ_STOP	0x4
+#define SEQ_START	0x3
+#define SEQ_REPEAT	0x1
+
 typedef struct {
 	int32_t* read_ptr;
 	int32_t* write_ptr;

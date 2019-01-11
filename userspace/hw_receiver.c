@@ -163,6 +163,10 @@ void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 void hw_receiver_init() {
 	log_info("hw_receiver_init, started");
 
+	log_info("hw_receiver_init stop sequence and lock, to be sure that they are not running");
+	stop_sequence();
+	stop_lock();
+
 	spi_rx_adc = (spi_t) {
 		.dev_path = "/dev/spidev32766.1",
 			.fd = -1,

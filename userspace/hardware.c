@@ -3,6 +3,7 @@
 #include "log.h"
 #include <linux/spi/spidev.h>
 #include <sys/ioctl.h>
+#include "shared_memory.h"
 
 
 int spi_open(spi_t * spi) {
@@ -72,9 +73,20 @@ void spi_send(spi_t spi, char * tx_buff, char * rx_buff)
 	}
 }
 
+void stop_sequence() {
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->control, SEQ_STOP);
+	shared_memory_release(mem);
+}
+void stop_lock() {
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->lock_sequence_on_off, 0);
+	shared_memory_release(mem);
+}
 
 
 void hardware_init() {
+
 
 	hw_transmitter_init();
 	hw_receiver_init();

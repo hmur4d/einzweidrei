@@ -25,6 +25,9 @@ char hw_read_wm8804(char addr) {
 
 void hw_gradient_init() {
 	log_info("hw_gradient_init started");
+	log_info("hw_gradient_init stop sequence and lock, to be sure that they are not running");
+	stop_sequence();
+	stop_lock();
 
 	spi_wm = (spi_t) {
 		.dev_path = "/dev/spidev32766.3",
