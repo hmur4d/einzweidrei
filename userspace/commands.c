@@ -254,6 +254,17 @@ static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 	shared_memory_release(mem);
 }
 
+static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* body) {
+
+
+	log_info("cmd_cam_init");
+
+	if (header->param1 & 1 == 1) {
+		hw_transmitter_init();
+	}
+
+}
+
 static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 	//TODO implement this
 
@@ -319,6 +330,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_READ_EEPROM_DATA, read_eeprom_data);
 	success &= register_command_handler(CMD_WRITE_IRQ, write_irq);
 	success &= register_command_handler(CMD_READ_PIO, read_pio);
+	success &= register_command_handler(CMD_CAM_INIT, cmd_cam_init);
 
 	success &= register_command_handler(CMD_ZG, cmd_zg);
 	success &= register_command_handler(CMD_RS, cmd_rs);

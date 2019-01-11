@@ -19,6 +19,7 @@ Command handlers: command id and implementation.
 #define CMD_READ_EEPROM_DATA                        0x17
 #define CMD_WRITE_IRQ                               0x18
 #define CMD_READ_PIO                                0x1a
+#define CMD_CAM_INIT                                0x1e
 
 
 //not yet implemented, copy-pasted from Cameleon NIOS
