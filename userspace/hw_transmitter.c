@@ -59,15 +59,15 @@ void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel) {
 	write_property(dds_sel, 1);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000840);
+	dds_write_n_update(ioupdate, 0x1B, 0x00000841);
 	write_property(dds_sel, 2);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000840);
+	dds_write_n_update(ioupdate, 0x1B, 0x00000841);
 	write_property(dds_sel, 3);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000840);
+	dds_write_n_update(ioupdate, 0x1B, 0x00000841);
 	write_property(dds_sel, 4);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
