@@ -165,7 +165,7 @@ static void who_are_you(clientsocket_t* client, header_t* header, const void* bo
 
 	int fpgaVersion = 109;
 	int hpsVersion = 100;
-	unsigned char fake_mac_address[] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC };
+	unsigned char fake_mac_address[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 	int versionID = 400;
 
 	header->cmd = CMD_WHO_ARE_YOU;
