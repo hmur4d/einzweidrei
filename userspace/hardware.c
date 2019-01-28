@@ -59,8 +59,7 @@ void spi_close(spi_t * spi) {
 	spi->fd = -1;
 }
 
-void spi_send(spi_t spi, char * tx_buff, char * rx_buff)
-{
+void spi_send(spi_t spi, char * tx_buff, char * rx_buff) {
 	struct spi_ioc_transfer tr = {
 		.tx_buf = (unsigned long)tx_buff,
 		.rx_buf = (unsigned long)rx_buff,
@@ -92,6 +91,7 @@ void stop_sequence() {
 	write_property(mem->control, SEQ_STOP);
 	shared_memory_release(mem);
 }
+
 void stop_lock() {
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_sequence_on_off, 0);
@@ -100,26 +100,31 @@ void stop_lock() {
 
 float read_fpga_temperature() {
 	int fd = open(TEMPERATURE_FILE, O_RDONLY);
-	if (fd <0) {
-		log_error("Unabled to read FPGA temperature");
+	if (fd < 0) {
+		log_error_errno("Unable to read FPGA temperature.");
 		return 0.0f;
 	}
-	char buff[10];
-	read(fd, buff, sizeof(buff));
+
+	char temperature_ascii[10];
+	int nread = read(fd, temperature_ascii, sizeof(temperature_ascii) - 1);
+	if (nread < 0) {
+		log_error_errno("Unable to read FPGA temperature.");
+		close(fd);
+		return 0.0f;
+	}
 	close(fd);
-	float t =(float)(atoi(buff)/1000.0);
+
+	temperature_ascii[nread] = '\0'; //ensure end of string char is present
+	int temperature_int = atoi(temperature_ascii);
+	float t = temperature_int / 1000.0f;
 	log_info("FPGA temperature is %.2f", t);
 	return t;
 }
 
 
 void hardware_init() {
-
-
 	hw_transmitter_init();
 	hw_receiver_init();
 	hw_gradient_init();
-
-	
 }
 

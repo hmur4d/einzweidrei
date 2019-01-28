@@ -17,6 +17,7 @@
 #define UDP_PORT			70
 
 #define TEMPERATURE_FILE	"/sys/devices/platform/sopc@0/ffc02200.i2c/i2c-0/0-0048/hwmon/hwmon0/temp1_input"
+
 //--
 
 int get_log_level();
