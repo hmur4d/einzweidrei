@@ -50,7 +50,7 @@ static void init_rx_mapping() {
 
 
 	//test pattern
-	int patternA = 32767;
+	int patternA = 0x8000;
 	int patternB = 0;
 	int test_ramp = 0x40;
 	int test_dualPattern = 0x20;
@@ -69,7 +69,7 @@ static void init_rx_mapping() {
 	rx_adc_write(0x28, 0x0000);//0=byte wise
 
 	//digital gain
-	rx_adc_write(0x2A, 0x0000);//+12dB on each ch 0xC
+	rx_adc_write(0x2A, 0xCCCC);//+12dB on each ch 0xC
 	rx_adc_write(0x2C, 0x0000);//0x0055=OUTxA/B from INx, NO avg on all ch
 	rx_adc_write(0x29, 0x0000);//0=No DIG FILTER, No AVG mode
 
@@ -90,9 +90,7 @@ static void init_rx_mapping() {
 
 	rx_adc_write(0xB3, 0x0);//0=16bit mode
 
-	rx_adc_write(0xB3, 0x0);//0=16bit mode
-
-	rx_adc_write(0x9, 0x400);//0=internal clamp disabled, 0x400 enabled
+	rx_adc_write(0x9, 0x000);//0=internal clamp disabled, 0x400 enabled
 }
 
 static int init_rx_adc(shared_memory_t * mem) {

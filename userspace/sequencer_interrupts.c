@@ -9,6 +9,7 @@
 #include "config.h"
 #include "clientgroup.h"
 #include "sequence_params.h"
+#include "hardware.h"
 
 #define RXDATA_FILE "/dev/rxdata"
 
@@ -83,6 +84,17 @@ static bool scan_done(uint8_t code) {
 
 static bool sequence_done(uint8_t code) {
 	log_info("Received sequence_done interrupt, code=0x%x", code);
+
+	sequence_params_t* sp = sequence_params_acquire();
+	bool repeat_scan = sp->repeat_scan_enabled;
+	sequence_params_release(sp);
+
+	if (repeat_scan) {
+		log_info("Repeat scan enabled, restart sequence");
+		stop_sequence();
+		start_sequence(true);
+		return true;
+	}
 	
 	message_t* message = create_message(MSG_SEQUENCE_DONE);
 	if (message == NULL) {

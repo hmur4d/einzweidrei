@@ -82,4 +82,5 @@ Command handlers: command id and implementation.
 
 bool register_all_commands();
 
+
 #endif

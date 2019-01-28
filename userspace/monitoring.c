@@ -2,6 +2,7 @@
 #include "log.h"
 #include "net_io.h"
 #include "commands.h"
+#include "hardware.h"
 
 static bool initialized = false;
 static pthread_mutex_t mutex;
@@ -23,12 +24,13 @@ static void send_monitoring_message() {
 	
 	//TODO find real values
 	int32_t volt_status = 0;
-	uint8_t volt_count = 1;
-	int16_t volt[] = { 12*100 };
+	uint8_t volt_count = 0;
+	int16_t volt[0];
 	
 	int32_t temperature_status = 0;
-	uint8_t temperature_count = 2;
-	int16_t temperature[] = { (273 + 75)*100, (273 + 45)*100 };
+	uint8_t temperature_count = 1;
+	int16_t fpga_temp=(int16_t)((273.15+read_fpga_temperature())*100);
+	int16_t temperature[] = {fpga_temp};
 
 	int32_t pressure_status = 0;
 	uint8_t pressure_count = 0;

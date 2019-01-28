@@ -4,6 +4,8 @@
 #include <linux/spi/spidev.h>
 #include <sys/ioctl.h>
 #include "shared_memory.h"
+#include "sequence_params.h"
+#include "config.h"
 
 
 int spi_open(spi_t * spi) {
@@ -73,8 +75,20 @@ void spi_send(spi_t spi, char * tx_buff, char * rx_buff)
 	}
 }
 
+void start_sequence(bool repeat_scan) {
+	sequence_params_t* seq_params = sequence_params_acquire();
+	seq_params->repeat_scan_enabled = repeat_scan;
+	sequence_params_release(seq_params);
+
+	shared_memory_t* mem = shared_memory_acquire();
+	log_info("writing sequence start: 0x%x <- 0x%x (%d), repeat = %d", mem->control, SEQ_START, SEQ_START, repeat_scan);
+	write_property(mem->control, SEQ_START);
+	shared_memory_release(mem);
+}
+
 void stop_sequence() {
 	shared_memory_t* mem = shared_memory_acquire();
+	log_info("writing stop sequence: 0x%x <- 0x%x (%d)", mem->control, SEQ_STOP, SEQ_STOP);
 	write_property(mem->control, SEQ_STOP);
 	shared_memory_release(mem);
 }
@@ -82,6 +96,20 @@ void stop_lock() {
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_sequence_on_off, 0);
 	shared_memory_release(mem);
+}
+
+float read_fpga_temperature() {
+	int fd = open(TEMPERATURE_FILE, O_RDONLY);
+	if (fd <0) {
+		log_error("Unabled to read FPGA temperature");
+		return 0.0f;
+	}
+	char buff[10];
+	read(fd, buff, sizeof(buff));
+	close(fd);
+	float t =(float)(atoi(buff)/1000.0);
+	log_info("FPGA temperature is %.2f", t);
+	return t;
 }
 
 
@@ -92,6 +120,6 @@ void hardware_init() {
 	hw_receiver_init();
 	hw_gradient_init();
 
-
+	
 }
 

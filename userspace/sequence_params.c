@@ -7,6 +7,9 @@ static pthread_mutex_t mutex;
 void sequence_params_clear(sequence_params_t* sequence_params) {
 	sequence_params->number_full = 0;
 	sequence_params->number_half_full = 0;
+	sequence_params->repeat_scan_enabled = false;
+	sequence_params->rx_gain = 0;
+	sequence_params->decfactor = 0;
 }
 
 bool sequence_params_init() {

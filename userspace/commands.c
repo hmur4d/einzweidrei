@@ -243,44 +243,29 @@ static void read_pio(clientsocket_t* client, header_t* header, const void* body)
 }
 
 static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
-	//TODO implement this
-
-
-	shared_memory_t* mem = shared_memory_acquire();
-	
-	log_info("writing start sequence: 0x%x <- 0x%x (%d)", mem->control, SEQ_START, SEQ_START);
-	write_property(mem->control, SEQ_START);
-	shared_memory_release(mem);
-}
-
-static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* body) {
-
-
-	log_info("cmd_cam_init");
-
-	if (header->param1 & 1 == 1) {
-		hw_transmitter_init();
-	}
-
+	start_sequence(false);
 }
 
 static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
+	start_sequence(true);
+}
 
-	
-	shared_memory_t* mem = shared_memory_acquire();
-	
-	log_info("writing repeat sequence: 0x%x <- 0x%x (%d)", mem->control, SEQ_REPEAT, SEQ_REPEAT);
-	write_property(mem->control, SEQ_REPEAT);
-	shared_memory_release(mem);
+
+
+static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* body) {
+	log_info("cmd_cam_init");
+	read_fpga_temperature();
+	if (header->param1 & 1 == 1) {
+		hw_transmitter_init();
+	}
 }
 
 static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const void* body) {
 
-	shared_memory_t* mem = shared_memory_acquire();
-	log_info("writing stop sequence: 0x%x <- 0x%x (%d)", mem->control, SEQ_STOP, SEQ_STOP);
-	write_property(mem->control, SEQ_STOP);
-	shared_memory_release(mem);
+	stop_sequence();
 }
+
+
 
 static void cmd_sequence_clear(clientsocket_t* client, header_t* header, const void* body) {
 	sequence_params_t* sequence_params=sequence_params_acquire();

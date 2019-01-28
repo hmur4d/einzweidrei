@@ -9,6 +9,7 @@ typedef struct {
 	int number_full;
 	int rx_gain;
 	int decfactor;
+	bool repeat_scan_enabled;
 
 }sequence_params_t;
 
