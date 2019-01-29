@@ -165,8 +165,10 @@ static void who_are_you(clientsocket_t* client, header_t* header, const void* bo
 
 	int fpgaVersion = 109;
 	int hpsVersion = 100;
-	unsigned char fake_mac_address[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+	unsigned char mac_address[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 	int versionID = 400;
+
+	clientsocket_get_mac_address(client, mac_address);
 
 	header->cmd = CMD_WHO_ARE_YOU;
 	header->param1 = fpgaVersion;
@@ -179,8 +181,8 @@ static void who_are_you(clientsocket_t* client, header_t* header, const void* bo
 
 	int32_t data[header->body_size];
 	data[0] = versionID;
-	data[1] = fake_mac_address[3] << 24 | fake_mac_address[2] << 16 | fake_mac_address[1] << 8 | fake_mac_address[0];
-	data[2] = fake_mac_address[5] << 8 | fake_mac_address[4];
+	data[1] = mac_address[3] << 24 | mac_address[2] << 16 | mac_address[1] << 8 | mac_address[0];
+	data[2] = mac_address[5] << 8 | mac_address[4];
 	data[3] = 5; //number of hsmc slots
 	data[4] = 0;
 	data[5] = 0;

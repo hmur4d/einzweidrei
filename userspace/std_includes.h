@@ -24,8 +24,11 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h> 
 #include <arpa/inet.h>
 #include <math.h>
+#include <linux/if.h>
+#include <ifaddrs.h>
 
 #endif

@@ -122,7 +122,6 @@ void serversocket_close(serversocket_t* serversocket) {
 	}
 }
 
-
 //-- client sockets
 
 static void clientsocket_init(clientsocket_t* clientsocket, serversocket_t* serversocket) {
@@ -130,6 +129,42 @@ static void clientsocket_init(clientsocket_t* clientsocket, serversocket_t* serv
 	clientsocket->server_fd = serversocket->fd;
 	clientsocket->server_port = serversocket->port;
 	clientsocket->server_name = serversocket->name;
+}
+
+static void clientsocket_get_interface_name(clientsocket_t* clientsocket, char* if_name) {
+	struct sockaddr_in addr;
+	socklen_t addr_len = sizeof(addr);
+	getsockname(clientsocket->fd, (struct sockaddr*)&addr, &addr_len);
+	struct ifaddrs* ifaddr;
+	getifaddrs(&ifaddr);
+
+	// look which interface contains the wanted address.
+	// When found, ifa->ifa_name contains the name of the interface (eth0, eth1, ppp0...)
+	struct ifaddrs* ifa;
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
+			struct sockaddr_in* inaddr = (struct sockaddr_in*)ifa->ifa_addr;
+			if (inaddr->sin_addr.s_addr == addr.sin_addr.s_addr && ifa->ifa_name) {
+				strcpy(if_name, ifa->ifa_name);
+				break;
+			}
+		}
+	}
+	freeifaddrs(ifaddr);
+}
+
+void clientsocket_get_mac_address(clientsocket_t* clientsocket, unsigned char* mac_address) {
+	struct ifreq ifr;
+	clientsocket_get_interface_name(clientsocket, ifr.ifr_name);
+	if (ioctl(clientsocket->fd, SIOCGIFHWADDR, &ifr) == 0) {
+		int i;
+		for (i = 0; i < 6; i++) {
+			mac_address[i] = (unsigned char)ifr.ifr_addr.sa_data[i];
+		}
+	}
+	else {
+		log_error_errno("Unable to read local mac address");
+	}
 }
 
 void clientsocket_close(clientsocket_t* clientsocket) {

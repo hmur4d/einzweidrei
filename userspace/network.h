@@ -46,6 +46,10 @@ void serversocket_close(serversocket_t* serversocket);
 
 //-- client sockets
 
+//Gets the mac address for the current socket. The mac_address parameter must be a uchar[6] buffer, 
+//previously allocated by the caller.
+void clientsocket_get_mac_address(clientsocket_t* clientsocket, unsigned char* mac_address);
+
 //Closes a client socket. The socket will be flagged, but its structure will still be available.
 //This is needed because a socket could be closed while trying to receive data in a loop. 
 void clientsocket_close(clientsocket_t* clientsocket);
