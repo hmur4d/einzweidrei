@@ -20,6 +20,8 @@ static gpio_irq_t list[] = {
 //--
 
 static gpio_irq_handler_f gpio_irq_handler = NULL;
+static DEFINE_SPINLOCK(spinlock);
+
 
 static gpio_irq_t* find_gpio_irq(int irq) {
 	gpio_irq_t *gpioirq;
@@ -46,7 +48,11 @@ static irqreturn_t forward_irq_to_handler(int irq, void *dev_id) {
 	}
 	
 	klog_debug("Interrupt happened: %s\n", gpioirq->name);
+	unsigned long irqflags;
+	spin_lock_irqsave(&spinlock, irqflags);
 	gpio_irq_handler(gpioirq);
+	spin_unlock_irqrestore(&spinlock, irqflags);
+
 	return IRQ_HANDLED;
 }
 

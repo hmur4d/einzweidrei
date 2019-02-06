@@ -30,5 +30,6 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <linux/interrupt.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
+#include <linux/spinlock.h>
 
 #endif
