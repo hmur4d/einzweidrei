@@ -34,9 +34,9 @@ bool interrupt_queue_add(uint8_t value) {
 
 	timed_value_t timedvalue = { .value = value, .time = ktime_get() };
 	buffer[next_write] = timedvalue;
+	next_write = (next_write + 1) % INTERRUPT_QUEUE_CAPACITY;
 	size++;
 
-	next_write = (next_write + 1) % INTERRUPT_QUEUE_CAPACITY;
 	return true;
 }
 
@@ -63,8 +63,8 @@ bool interrupt_queue_take(uint8_t* value) {
 	}
 
 	timed_value_t timedvalue = buffer[next_read];
-	next_read = (next_read + 1) % INTERRUPT_QUEUE_CAPACITY;
 	*value = timedvalue.value;
+	next_read = (next_read + 1) % INTERRUPT_QUEUE_CAPACITY;
 	size--;
 	
 	/*
