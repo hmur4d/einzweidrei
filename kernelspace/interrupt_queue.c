@@ -7,7 +7,7 @@ typedef struct {
 } timed_value_t;
 
 //use a ring buffer
-static int size = 0;
+static volatile int size = 0;
 static int next_read = 0;
 static int next_write = 0;
 static timed_value_t buffer[INTERRUPT_QUEUE_CAPACITY];
