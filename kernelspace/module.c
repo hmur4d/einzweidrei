@@ -45,8 +45,16 @@ static bool dev_interrupts_closed(void) {
 
 static void publish_interrupt(gpio_irq_t* gpioirq) {
 	if (failure) {
+		klog_error("Interrupt 0x%x (%s) not published due to previous failure.\n", gpioirq->code, gpioirq->name);
 		return;
 	}
+
+	int qsize, qnext_read, qnext_write;
+	ulong qempty_takes;
+	interrupt_queue_status(&qsize, &qnext_read, &qnext_write, &qempty_takes);
+	klog_info("publishing interrupt 0x%x (%s): queue: size=%d, next_read=%d, next_write=%d, empty_takes=%lu\n",
+		gpioirq->code, gpioirq->name,
+		qsize, qnext_read, qnext_write, qempty_takes);
 
 	if (!interrupt_queue_add(gpioirq->code)) {
 		failure = true;

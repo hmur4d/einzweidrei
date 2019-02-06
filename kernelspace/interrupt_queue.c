@@ -79,3 +79,10 @@ bool interrupt_queue_take(uint8_t* value) {
 	empty_takes = 0;
 	return true;
 }
+
+void interrupt_queue_status(int *qsize, int *qnext_read, int *qnext_write, ulong *qempty_takes) {
+	*qsize = size;
+	*qnext_read = next_read;
+	*qnext_write = next_write;
+	*qempty_takes = empty_takes;
+}

@@ -47,7 +47,6 @@ static irqreturn_t forward_irq_to_handler(int irq, void *dev_id) {
 		return IRQ_HANDLED;
 	}
 	
-	klog_debug("Interrupt happened: %s\n", gpioirq->name);
 	unsigned long irqflags;
 	spin_lock_irqsave(&spinlock, irqflags);
 	gpio_irq_handler(gpioirq);

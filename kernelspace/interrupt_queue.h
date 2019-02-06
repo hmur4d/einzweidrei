@@ -28,4 +28,7 @@ bool interrupt_queue_add(uint8_t value);
 //May wait a bit if the queue is empty.
 bool interrupt_queue_take(uint8_t* value);
 
+//Asks for queue status, used for logging only.
+void interrupt_queue_status(int *qsize, int *qnext_read, int *qnext_write, ulong *qempty_takes);
+
 #endif
