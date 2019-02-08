@@ -58,8 +58,8 @@ static bool send_lock_data(off_t offset, size_t nbytes, int isFull) {
 
 	read(data_fd, buffer, nbytes);
 	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("read lock data (%d bytes): %.3f ms", nbytes,
-		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
+	//log_info("read lock data (%d bytes): %.3f ms", nbytes,
+	//	(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
 	
 	message_t* message = create_message_with_body(MSG_LOCK_SCAN_DONE, buffer, nbytes);
 	if (message == NULL) {

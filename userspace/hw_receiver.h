@@ -82,6 +82,7 @@
 
 
 void hw_receiver_write_rx_gain(int rx_channel,int binary_gain);
+void hw_receiver_write_lock_rx_gain(int gain_x10);
 void hw_receiver_init();
 
 #endif 

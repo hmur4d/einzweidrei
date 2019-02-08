@@ -3,9 +3,14 @@
 #include "shared_memory.h"
 #include "hardware.h"
 #include "log.h"
+#include "math.h"
+#include "ram.h"
+#include "memory_map.h"
 
 spi_t spi_rx_adc;
 spi_t spi_rx_dac;
+
+bool lock_present = false;
 
 // RX DAC : receiver gain
 static void rx_dac_write(char cmd, char addr, short data) {
@@ -151,14 +156,75 @@ static int init_rx_adc(shared_memory_t * mem) {
 
 void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 
+	if (rx_channel == 3 && lock_present) {
+		log_info("hw_receiver_write_rx_gain rx[3].gain aborted bycause lock is en this channel");
+		return;
+	}
+
 	char dac_addr_list[] = {ADDR_CMD_DAC_A ,ADDR_CMD_DAC_B,ADDR_CMD_DAC_C,ADDR_CMD_DAC_D };
 	spi_open(&spi_rx_dac);
 	log_info("hw_receiver_write_rx_gain rx[%d].gain=%d", rx_channel, binary_gain);
 	rx_dac_write( CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, dac_addr_list[rx_channel], binary_gain);
 	spi_close(&spi_rx_dac);
 }
+void hw_receiver_write_lock_rx_gain(int gain_x10) {
+	lock_present = true;
 
+	float gainDB = gain_x10 / 10.0f;
+
+	float rf_gain = 18.3;
+	char rf_gan_enabled = 0;
+	float vga = 0;
+	if (gainDB>rf_gain) {
+		vga = gainDB - rf_gain;
+		rf_gan_enabled = 1;
+	}
+	else {
+		vga = gainDB;
+	}
+
+	ram_descriptor_t ram;
+	ram.is_register = true;
+	ram.register_id = RAM_REGISTER_RF_SWITCH_SELECTED;
+	ram.offset_bytes = RAM_REGISTERS_OFFSET + ram.register_id * RAM_REGISTERS_OFFSET_STEP;
+	ram.offset_int32 = ram.offset_bytes / sizeof(int32_t);
+
+	shared_memory_t* mem = shared_memory_acquire();
+	int32_t existingValue=0;
+	memcpy(&existingValue, mem->rams + ram.offset_int32, sizeof(existingValue));
+	if (rf_gan_enabled) {
+		
+		existingValue |= 0x0008;//RF switch lock = 4eme bit
+	}
+	else {
+		existingValue &= 0xFFF7;//RF switch lock = 4eme bit
+	}
+	log_info("hw_receiver_write_lock_rx_gain RFgain = %d, vga = %.2f, reg=%d", rf_gan_enabled, vga, existingValue);
+	memcpy(mem->rams + ram.offset_int32, &existingValue, sizeof(existingValue));
+	shared_memory_release(mem);
+
+	float dBperVolt = 20.6f;
+	float minVolt = 0.4f;
+	float maxDacVolt = 2.5f;
+	int nbBitDac = 16;
+	int maxDacValue = (int)(pow(2, nbBitDac) - 1);
+
+	float volt = minVolt + vga / dBperVolt;
+	int binary = (int)((volt / maxDacVolt)*(maxDacValue));
+	if (binary>maxDacValue) {
+		binary = maxDacValue;
+	}
+	if (binary<0) {
+		binary = 0;
+	}
+
+	spi_open(&spi_rx_dac);
+	log_info("hw_receiver_write_lock_rx_gain rx.gain=%d", binary);
+	rx_dac_write( CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, ADDR_CMD_DAC_D, binary);
+	spi_close(&spi_rx_dac);
+}
 void hw_receiver_init() {
+	lock_present = false;
 	log_info("hw_receiver_init, started");
 
 	log_info("hw_receiver_init stop sequence and lock, to be sure that they are not running");

@@ -92,7 +92,8 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 		uint32_t value = *((uint32_t*)body);
 		log_info("Ram.id==RAM_REGISTER_LOCK_RX_GAIN");
-		hw_receiver_write_rx_gain(LOCK_RX_CHANNEL,value);
+		
+		hw_receiver_write_lock_rx_gain(value);
 
 	}
 	if (ram.id == RAM_REGISTERS_LOCK_SELECTED + RAM_REGISTER_LOCK_POWER_SELECTED) {
