@@ -57,9 +57,6 @@ static void init_rx_mapping() {
 	//test pattern
 	int patternA = 0x8000;
 	int patternB = 0;
-	int test_ramp = 0x40;
-	int test_dualPattern = 0x20;
-	int test_singlePattern = 0x10;
 	int test_disabled = 0x0;
 	int test = test_disabled;
 
@@ -83,10 +80,7 @@ static void init_rx_mapping() {
 
 	//Serialization
 	int en_ser = 0x8000;
-	int ser_18b =    0x1000;
 	int ser_16b =    0x800;
-	int ser_14b =    0x400;
-	int pad_two_0s = 0x20;
 	int msb_first = 0x8;
 	int complement_2 = 0x4;
 	int wire_2x = 0x1;
