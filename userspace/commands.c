@@ -253,8 +253,6 @@ static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 	start_sequence(true);
 }
 
-
-
 static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* body) {
 	log_info("cmd_cam_init");
 	read_fpga_temperature();
@@ -264,11 +262,8 @@ static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* b
 }
 
 static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const void* body) {
-
 	stop_sequence();
 }
-
-
 
 static void cmd_sequence_clear(clientsocket_t* client, header_t* header, const void* body) {
 	sequence_params_t* sequence_params=sequence_params_acquire();
@@ -277,19 +272,18 @@ static void cmd_sequence_clear(clientsocket_t* client, header_t* header, const v
 }
 
 static void cmd_lock_sequence_on_off(clientsocket_t* client, header_t* header, const void* body) {
-
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_sequence_on_off, header->param1);
 	shared_memory_release(mem);
 }
-static void cmd_lock_on_off(clientsocket_t* client, header_t* header, const void* body) {
 
+static void cmd_lock_on_off(clientsocket_t* client, header_t* header, const void* body) {
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_on_off, header->param1);
 	shared_memory_release(mem);
 }
-static void cmd_lock_sweep_on_off(clientsocket_t* client, header_t* header, const void* body) {
 
+static void cmd_lock_sweep_on_off(clientsocket_t* client, header_t* header, const void* body) {
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_sweep_on_off, header->param1);
 	shared_memory_release(mem);
