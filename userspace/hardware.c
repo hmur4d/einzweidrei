@@ -117,7 +117,7 @@ float read_fpga_temperature() {
 	temperature_ascii[nread] = '\0'; //ensure end of string char is present
 	int temperature_int = atoi(temperature_ascii);
 	float t = temperature_int / 1000.0f;
-	log_info("FPGA temperature is %.2f", t);
+	//log_info("FPGA temperature is %.2f", t);
 	return t;
 }
 
