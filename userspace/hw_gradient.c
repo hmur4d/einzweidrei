@@ -4,22 +4,18 @@
 
 spi_t spi_wm;
 
-
 void hw_write_wm8804(char addr, char wr_data) {
 	char tx_buff[2] = { 0x7f & addr,wr_data};
-	char rx_buff;
-	spi_send(spi_wm, tx_buff, rx_buff);
+	char rx_buff[2] = { 0, 0 };
 
+	spi_send(spi_wm, tx_buff, rx_buff);
 }
 
-
 char hw_read_wm8804(char addr) {
-
 	char tx_buff[2] = { 0x80 | addr,0 };
-	char rx_buff[2] = { 0,0 };
+	char rx_buff[2] = { 0, 0 };
 
 	spi_send(spi_wm, tx_buff, rx_buff);
-
 	return rx_buff[1];
 }
 
