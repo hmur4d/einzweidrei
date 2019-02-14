@@ -256,8 +256,19 @@ static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* body) {
 	log_info("cmd_cam_init");
 	read_fpga_temperature();
-	if (header->param1 & 1 == 1) {
+
+	if (header->param1 & 1) {
+		shared_memory_t * mem = shared_memory_acquire();
+		int32_t lock_status = read_property(mem->lock_sequence_on_off);
+		shared_memory_release(mem);
+
+		//init stops lock sequence, so we need to save and restore its status...
 		hw_transmitter_init();
+
+		log_info("set lock status: %d", lock_status);
+		mem = shared_memory_acquire();
+		write_property(mem->lock_sequence_on_off, lock_status);
+		shared_memory_release(mem);
 	}
 }
 

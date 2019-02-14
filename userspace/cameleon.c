@@ -65,6 +65,11 @@ static void accept_lock_client(clientsocket_t* client) {
 
 	clientgroup_close_all();
 	lock_interrupts_set_client(NULL);
+
+	//stop lock sequence
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->lock_sequence_on_off, 0);
+	shared_memory_release(mem);
 }
 
 //--

@@ -202,10 +202,12 @@ void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 
 
 }
+
 void hw_receiver_write_lock_rx_gain(int binary_gain) {
 	lock_present = true;
 	write_rx_gain(3, binary_gain);
 }
+
 void hw_receiver_init() {
 	lock_present = false;
 	log_info("hw_receiver_init, started");
