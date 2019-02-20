@@ -48,7 +48,30 @@ void hw_gradient_init() {
 
 	char wm_rd = hw_read_wm8804(0);
 
-	log_info("read from wm : %x \n", wm_rd);
+	log_info("read from wm1 : %x \n", wm_rd);
+
+	spi_close(&spi_wm);
+
+	spi_wm = (spi_t) {
+		.dev_path = "/dev/spidev32766.4",
+			.fd = -1,
+			.speed = 50000,
+			.bits = 8,
+			.len = 2,
+			.mode = 0,
+			.delay = 0,
+	};
+	spi_open(&spi_wm);
+
+	hw_write_wm8804(0x1E, 2); //power up
+	hw_write_wm8804(0x1B, 2);
+	hw_write_wm8804(0x12, 6); // not audio no copyright
+	hw_write_wm8804(0x16, 2); // not audio no copyright
+	hw_write_wm8804(0x08, 0x38); // for the RX : no hold
+
+	wm_rd = hw_read_wm8804(0);
+
+	log_info("read from wm2 : %x \n", wm_rd);
 
 	spi_close(&spi_wm);
 

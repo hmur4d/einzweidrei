@@ -6,6 +6,7 @@
 #include "shared_memory.h"
 #include "sequence_params.h"
 #include "config.h"
+#include "memory_map.h"
 
 
 int spi_open(spi_t * spi) {
@@ -126,5 +127,19 @@ void hardware_init() {
 	hw_transmitter_init();
 	hw_receiver_init();
 	hw_gradient_init();
+
+	
+	uint32_t lock_shapes[512];
+	for (int i = 0; i < 512; i++) {
+		lock_shapes[i] = 0x0FFF0000;
+	}
+	shared_memory_t* mem = shared_memory_acquire();
+	uint32_t desti = mem->rams + RAM_LOCK_SHAPE_OFFSET/sizeof(uint32_t);
+	uint32_t size_byte = sizeof(lock_shapes);
+	log_info("Write LockShape at 0x%x size in bytes=%d, first value=0x%x", desti,size_byte,lock_shapes[0]);
+	memcpy(desti, lock_shapes, size_byte);
+	shared_memory_release(mem);
+	
+
 }
 

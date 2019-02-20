@@ -124,4 +124,8 @@ Memory map, copied as-is from CameleonNIOS
 #define RAM_SMART_TTL_VALUES_DATA_SELECTED              91
 #define RAM_SMART_TTL_VALUES_DATA_OFFSET                (RAM_OFFSET_STEP * (RAM_SMART_TTL_VALUES_DATA_SELECTED))
 
+/************************RAM_LOCK_SHAPE************************/
+#define RAM_LOCK_SHAPE_SELECTED				            92
+#define RAM_LOCK_SHAPE_OFFSET							(RAM_OFFSET_STEP * (RAM_LOCK_SHAPE_SELECTED))
+
 #endif
