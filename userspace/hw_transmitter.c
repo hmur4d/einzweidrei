@@ -126,8 +126,6 @@ static void dds_sync(shared_memory_t *mem) {
 }
 
 void hw_transmitter_init() {
-
-
 	log_info("hw_transmitter_init started");
 	log_info("hw_transmitter_init stop sequence and lock, to be sure that they are not running");
 	stop_sequence();

@@ -31,7 +31,6 @@ typedef struct {
 
 //Used to expose typed memory blocks
 typedef struct {
-
 	property_t lock_sweep_on_off;
 	property_t lock_sequence_on_off;
 	property_t lock_on_off;

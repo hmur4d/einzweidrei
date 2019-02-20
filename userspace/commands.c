@@ -253,22 +253,28 @@ static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
 	start_sequence(true);
 }
 
-
-
 static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* body) {
 	log_info("cmd_cam_init");
 	read_fpga_temperature();
-	if (header->param1 & 1 == 1) {
+
+	if (header->param1 & 1) {
+		shared_memory_t * mem = shared_memory_acquire();
+		int32_t lock_status = read_property(mem->lock_sequence_on_off);
+		shared_memory_release(mem);
+
+		//init stops lock sequence, so we need to save and restore its status...
 		hw_transmitter_init();
+
+		log_info("set lock status: %d", lock_status);
+		mem = shared_memory_acquire();
+		write_property(mem->lock_sequence_on_off, lock_status);
+		shared_memory_release(mem);
 	}
 }
 
 static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const void* body) {
-
 	stop_sequence();
 }
-
-
 
 static void cmd_sequence_clear(clientsocket_t* client, header_t* header, const void* body) {
 	sequence_params_t* sequence_params=sequence_params_acquire();
@@ -277,19 +283,18 @@ static void cmd_sequence_clear(clientsocket_t* client, header_t* header, const v
 }
 
 static void cmd_lock_sequence_on_off(clientsocket_t* client, header_t* header, const void* body) {
-
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_sequence_on_off, header->param1);
 	shared_memory_release(mem);
 }
-static void cmd_lock_on_off(clientsocket_t* client, header_t* header, const void* body) {
 
+static void cmd_lock_on_off(clientsocket_t* client, header_t* header, const void* body) {
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_on_off, header->param1);
 	shared_memory_release(mem);
 }
-static void cmd_lock_sweep_on_off(clientsocket_t* client, header_t* header, const void* body) {
 
+static void cmd_lock_sweep_on_off(clientsocket_t* client, header_t* header, const void* body) {
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_sweep_on_off, header->param1);
 	shared_memory_release(mem);

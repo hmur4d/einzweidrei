@@ -118,7 +118,7 @@ bool shared_memory_init(const char* memory_file) {
 		.name = "lock_on",
 	};
 	sharedmem.lock_sequence_on_off = (property_t) {
-		.read_ptr = NULL,
+		.read_ptr = sharedmem.lwbridge + 16378,
 		.write_ptr = sharedmem.lwbridge + 16378,
 		.bit_size = 1,
 		.bit_offset = 0,
