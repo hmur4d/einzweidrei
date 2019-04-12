@@ -22,10 +22,10 @@ char hw_read_wm8804(char addr) {
 	spi_send(spi_wm, tx_buff, rx_buff);
 	return rx_buff[1];
 }
-char read_wm_i2c(int i2c_fd, char wm_addr, char reg) {
+uint8_t read_wm_i2c(int i2c_fd, uint8_t wm_addr, uint8_t reg) {
 	struct i2c_msg wm_msg[2];	// declare our two i2c_msg array
-	char in_reg = 0x80 | reg;     // write reg address msb=1
-	unsigned char rd_data = 0;
+	uint8_t in_reg = 0x80 | reg;     // write reg address msb=1
+	uint8_t rd_data = 0;
 
 	// Load up transmit msg
 	wm_msg[0].addr = wm_addr;
@@ -50,9 +50,9 @@ char read_wm_i2c(int i2c_fd, char wm_addr, char reg) {
 }
 
 
-char write_wm_i2c(int i2c_fd, char wm_addr, char reg, char wr_data) {
+uint8_t write_wm_i2c(int i2c_fd, uint8_t wm_addr, uint8_t reg, uint8_t wr_data) {
 	struct i2c_msg wm_msg[2];	// declare our two i2c_msg array
-	char in_reg[2];
+	uint8_t in_reg[2];
 	in_reg[0] = 0x80 | reg;     // write reg address msb=1
 	in_reg[1] = wr_data;     // write reg address msb=1
 
@@ -60,7 +60,7 @@ char write_wm_i2c(int i2c_fd, char wm_addr, char reg, char wr_data) {
 	wm_msg[0].addr = wm_addr;
 	wm_msg[0].flags = 0;
 	wm_msg[0].len = sizeof(in_reg);
-	wm_msg[0].buf = &in_reg;
+	wm_msg[0].buf = (uint8_t*) &in_reg;
 
 	struct i2c_rdwr_ioctl_data i2c_data; // declare our i2c_rdwr_ioctl_data structure
 	i2c_data.msgs = wm_msg;
@@ -124,7 +124,7 @@ void hw_gradient_init() {
 	write_property(mem->wm_reset, 0);
 	usleep(2);
 	write_property(mem->wm_reset, 1);
-	short rd_data;
+	uint8_t rd_data;
 	int com_ok;
 	for (int j = 0; j <= 5; j++) {
 		com_ok = 1;
