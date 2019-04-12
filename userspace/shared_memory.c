@@ -77,17 +77,24 @@ bool shared_memory_init(const char* memory_file) {
 	};
 	sharedmem.rx_bitsleep_rst = (property_t) {
 		.read_ptr = NULL,
-			.write_ptr = sharedmem.lwbridge + 16380,
-			.bit_size = 8,
-			.bit_offset = 0,
-			.name = "rx_bitsleep_rst",
+		.write_ptr = sharedmem.lwbridge + 16380,
+		.bit_size = 8,
+		.bit_offset = 0,
+		.name = "rx_bitsleep_rst",
 	};
 	sharedmem.dds_reset = (property_t) {
 		.read_ptr = NULL,
-			.write_ptr = sharedmem.lwbridge + 16380,
-			.bit_size = 1,
-			.bit_offset = 8,
-			.name = "dds_reset",
+		.write_ptr = sharedmem.lwbridge + 16380,
+		.bit_size = 1,
+		.bit_offset = 8,
+		.name = "dds_reset",
+	};
+	sharedmem.wm_reset = (property_t) {
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16380,
+		.bit_size = 1,
+		.bit_offset = 12,
+		.name = "wm_reset",
 	};
 	sharedmem.rx_bitsleep_ctr = (property_t) {
 		.read_ptr = NULL,

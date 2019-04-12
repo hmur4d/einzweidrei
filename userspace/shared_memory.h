@@ -38,6 +38,7 @@ typedef struct {
 	property_t dds_sel;
 	property_t dds_ioupdate;
 	property_t dds_reset;
+	property_t wm_reset;
 
 	property_t rx_bit_aligned;
 	property_t rx_bitsleep_ctr;
