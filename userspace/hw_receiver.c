@@ -7,6 +7,13 @@
 #include "ram.h"
 #include "memory_map.h"
 
+#define TEST_DISABLE		0x0
+#define TEST_RAMP			0x40
+#define TEST_DUAL_PATTERN	0x20
+#define TEST_SINGLE_PATTERN 0x10
+
+
+
 spi_t spi_rx_adc;
 spi_t spi_rx_dac;
 
@@ -57,8 +64,8 @@ static void init_rx_mapping() {
 	//test pattern
 	int patternA = 0x8000;
 	int patternB = 0;
-	int test_disabled = 0x0;
-	int test = test_disabled;
+
+	int test = TEST_DISABLE;
 
 	int reg25 = test + (((patternB >> 14) & 0x3) << 2) + (((patternA >> 14) & 0x3));
 	int reg26 = (patternA & 0x3FFF) << 2;
@@ -71,7 +78,7 @@ static void init_rx_mapping() {
 	rx_adc_write(0x28, 0x0000);//0=byte wise
 
 	//digital gain
-	rx_adc_write(0x2A, 0xCCCC);//+12dB on each ch 0xC
+	rx_adc_write(0x2A, 0x0000);//+12dB on each ch 0xC
 	rx_adc_write(0x2C, 0x0000);//0x0055=OUTxA/B from INx, NO avg on all ch
 	rx_adc_write(0x29, 0x0000);//0=No DIG FILTER, No AVG mode
 
