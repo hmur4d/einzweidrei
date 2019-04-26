@@ -53,6 +53,11 @@ bool ram_find(unsigned int ram_id, int span_bytes, ram_descriptor_t* ram) {
 		ram->offset_int32 = ram->offset_bytes / sizeof(int32_t);
 		return true;
 	}
+	if (ram_id == RAM_LOCK_SHAPE_SELECTED) {
+		ram->offset_bytes = RAM_LOCK_SHAPE_OFFSET;
+		ram->offset_int32 = ram->offset_bytes / sizeof(int32_t);
+		return true;
+	}
 
 	log_error("Unknown memory base: 0x%x", ram_id);
 	return false;
