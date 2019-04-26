@@ -6,6 +6,8 @@
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h> // 
 
+extern int hw_revision;
+
 spi_t spi_wm;
 
 void hw_write_wm8804(char addr, char wr_data) {
@@ -71,98 +73,109 @@ uint8_t write_wm_i2c(int i2c_fd, uint8_t wm_addr, uint8_t reg, uint8_t wr_data) 
 }
 
 void hw_gradient_init() {
-	log_info("hw_gradient_init started");
+	log_info("hw_gradient_init started for HW_REVISION = %d", hw_revision);
 	log_info("hw_gradient_init stop sequence and lock, to be sure that they are not running");
 	stop_sequence();
 	stop_lock();
 
-	spi_wm = (spi_t) {
-		.dev_path = "/dev/spidev32766.3",
-			.fd = -1,
-			.speed = 50000,
-			.bits = 8,
-			.len = 2,
-			.mode = 0,
-			.delay = 0,
-	};
-	spi_open(&spi_wm);
 
-	hw_write_wm8804(0x1E, 2); //power up
-	hw_write_wm8804(0x1B, 2);
-	hw_write_wm8804(0x12, 6); // not audio no copyright
-	hw_write_wm8804(0x16, 2); // not audio no copyright
-	hw_write_wm8804(0x08, 0x38); // for the RX : no hold
 
-	char wm_rd = hw_read_wm8804(0);
+	if (hw_revision == HW_REV_4v1 || hw_revision == HW_REV_4v0) {
 
-	log_info("read from wm1 : %x \n", wm_rd);
+		spi_wm = (spi_t) {
+			.dev_path = "/dev/spidev32766.3",
+				.fd = -1,
+				.speed = 50000,
+				.bits = 8,
+				.len = 2,
+				.mode = 0,
+				.delay = 0,
+		};
+		spi_open(&spi_wm);
 
-	spi_close(&spi_wm);
+		hw_write_wm8804(0x1E, 2); //power up
+		hw_write_wm8804(0x1B, 2);
+		hw_write_wm8804(0x12, 6); // not audio no copyright
+		hw_write_wm8804(0x16, 2); // not audio no copyright
+		hw_write_wm8804(0x08, 0x38); // for the RX : no hold
 
-	spi_wm = (spi_t) {
-		.dev_path = "/dev/spidev32766.4",
-			.fd = -1,
-			.speed = 50000,
-			.bits = 8,
-			.len = 2,
-			.mode = 0,
-			.delay = 0,
-	};
-	spi_open(&spi_wm);
+		char wm_rd = hw_read_wm8804(0);
 
-	hw_write_wm8804(0x1E, 2); //power up
-	hw_write_wm8804(0x1B, 2);
-	hw_write_wm8804(0x12, 6); // not audio no copyright
-	hw_write_wm8804(0x16, 2); // not audio no copyright
-	hw_write_wm8804(0x08, 0x38); // for the RX : no hold
+		log_info("spi read from wm1 : %x \n", wm_rd);
 
-	wm_rd = hw_read_wm8804(0);
+		spi_close(&spi_wm);
 
-	log_info("read from wm2 : %x \n", wm_rd);
-	int i2c_fd = open("/dev/i2c-0", O_RDWR);
-	shared_memory_t * mem = shared_memory_acquire();
-	write_property(mem->wm_reset, 0);
-	usleep(2);
-	write_property(mem->wm_reset, 1);
-	uint8_t rd_data;
-	int com_ok;
-	for (int j = 0; j <= 5; j++) {
-		com_ok = 1;
-		rd_data = read_wm_i2c(i2c_fd, 0x3B, 0);
-		printf("%d attempt : 1 read at %c => %x \n", j, 0, rd_data);
-		if (rd_data != 5) {
-			com_ok = 0;
-			write_property(mem->wm_reset, 1);
-			usleep(2);
-			write_property(mem->wm_reset, 0);
-		}
+		spi_wm = (spi_t) {
+			.dev_path = "/dev/spidev32766.4",
+				.fd = -1,
+				.speed = 50000,
+				.bits = 8,
+				.len = 2,
+				.mode = 0,
+				.delay = 0,
+		};
+		spi_open(&spi_wm);
 
-		rd_data = read_wm_i2c(i2c_fd, 0x3A, 0);
-		printf("%d attempt : 2 read at %c => %x \n", j, 0, rd_data);
-		if (rd_data != 5) {
-			com_ok = 0;
-			write_property(mem->wm_reset, 1);
-			usleep(2);
-			write_property(mem->wm_reset, 0);
-		}
-		if (com_ok == 1) j = 5;
+		hw_write_wm8804(0x1E, 2); //power up
+		hw_write_wm8804(0x1B, 2);
+		hw_write_wm8804(0x12, 6); // not audio no copyright
+		hw_write_wm8804(0x16, 2); // not audio no copyright
+		hw_write_wm8804(0x08, 0x38); // for the RX : no hold
+
+		wm_rd = hw_read_wm8804(0);
+
+		log_info("spi read from wm2 : %x \n", wm_rd);
+		spi_close(&spi_wm);
+
 	}
-	shared_memory_release(mem);
+	else if (hw_revision == HW_REV_4v2) {
 
-	write_wm_i2c(i2c_fd, 0x3A, 0x1E, 2); //power up
-	write_wm_i2c(i2c_fd, 0x3A, 0x1B, 2);
-	write_wm_i2c(i2c_fd, 0x3A, 0x12, 6); // not audio no copyright
-	write_wm_i2c(i2c_fd, 0x3A, 0x16, 2); // not audio no copyright
-	write_wm_i2c(i2c_fd, 0x3A, 0x08, 0x38); // for the RX : no hold
+		int i2c_fd = open("/dev/i2c-0", O_RDWR);
+		shared_memory_t * mem = shared_memory_acquire();
+		write_property(mem->wm_reset, 0);
+		usleep(2);
+		write_property(mem->wm_reset, 1);
+		uint8_t rd_data;
+		int com_ok;
+		for (int j = 0; j <= 5; j++) {
+			com_ok = 1;
+			rd_data = read_wm_i2c(i2c_fd, 0x3B, 0);
+			log_info("I2C read, %d attempt : 1 read at %c => %x \n", j, 0, rd_data);
+			if (rd_data != 5) {
+				com_ok = 0;
+				write_property(mem->wm_reset, 1);
+				usleep(2);
+				write_property(mem->wm_reset, 0);
+			}
 
-	write_wm_i2c(i2c_fd, 0x3B, 0x1E, 2); //power up
-	write_wm_i2c(i2c_fd, 0x3B, 0x1B, 2);
-	write_wm_i2c(i2c_fd, 0x3B, 0x12, 6); // not audio no copyright
-	write_wm_i2c(i2c_fd, 0x3B, 0x16, 2); // not audio no copyright
-	write_wm_i2c(i2c_fd, 0x3B, 0x08, 0x38); // for the RX : no hold
-	
+			rd_data = read_wm_i2c(i2c_fd, 0x3A, 0);
+			log_info("I2C read, %d attempt : 2 read at %c => %x \n", j, 0, rd_data);
+			if (rd_data != 5) {
+				com_ok = 0;
+				write_property(mem->wm_reset, 1);
+				usleep(2);
+				write_property(mem->wm_reset, 0);
+			}
+			if (com_ok == 1) j = 5;
+		}
+		shared_memory_release(mem);
 
-	spi_close(&spi_wm);
+		write_wm_i2c(i2c_fd, 0x3A, 0x1E, 2); //power up
+		write_wm_i2c(i2c_fd, 0x3A, 0x1B, 2);
+		write_wm_i2c(i2c_fd, 0x3A, 0x12, 6); // not audio no copyright
+		write_wm_i2c(i2c_fd, 0x3A, 0x16, 2); // not audio no copyright
+		write_wm_i2c(i2c_fd, 0x3A, 0x08, 0x38); // for the RX : no hold
+
+		write_wm_i2c(i2c_fd, 0x3B, 0x1E, 2); //power up
+		write_wm_i2c(i2c_fd, 0x3B, 0x1B, 2);
+		write_wm_i2c(i2c_fd, 0x3B, 0x12, 6); // not audio no copyright
+		write_wm_i2c(i2c_fd, 0x3B, 0x16, 2); // not audio no copyright
+		write_wm_i2c(i2c_fd, 0x3B, 0x08, 0x38); // for the RX : no hold
+
+		close(i2c_fd);
+	}
+
+
 
 	log_info("hw_gradient_init done");
 };

@@ -8,6 +8,11 @@
 #include "hw_gradient.h"
 #include "std_includes.h"
 
+#define HW_REV_4v2 2
+#define HW_REV_4v1 1
+#define HW_REV_4v0 0
+
+int hw_revision = HW_REV_4v2;
 
 typedef struct {
 	char* dev_path;
