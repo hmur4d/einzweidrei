@@ -11,9 +11,9 @@
 
 //--
 
-char* get_log_file();
-int get_log_level();
-char* get_memory_file();
-int get_hardware_revision();
+char* config_log_file();
+int config_log_level();
+char* config_memory_file();
+int config_hardware_revision();
 
 #endif

@@ -13,22 +13,22 @@
 
 //--
 
-char* get_log_file() {
+char* config_log_file() {
 	char* filename = getenv(ENV_LOG_FILE);
 	return filename == NULL ? DEFAULT_LOG_FILE : filename;
 }
 
-int get_log_level() {
+int config_log_level() {
 	char* loglevel_name = getenv(ENV_LOG_LEVEL);
 	return log_level_from_name(loglevel_name, DEFAULT_LOG_LEVEL);
 }
 
-char* get_memory_file() {
+char* config_memory_file() {
 	char* filename = getenv(ENV_DEV_MEM);
 	return filename == NULL ? DEFAULT_DEV_MEM : filename;
 }
 
-int get_hardware_revision() {
+int config_hardware_revision() {
 	char* revision = getenv(ENV_HW_REVISION);
 	return revision == NULL ? HW_REV_4v2 : atoi(revision);
 }

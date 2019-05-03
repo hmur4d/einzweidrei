@@ -117,7 +117,7 @@ void test_read_lockdata_partial(int nwords, int print_count) {
 
 
 int test_main(int argc, char ** argv) {
-	if (!log_init(get_log_level(), get_log_file())) {
+	if (!log_init(config_log_level(), config_log_file())) {
 		return 1;
 	}
 
