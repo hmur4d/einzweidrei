@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Start the cameleon
+#
+
+case "$1" in
+  start)
+        echo "Starting cameleon..."
+        source /opt/RS2D/cameleon.conf
+        insmod /opt/RS2D/modcameleon.ko
+        /opt/RS2D/cameleon > /dev/null &
+        ;;
+  stop)
+        echo "Stopping cameleon..."
+        killall -9 cameleon
+        sleep 1
+        rmmod modcameleon.ko
+        ;;
+  restart|reload)
+        "$0" stop
+        "$0" start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?

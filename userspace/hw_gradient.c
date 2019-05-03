@@ -1,12 +1,9 @@
 #include "hw_gradient.h"
 #include "hardware.h"
+#include "config.h"
 #include "log.h"
 
 #include "shared_memory.h"
-#include <linux/i2c-dev.h>
-#include <linux/i2c.h> // 
-
-extern int hw_revision;
 
 spi_t spi_wm;
 
@@ -73,12 +70,11 @@ uint8_t write_wm_i2c(int i2c_fd, uint8_t wm_addr, uint8_t reg, uint8_t wr_data) 
 }
 
 void hw_gradient_init() {
+	int hw_revision = get_hardware_revision();
 	log_info("hw_gradient_init started for HW_REVISION = %d", hw_revision);
 	log_info("hw_gradient_init stop sequence and lock, to be sure that they are not running");
 	stop_sequence();
 	stop_lock();
-
-
 
 	if (hw_revision == HW_REV_4v1 || hw_revision == HW_REV_4v0) {
 

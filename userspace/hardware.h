@@ -2,7 +2,6 @@
 #ifndef _HARDWARE_H_
 #define _HARDWARE_H_
 
-
 #include "hw_transmitter.h"
 #include "hw_receiver.h"
 #include "hw_gradient.h"
@@ -11,8 +10,6 @@
 #define HW_REV_4v2 2
 #define HW_REV_4v1 1
 #define HW_REV_4v0 0
-
-int hw_revision = HW_REV_4v2;
 
 typedef struct {
 	char* dev_path;

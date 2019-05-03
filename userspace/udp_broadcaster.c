@@ -1,4 +1,5 @@
 #include "udp_broadcaster.h"
+#include "log.h"
 #include "commands.h"
 #include "config.h"
 #include "pthread.h"
@@ -13,7 +14,6 @@ static pthread_t thread;
 
 
 static void init_device_info(udp_info_t * pUDPinfo) {
-
 	pUDPinfo->cmd = CMD_DEVICE_INFO;
 
 	pUDPinfo->cameleon= (device_info_t) {

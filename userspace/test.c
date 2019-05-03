@@ -1,5 +1,4 @@
 #include "std_includes.h"
-#include "module_loader.h"
 #include "shared_memory.h"
 #include "log.h"
 #include "config.h"
@@ -118,14 +117,7 @@ void test_read_lockdata_partial(int nwords, int print_count) {
 
 
 int test_main(int argc, char ** argv) {
-	int loglevel = get_log_level();
-	if (!log_init(loglevel, LOG_FILE)) {
-		return 1;
-	}
-
-	log_info("loading module...");
-	if (!module_load(MODULE_PATH, "")) {
-		log_error("Unable to load module (%s), exiting", MODULE_PATH);
+	if (!log_init(get_log_level(), get_log_file())) {
 		return 1;
 	}
 

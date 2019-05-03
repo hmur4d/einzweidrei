@@ -1,8 +1,5 @@
-
 #include "hardware.h"
 #include "log.h"
-#include <linux/spi/spidev.h>
-#include <sys/ioctl.h>
 #include "shared_memory.h"
 #include "sequence_params.h"
 #include "config.h"

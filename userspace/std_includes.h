@@ -5,6 +5,7 @@
 Common system includes, used in several files.
 Project includes should not be added here, only unmodifiable system includes.
 */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -14,9 +15,12 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <unistd.h>
 #include <libgen.h>
 #include <time.h>
+#include <math.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <ifaddrs.h>
+
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h> 
@@ -25,10 +29,14 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+
 #include <netinet/in.h> 
+
 #include <arpa/inet.h>
-#include <math.h>
+
 #include <linux/if.h>
-#include <ifaddrs.h>
+#include <linux/i2c-dev.h>
+#include <linux/i2c.h>
+#include <linux/spi/spidev.h>
 
 #endif

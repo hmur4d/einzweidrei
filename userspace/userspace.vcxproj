@@ -105,7 +105,6 @@
     <ClInclude Include="lock_interrupts.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="memory_map.h" />
-    <ClInclude Include="module_loader.h" />
     <ClInclude Include="monitoring.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="net_io.h" />
@@ -132,7 +131,6 @@
     <ClCompile Include="lock_interrupts.c" />
     <ClCompile Include="log.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="module_loader.c" />
     <ClCompile Include="monitoring.c" />
     <ClCompile Include="network.c" />
     <ClCompile Include="net_io.c" />
@@ -144,7 +142,10 @@
     <ClCompile Include="workqueue.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="config\cameleon.conf" />
     <None Include="Makefile" />
+    <None Include="scripts\S60cameleon" />
+    <None Include="scripts\start.sh" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="README.txt" />

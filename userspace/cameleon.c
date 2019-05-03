@@ -3,7 +3,6 @@
 #include "std_includes.h"
 #include "log.h"
 #include "config.h"
-#include "module_loader.h"
 #include "net_io.h"
 #include "shared_memory.h"
 #include "workqueue.h"
@@ -75,31 +74,18 @@ static void accept_lock_client(clientsocket_t* client) {
 //--
 
 int cameleon_main(int argc, char ** argv) {
-	int loglevel = get_log_level();
-	if (!log_init(loglevel, LOG_FILE)) {
+	if (!log_init(get_log_level(), get_log_file())) {
 		return 1;
 	}
 
 	log_info("Starting main program");
-
-#ifndef X86
-	if (!module_load(MODULE_PATH, "")) {
-		log_error("Unable to load module (%s), exiting", MODULE_PATH);
-		return 1;
-	}
-#endif
-
 	char* memory_file = get_memory_file();
 	if (!shared_memory_init(memory_file)) {
 		log_error("Unable to open shared memory (%s), exiting", memory_file);
 		return 1;
 	}
 
-
-	 //Init hardware
-
 	hardware_init();
-
 
 	if (!sequencer_interrupts_init()) {
 		log_error("Unable to init sequencer interrupts, exiting");
@@ -205,10 +191,6 @@ int cameleon_main(int argc, char ** argv) {
 	destroy_interrupt_handlers();
 
 	shared_memory_close();
-
-#ifndef X86
-	module_unload(MODULE_PATH);
-#endif
 
 	log_close();
 	return 0;

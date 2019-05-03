@@ -17,7 +17,6 @@
     <ClCompile Include="ram.c" />
     <ClCompile Include="test.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="module_loader.c" />
     <ClCompile Include="sequence_params.c" />
     <ClCompile Include="hardware.c" />
     <ClCompile Include="udp_broadcaster.c" />
@@ -55,7 +54,6 @@
     <ClInclude Include="generated\hps_bridges.h">
       <Filter>generated</Filter>
     </ClInclude>
-    <ClInclude Include="module_loader.h" />
     <ClInclude Include="sequence_params.h" />
     <ClInclude Include="hardware.h" />
     <ClInclude Include="udp_broadcaster.h" />
@@ -67,6 +65,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+    <None Include="config\cameleon.conf">
+      <Filter>config</Filter>
+    </None>
+    <None Include="scripts\S60cameleon">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="scripts\start.sh">
+      <Filter>scripts</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="README.txt" />
@@ -74,6 +81,12 @@
   <ItemGroup>
     <Filter Include="generated">
       <UniqueIdentifier>{98c3153e-6c7e-4466-80b0-fc21b2895389}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="config">
+      <UniqueIdentifier>{5bdeca56-abb8-4c7c-9be7-f9e9f44abdeb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{8b203b3e-f7f6-4c31-b2e2-f4d342957134}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
