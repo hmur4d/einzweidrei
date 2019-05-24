@@ -43,6 +43,11 @@ static bool dev_interrupts_closed(void) {
 	return true;
 }
 
+static bool is_acqdata_interrupt(uint8_t code) {
+	return code == INTERRUPT_ACQUISITION_HALF_FULL 
+		|| code == INTERRUPT_ACQUISITION_FULL;
+}
+
 static void publish_interrupt(gpio_irq_t* gpioirq) {
 	if (failure) {
 		klog_error("Interrupt 0x%x (%s) not published due to previous failure.\n", gpioirq->code, gpioirq->name);
@@ -56,12 +61,23 @@ static void publish_interrupt(gpio_irq_t* gpioirq) {
 		gpioirq->code, gpioirq->name,
 		qsize, qnext_read, qnext_write, qempty_takes);
 
+	//ensure that a previous ACQUISITION_(HALF_)FULL isn't in the queue, otherwise it would mean a data corruption
+	if (is_acqdata_interrupt(gpioirq->code) && interrupt_queue_contains(gpioirq->code)) {
+		failure = true;
+		klog_error("A previous data interrupt wasn't already handled: 0x%x (%s)!\n", gpioirq->code, gpioirq->name);
+		klog_error("Stopping interruption handling.\n");
+		interrupt_queue_reset();
+		interrupt_queue_add(INTERRUPT_FAILURE);
+		return;
+	}
+
 	if (!interrupt_queue_add(gpioirq->code)) {
 		failure = true;
 		klog_error("Unable to add interrupt 0x%x (%s)!\n", gpioirq->code, gpioirq->name);
 		klog_error("Stopping interruption handling.\n");
 		interrupt_queue_reset();
 		interrupt_queue_add(INTERRUPT_FAILURE);
+		return;
 	}
 }
 

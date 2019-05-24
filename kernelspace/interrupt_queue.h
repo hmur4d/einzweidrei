@@ -20,6 +20,9 @@ void interrupt_queue_reset(void);
 //Checks whether the queue is empty.
 bool interrupt_queue_is_empty(void);
 
+//Checks whether the queue contains a specific interrupt
+bool interrupt_queue_contains(uint8_t value);
+
 //Adds a value to the end of the queue, wake up consumer if needed.
 //Not blocking, will return false if the queue is full.
 bool interrupt_queue_add(uint8_t value);

@@ -12,8 +12,8 @@ static DEFINE_SPINLOCK(spinlock);
 
 //use a ring buffer
 static volatile int size = 0;
-static int next_read = 0;
-static int next_write = 0;
+static volatile int next_read = 0;
+static volatile int next_write = 0;
 static timed_value_t buffer[INTERRUPT_QUEUE_CAPACITY];
 
 //count empty take to allow waiting longer when the buffer remains empty for many calls
@@ -28,6 +28,27 @@ void interrupt_queue_reset(void) {
 
 bool interrupt_queue_is_empty(void) {
 	return size == 0;
+}
+
+bool interrupt_queue_contains(uint8_t value) {
+	unsigned long irqflags;
+	spin_lock_irqsave(&spinlock, irqflags);
+
+	bool contains = false;
+	int index = next_read;
+	
+	while (index != next_write) {
+		timed_value_t timedvalue = buffer[index];
+		if (value == timedvalue.value) {
+			contains = true;
+			break;
+		}
+
+		index = (index + 1) % INTERRUPT_QUEUE_CAPACITY;
+	}
+	
+	spin_unlock_irqrestore(&spinlock, irqflags);
+	return contains;
 }
 
 bool interrupt_queue_add(uint8_t value) {
@@ -87,12 +108,14 @@ bool interrupt_queue_take(uint8_t* value) {
 	size--;
 	empty_takes = 0;
 
+	/*
 	ktime_t now = ktime_get();
 	ktime_t delta = ktime_sub(now, timedvalue.time);
 	u64 delta_ns = ktime_to_ns(delta);
 	if (delta_ns > 1000000) {
 		klog_warning("latency from interrupt_queue_take: size=%d / %d, time=%llu ns\n", size, INTERRUPT_QUEUE_CAPACITY, delta_ns);
 	}
+	*/
 
 	spin_unlock_irqrestore(&spinlock, irqflags);
 	return true;
