@@ -9,6 +9,28 @@ static pthread_mutex_t mutex;
 static pthread_t thread;
 static clientsocket_t* client = NULL;
 
+static long cpu_usage[] = {
+	0, 0, 0, 0 //user, nice, system, idle
+};
+
+static double get_cpu_load_average() {
+	long previous_usage = cpu_usage[0] + cpu_usage[1] + cpu_usage[2];
+	long previous_idle = cpu_usage[3];
+
+	FILE* fp = fopen("/proc/stat", "r");
+	if (fp == NULL) {
+		return 0;
+	}
+
+	fscanf(fp, "%*s %ld %ld %ld %ld", &cpu_usage[0], &cpu_usage[1], &cpu_usage[2], &cpu_usage[3]);
+	fclose(fp);
+
+	long usage = cpu_usage[0] + cpu_usage[1] + cpu_usage[2];
+	long idle = cpu_usage[3];
+
+	return (usage - previous_usage) / (double)(usage + idle - previous_usage - previous_idle);
+}
+
 static int copy_to_body(int16_t* body, int offset, int16_t* values, int count) {
 	memcpy(body + offset, values, count * sizeof(short));
 	return offset + count;
@@ -20,23 +42,27 @@ static void send_monitoring_message() {
 		return;
 	}
 
+	int16_t fpga_temp = (int16_t)((273.15 + read_fpga_temperature()) * 100);
+	int16_t cpu_usage = (int16_t)(get_cpu_load_average() * 100);
+
 	int32_t id = 1;
 	
-	//TODO find real values
 	int32_t volt_status = 0;
 	uint8_t volt_count = 0;
 	int16_t volt[0];
 	
 	int32_t temperature_status = 0;
 	uint8_t temperature_count = 1;
-	int16_t fpga_temp=(int16_t)((273.15+read_fpga_temperature())*100);
-	int16_t temperature[] = {fpga_temp};
+	int16_t temperature[] = { fpga_temp };
 
 	int32_t pressure_status = 0;
 	uint8_t pressure_count = 0;
 
 	int32_t other_status = 0;
-	uint8_t other_count = 0;
+	uint8_t other_count = 1;
+	int16_t other[] = { cpu_usage };
+
+	//TODO add memory usage
 
 	int32_t config = (volt_count & 0xF) << 12 | (temperature_count & 0xF) << 8 | (pressure_count & 0xF) << 4 | (other_count & 0xF);
 
@@ -55,7 +81,9 @@ static void send_monitoring_message() {
 	uint offset = 0;
 	offset = copy_to_body(body, offset, volt, volt_count);
 	offset = copy_to_body(body, offset, temperature, temperature_count);
-	//TODO pressure & other?
+	//TODO pressure?
+	offset = copy_to_body(body, offset, other, other_count);
+
 
 	log_debug("Sending monitoring message");
 	send_message(client, &header, body);
