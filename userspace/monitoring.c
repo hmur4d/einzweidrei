@@ -31,6 +31,14 @@ static double get_cpu_load_average() {
 	return (usage - previous_usage) / (double)(usage + idle - previous_usage - previous_idle);
 }
 
+static double get_memory_usage() {
+	struct sysinfo info;
+
+	sysinfo(&info);
+	double used = info.totalram - info.freeram;
+	return used / info.totalram;
+}
+
 static int copy_to_body(int16_t* body, int offset, int16_t* values, int count) {
 	memcpy(body + offset, values, count * sizeof(short));
 	return offset + count;
@@ -44,6 +52,7 @@ static void send_monitoring_message() {
 
 	int16_t fpga_temp = (int16_t)((273.15 + read_fpga_temperature()) * 100);
 	int16_t cpu_usage = (int16_t)(get_cpu_load_average() * 100);
+	int16_t mem_usage = (int16_t)(get_memory_usage() * 100);
 
 	int32_t id = 1;
 	
@@ -59,8 +68,8 @@ static void send_monitoring_message() {
 	uint8_t pressure_count = 0;
 
 	int32_t other_status = 0;
-	uint8_t other_count = 1;
-	int16_t other[] = { cpu_usage };
+	uint8_t other_count = 2;
+	int16_t other[] = { cpu_usage, mem_usage };
 
 	//TODO add memory usage
 
