@@ -13,6 +13,10 @@ static long cpu_usage[] = {
 	0, 0, 0, 0 //user, nice, system, idle
 };
 
+static unsigned long long network_tx_bytes = 0;
+static struct timespec network_time = { 0, 0 };
+
+//% of CPU
 static double get_cpu_load_average() {
 	long previous_usage = cpu_usage[0] + cpu_usage[1] + cpu_usage[2];
 	long previous_idle = cpu_usage[3];
@@ -31,12 +35,34 @@ static double get_cpu_load_average() {
 	return (usage - previous_usage) / (double)(usage + idle - previous_usage - previous_idle);
 }
 
+//% of total physical ram
 static double get_memory_usage() {
 	struct sysinfo info;
 
 	sysinfo(&info);
 	double used = info.totalram - info.freeram;
 	return used / info.totalram;
+}
+
+//bytes per second
+static double get_network_usage() {
+	unsigned long long previous = network_tx_bytes;
+	struct timespec prev_time = { network_time.tv_sec, network_time.tv_nsec };
+
+	FILE* fp = fopen("/sys/class/net/eth0/statistics/tx_bytes", "r");
+	if (fp == NULL) {
+		return 0;
+	}
+
+	fscanf(fp, "%Ld", &network_tx_bytes);
+	fclose(fp);
+
+	clock_gettime(CLOCK_MONOTONIC, &network_time);
+	double elapsed_ms = (network_time.tv_sec - prev_time.tv_sec) * 1000 
+		+ (network_time.tv_nsec - prev_time.tv_nsec) / 1000000.0f;
+	
+	long bytes = network_tx_bytes - previous;
+	return (bytes / elapsed_ms) * 1000;
 }
 
 static int copy_to_body(int16_t* body, int offset, int16_t* values, int count) {
@@ -53,6 +79,7 @@ static void send_monitoring_message() {
 	int16_t fpga_temp = (int16_t)((273.15 + read_fpga_temperature()) * 100);
 	int16_t cpu_usage = (int16_t)(get_cpu_load_average() * 100);
 	int16_t mem_usage = (int16_t)(get_memory_usage() * 100);
+	int16_t net_usage = (int16_t)((get_network_usage() / 1024) * 8); //converts to kb/s
 
 	int32_t id = 1;
 	
@@ -68,10 +95,20 @@ static void send_monitoring_message() {
 	uint8_t pressure_count = 0;
 
 	int32_t other_status = 0;
-	uint8_t other_count = 2;
-	int16_t other[] = { cpu_usage, mem_usage };
-
-	//TODO add memory usage
+	uint8_t other_count = 3;
+	int16_t other[] = { cpu_usage, mem_usage, net_usage };
+	if (cpu_usage > 90) {
+		other_status += (1 << 12);
+	}
+	else if (cpu_usage > 80) {
+		other_status += (1 << 28);
+	}
+	if (mem_usage > 90) {
+		other_status += (1 << 13);
+	}
+	else if (mem_usage > 80) {
+		other_status += (1 << 29);
+	}
 
 	int32_t config = (volt_count & 0xF) << 12 | (temperature_count & 0xF) << 8 | (pressure_count & 0xF) << 4 | (other_count & 0xF);
 
