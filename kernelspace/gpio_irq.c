@@ -8,7 +8,7 @@
 
 //associations between GPIO and interrupt codes
 static gpio_irq_t list[] = {
-	_gpio(INTERRUPT_SCAN_DONE,				0),
+	//_gpio(INTERRUPT_SCAN_DONE,				0),
 	_gpio(INTERRUPT_SEQUENCE_DONE,			1),
 	_gpio(INTERRUPT_ACQUISITION_HALF_FULL,	8),
 	_gpio(INTERRUPT_ACQUISITION_FULL,		9),
