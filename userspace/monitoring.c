@@ -96,19 +96,7 @@ static void send_monitoring_message() {
 
 	int32_t other_status = 0;
 	uint8_t other_count = 3;
-	int16_t other[] = { cpu_usage, mem_usage, net_usage };
-	if (cpu_usage > 90) {
-		other_status += (1 << 12);
-	}
-	else if (cpu_usage > 80) {
-		other_status += (1 << 28);
-	}
-	if (mem_usage > 90) {
-		other_status += (1 << 13);
-	}
-	else if (mem_usage > 80) {
-		other_status += (1 << 29);
-	}
+	int16_t other[] = { cpu_usage, mem_usage, net_usage };	
 
 	int32_t config = (volt_count & 0xF) << 12 | (temperature_count & 0xF) << 8 | (pressure_count & 0xF) << 4 | (other_count & 0xF);
 
