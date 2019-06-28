@@ -10,6 +10,7 @@
 #define ENV_LOG_FILE	"LOG_FILE"
 #define ENV_DEV_MEM		"DEV_MEM"
 #define ENV_HW_REVISION "HARDWARE_REVISION"
+#define ENV_HW_LOCK_ACTIVATED "HARDWARE_LOCK_ACTIVATED"
 
 //--
 
@@ -31,4 +32,9 @@ char* config_memory_file() {
 int config_hardware_revision() {
 	char* revision = getenv(ENV_HW_REVISION);
 	return revision == NULL ? HW_REV_4v2 : atoi(revision);
+}
+
+bool config_hardware_lock_activated() {
+	char* lock_activated = getenv(ENV_HW_LOCK_ACTIVATED);
+	return lock_activated == NULL ? true : (bool)atoi(lock_activated);
 }

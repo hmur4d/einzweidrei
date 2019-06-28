@@ -15,5 +15,6 @@ char* config_log_file();
 int config_log_level();
 char* config_memory_file();
 int config_hardware_revision();
+bool config_hardware_lock_activated();
 
 #endif
