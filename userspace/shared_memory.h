@@ -44,6 +44,10 @@ typedef struct {
 	property_t rx_bitsleep_ctr;
 	property_t rx_bitsleep_rst;
 
+	property_t rxext_bit_aligned;
+	property_t rxext_bitsleep_ctr;
+	property_t rxext_bitsleep_rst;
+
 	int32_t* lwbridge;
 	int32_t* rams;
 } shared_memory_t;
