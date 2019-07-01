@@ -36,5 +36,5 @@ int config_hardware_revision() {
 
 bool config_hardware_lock_activated() {
 	char* lock_activated = getenv(ENV_HW_LOCK_ACTIVATED);
-	return lock_activated == NULL ? true : (bool)atoi(lock_activated);
+	return lock_activated == NULL ? true : atoi(lock_activated)!=0;
 }

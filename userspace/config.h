@@ -1,5 +1,7 @@
+
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
+#include "std_includes.h"
 
 #define COMMAND_PORT		40 //socket1 in cameleon nios
 #define SEQUENCER_PORT		30 //socket2 in cameleon nios
