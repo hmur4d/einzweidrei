@@ -6,6 +6,7 @@
 #include "math.h"
 #include "ram.h"
 #include "memory_map.h"
+#include "config.h"
 
 #define TEST_DISABLE		0x0
 #define TEST_RAMP			0x40
@@ -175,6 +176,7 @@ void write_rx_gain(int rx_channel, int binary) {
 	int rf_gain_enabled = (binary >> 15) & 0x1;
 
 	char dac_addr_list[] = { ADDR_CMD_DAC_A ,ADDR_CMD_DAC_B,ADDR_CMD_DAC_C,ADDR_CMD_DAC_D };
+
 	spi_open(&spi_rx_dac);
 	log_info("hw_receiver_write_rx_gain rx[%d].gain=%d", rx_channel, dac_value);
 	rx_dac_write(CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, dac_addr_list[rx_channel], dac_value);
@@ -206,7 +208,7 @@ void write_rx_gain(int rx_channel, int binary) {
 /*
 void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 	if (rx_channel == 3 && lock_present) {
-		log_info("hw_receiver_write_rx_gain rx[3].gain aborted bycause lock is en this channel");
+		log_info("hw_receiver_write_rx_gain rx[3].gain aborted because lock is on this channel");
 	}
 	else {
 		write_rx_gain(rx_channel, binary_gain);
@@ -433,7 +435,7 @@ void hw_receiver_write_rx_gain(int rx_channel, int binary_gain) {
 
 
 void hw_receiver_init() {
-	lock_present = false;
+	lock_present = config_hardware_lock_activated();
 	log_info("hw_receiver_init, started");
 
 	log_info("hw_receiver_init stop sequence and lock, to be sure that they are not running");
