@@ -153,7 +153,34 @@ bool shared_memory_init(const char* memory_file) {
 			.bit_offset = 0,
 			.name = "rxext_bit_aligned",
 	};
-
+	sharedmem.fpga_id = (property_t){
+		.read_ptr = sharedmem.lwbridge + 4,
+			.write_ptr = NULL,
+			.bit_size = 32,
+			.bit_offset = 0,
+			.name = "fpga_id",
+	};
+	sharedmem.fpga_type = (property_t){
+		.read_ptr = sharedmem.lwbridge + 5,
+			.write_ptr = NULL,
+			.bit_size = 4,
+			.bit_offset = 28,
+			.name = "fpga_type",
+	};
+	sharedmem.fpga_rev_major = (property_t){
+		.read_ptr = sharedmem.lwbridge + 5,
+			.write_ptr = NULL,
+			.bit_size = 12,
+			.bit_offset = 16,
+			.name = "fpga_rev_major",
+	};
+	sharedmem.fpga_rev_minor = (property_t){
+		.read_ptr = sharedmem.lwbridge + 5,
+			.write_ptr = NULL,
+			.bit_size = 16,
+			.bit_offset = 0,
+			.name = "fpga_rev_minor",
+	};
 
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
 	if (sharedmem.rams == MAP_FAILED) {

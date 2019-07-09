@@ -133,6 +133,14 @@ void init_lock_shape() {
 }
 
 void hardware_init() {
+	shared_memory_t* mem = shared_memory_acquire();
+	log_info("FPGA ID=%d, TYPE=%d, REV_MAJOR=%d, REV_MINOR=%d\n", 
+		read_property(mem->fpga_id),
+		read_property(mem->fpga_type), 
+		read_property(mem->fpga_rev_major), 
+		read_property(mem->fpga_rev_minor));
+	shared_memory_release(mem);
+
 	hw_transmitter_init();
 	hw_receiver_init();
 	hw_gradient_init();

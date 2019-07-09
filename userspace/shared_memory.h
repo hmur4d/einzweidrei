@@ -48,6 +48,11 @@ typedef struct {
 	property_t rxext_bitsleep_ctr;
 	property_t rxext_bitsleep_rst;
 
+	property_t fpga_id;
+	property_t fpga_type;
+	property_t fpga_rev_major;
+	property_t fpga_rev_minor;
+
 	int32_t* lwbridge;
 	int32_t* rams;
 } shared_memory_t;
