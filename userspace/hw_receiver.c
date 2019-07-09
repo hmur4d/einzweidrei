@@ -425,8 +425,13 @@ void hw_receiver_write_rx_gain(int rx_channel, int binary_gain) {
 		log_info("hw_receiver_write_rx_gain rx[3].gain aborted bycause lock is en this channel");
 	}
 	else {
-		//write_rx_gain(rx_channel, binary_gain);
-		write_rxext_gain(rx_channel, binary_gain);
+		if (rx_channel < 4 && rx_channel >= 0) {
+			write_rx_gain(rx_channel, binary_gain);
+		}
+		else if (rx_channel < 8 && rx_channel >= 4) {
+			write_rxext_gain(rx_channel, binary_gain);
+		}
+		
 	}
 
 }
