@@ -178,31 +178,30 @@ void write_rx_gain(int rx_channel, int binary) {
 	char dac_addr_list[] = { ADDR_CMD_DAC_A ,ADDR_CMD_DAC_B,ADDR_CMD_DAC_C,ADDR_CMD_DAC_D };
 
 	spi_open(&spi_rx_dac);
-	log_info("hw_receiver_write_rx_gain rx[%d].gain=%d", rx_channel, dac_value);
 	rx_dac_write(CMD_WRITE_TO_AND_UPDATE_DAC_CHANNEL_N, dac_addr_list[rx_channel], dac_value);
 	spi_close(&spi_rx_dac);
 
-	if (rx_channel != 3) {
-		ram_descriptor_t ram;
-		ram.is_register = true;
-		ram.register_id = RAM_REGISTER_RF_SWITCH_SELECTED;
-		ram.offset_bytes = RAM_REGISTERS_OFFSET + ram.register_id * RAM_REGISTERS_OFFSET_STEP;
-		ram.offset_int32 = ram.offset_bytes / sizeof(int32_t);
 
-		shared_memory_t* mem = shared_memory_acquire();
-		int32_t existingValue = 0;
-		memcpy(&existingValue, mem->rams + ram.offset_int32, sizeof(existingValue));
-		if (rf_gain_enabled) {
+	ram_descriptor_t ram;
+	ram.is_register = true;
+	ram.register_id = RAM_REGISTER_RF_SWITCH_SELECTED;
+	ram.offset_bytes = RAM_REGISTERS_OFFSET + ram.register_id * RAM_REGISTERS_OFFSET_STEP;
+	ram.offset_int32 = ram.offset_bytes / sizeof(int32_t);
 
-			existingValue |= (int32_t)pow(2, rx_channel);//RF switch lock = 4eme bit
-		}
-		else {
-			existingValue &= ~(int32_t)pow(2, rx_channel);//RF switch lock = 4eme bit
-		}
-		log_info("write_rx_gain RFgain = %d, vga = %.2f, reg=%d", rf_gain_enabled, dac_value, existingValue);
-		memcpy(mem->rams + ram.offset_int32, &existingValue, sizeof(existingValue));
-		shared_memory_release(mem);
+	shared_memory_t* mem = shared_memory_acquire();
+	int32_t existingValue = 0;
+	memcpy(&existingValue, mem->rams + ram.offset_int32, sizeof(existingValue));
+	if (rf_gain_enabled) {
+
+		existingValue |= (int32_t)pow(2, rx_channel);//RF switch lock = 4eme bit
 	}
+	else {
+		existingValue &= ~(int32_t)pow(2, rx_channel);//RF switch lock = 4eme bit
+	}
+	log_info("write_rx_gain RFgain[%d] = %d, vga = %.2f, reg=%d",rx_channel, rf_gain_enabled, dac_value * 2.5f / 65536, existingValue);
+	memcpy(mem->rams + ram.offset_int32, &existingValue, sizeof(existingValue));
+	shared_memory_release(mem);
+	
 }
 
 /*
@@ -217,8 +216,9 @@ void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 */
 
 void hw_receiver_write_lock_rx_gain(int binary_gain) {
-	lock_present = true;
-	write_rx_gain(3, binary_gain);
+	if (config_hardware_lock_activated()) {
+		write_rx_gain(3, binary_gain);
+	}
 }
 char read_mcp_i2c(int i2c_fd, __u8 mcp_addr, __u8 reg) {
 	struct i2c_msg wm_msg[2];	// declare our two i2c_msg array
@@ -415,21 +415,21 @@ void write_rxext_gain(int rx_channel, int binary) {
 		existingValue &= ~(int32_t)pow(2, rx_channel);//RF switch lock = 4eme bit
 													  //existingValue |= (int32_t)pow(2, 1);//RF switch lock = 4eme bit
 	}
-	log_info("write_rx_gain RFgain = %d, vga = %.2f, reg=%d", rf_gain_enabled, dac_value, existingValue);
+	log_info("write_rxext_gain RFgain[%d(%d)] = %d, vga = %.2f, reg=%d",rx_channel,rx_channel + 4, rf_gain_enabled, dac_value*2.5f/65536, existingValue);
 	memcpy(mem->rams + ram.offset_int32, &existingValue, sizeof(existingValue));
 	shared_memory_release(mem);
 }
 
 void hw_receiver_write_rx_gain(int rx_channel, int binary_gain) {
-	if (rx_channel == 3 && lock_present) {
-		log_info("hw_receiver_write_rx_gain rx[3].gain aborted bycause lock is en this channel");
+	if (rx_channel == 3 && config_hardware_lock_activated()) {
+		log_info("hw_receiver_write_rx_gain rx[3].gain aborted bycause lock is activated on this channel");
 	}
 	else {
 		if (rx_channel < 4 && rx_channel >= 0) {
 			write_rx_gain(rx_channel, binary_gain);
 		}
 		else if (rx_channel < 8 && rx_channel >= 4) {
-			write_rxext_gain(rx_channel, binary_gain);
+			write_rxext_gain(rx_channel-4, binary_gain);
 		}
 		
 	}

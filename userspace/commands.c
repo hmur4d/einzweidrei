@@ -80,7 +80,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		log_info("Ram.id==RAM_REGISTER_DECFACTOR_SELECTED decfactor=%d, rescale needed= %.3f", sequence_params->decfactor, rescale);
 		sequence_params_release(sequence_params);
 	}
-	if (ram.id >= RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED && ram.id<=RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX3_SELECTED) {
+	if (ram.id >= RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED && ram.id<=RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX7_SELECTED) {
 
 		int rx_channel = ram.id - (RAM_REGISTERS_SELECTED + RAM_REGISTER_GAIN_RX0_SELECTED);
 		
