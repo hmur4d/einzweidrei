@@ -403,21 +403,15 @@ void write_rxext_gain(int rx_channel, int binary) {
 	ram.offset_bytes = RAM_REGISTERS_OFFSET + ram.register_id * RAM_REGISTERS_OFFSET_STEP;
 	ram.offset_int32 = ram.offset_bytes / sizeof(int32_t);
 
-	shared_memory_t* mem = shared_memory_acquire();
-	int32_t existingValue = 0;
-	memcpy(&existingValue, mem->rams + ram.offset_int32, sizeof(existingValue));
-	if (rf_gain_enabled) {
 
-		existingValue |= (int32_t)pow(2, rx_channel);//RF switch lock = 4eme bit
-													 //existingValue |= (int32_t)pow(2, 1);//RF switch lock = 4eme bit
+	if (rf_gain_enabled) {
+		set_bit_mcp(i2c_fd, rx_channel + 1, 1);
 	}
 	else {
-		existingValue &= ~(int32_t)pow(2, rx_channel);//RF switch lock = 4eme bit
-													  //existingValue |= (int32_t)pow(2, 1);//RF switch lock = 4eme bit
+		set_bit_mcp(i2c_fd, rx_channel + 1, 0);
 	}
-	log_info("write_rxext_gain RFgain[%d(%d)] = %d, vga = %.2f, reg=%d",rx_channel,rx_channel + 4, rf_gain_enabled, dac_value*2.5f/65536, existingValue);
-	memcpy(mem->rams + ram.offset_int32, &existingValue, sizeof(existingValue));
-	shared_memory_release(mem);
+	log_info("write_rxext_gain RFgain[%d] = %d, vga = %.2f",rx_channel+4, rf_gain_enabled, dac_value*2.5f/65536);
+
 }
 
 void hw_receiver_write_rx_gain(int rx_channel, int binary_gain) {
