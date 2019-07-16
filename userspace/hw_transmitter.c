@@ -55,23 +55,39 @@ void hw_all_dds_dac_cal(property_t ioupdate, property_t dds_sel) {
 	}
 }
 
-void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel) {
+void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, int rev_maj, int rev_min) {
+
+	//DEFAULT DELAY VALUE UP TO CAMELEON 4 '2.1'
+	uint32_t delay_for_dds_0 = 0x00000842;
+	uint32_t delay_for_dds_1 = 0x00000842;
+	uint32_t delay_for_dds_2 = 0x00000842;
+	uint32_t delay_for_dds_3 = 0x00000842;
+
+
+	//DELAYS FOR CAMELEON 4 '3.0'
+	if (rev_maj == 3 && rev_min == 0) {
+		delay_for_dds_0 = 0x00000843;
+		delay_for_dds_1 = 0x00000843;
+		delay_for_dds_2 = 0x00000843;
+		delay_for_dds_3 = 0x00000843;
+	}
+
 	write_property(dds_sel, 1);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000842);
+	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_0);
 	write_property(dds_sel, 2);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000842);
+	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_1);
 	write_property(dds_sel, 3);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000842);
+	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_2);
 	write_property(dds_sel, 4);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000842);
+	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_3);
 
 
 }
@@ -105,6 +121,10 @@ static void dds_sync(shared_memory_t *mem) {
 
 
 	log_info("DDS syncing started");
+	int rev_maj = read_property(mem->fpga_rev_major);
+	int rev_min = read_property(mem->fpga_rev_minor);
+	log_info("DDS sync cameleon version is %d.%d", rev_maj, rev_min);
+
 	//reset dds
 	write_property(mem->dds_reset, 1);
 	usleep(2);
@@ -113,7 +133,7 @@ static void dds_sync(shared_memory_t *mem) {
 	//DAC CAL
 	hw_all_dds_dac_cal(mem->dds_ioupdate,mem->dds_sel);
 	//CAL_W_SYNC
-	hw_all_dds_cal_w_sync(mem->dds_ioupdate, mem->dds_sel);
+	hw_all_dds_cal_w_sync(mem->dds_ioupdate, mem->dds_sel, rev_maj, rev_min);
 	//DAC CAL
 	hw_all_dds_dac_cal(mem->dds_ioupdate, mem->dds_sel);
 	//normal config
