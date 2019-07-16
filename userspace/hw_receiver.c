@@ -216,7 +216,11 @@ void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 */
 
 void hw_receiver_write_lock_rx_gain(int binary_gain) {
-	if (config_hardware_lock_activated()) {
+	shared_memory_t* mem = shared_memory_acquire();
+	bool is_lock_seq_on = read_property(mem->lock_sequence_on_off);
+	shared_memory_release(mem);
+
+	if (config_hardware_lock_activated() && is_lock_seq_on) {
 		write_rx_gain(3, binary_gain);
 	}
 }
@@ -415,7 +419,12 @@ void write_rxext_gain(int rx_channel, int binary) {
 }
 
 void hw_receiver_write_rx_gain(int rx_channel, int binary_gain) {
-	if (rx_channel == 3 && config_hardware_lock_activated()) {
+	
+	shared_memory_t* mem = shared_memory_acquire();
+	bool is_lock_seq_on = read_property(mem->lock_sequence_on_off);
+	shared_memory_release(mem);
+
+	if (rx_channel == 3 && is_lock_seq_on && config_hardware_lock_activated()) {
 		log_info("hw_receiver_write_rx_gain rx[3].gain aborted bycause lock is activated on this channel");
 	}
 	else {
