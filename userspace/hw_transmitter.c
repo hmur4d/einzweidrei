@@ -55,38 +55,26 @@ void hw_all_dds_dac_cal(property_t ioupdate, property_t dds_sel) {
 	}
 }
 
-void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, int rev_maj, int rev_min) {
+void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, uint8_t delay_for_dds_0, uint8_t delay_for_dds_1,uint8_t delay_for_dds_2,uint8_t delay_for_dds_3) {
 
-	//DEFAULT DELAY VALUE UP TO CAMELEON 4 '2.1'
-	uint32_t delay_for_dds_0 = 0x00000842;
-	uint32_t delay_for_dds_1 = 0x00000842;
-	uint32_t delay_for_dds_2 = 0x00000842;
-	uint32_t delay_for_dds_3 = 0x00000842;
 
-	//DELAYS FOR CAMELEON 4 '3.0'
-	if (rev_maj == 3 && rev_min == 0) {
-		delay_for_dds_0 = 0x00000843;
-		delay_for_dds_1 = 0x00000843;
-		delay_for_dds_2 = 0x00000843;
-		delay_for_dds_3 = 0x00000843;
-	}
 
 	write_property(dds_sel, 1);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_0);
+	dds_write_n_update(ioupdate, 0x1B, 0x00000840 | (delay_for_dds_0 & 0x7));
 	write_property(dds_sel, 2);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_1);
+	dds_write_n_update(ioupdate, 0x1B, 0x00000840 | (delay_for_dds_1 & 0x7));
 	write_property(dds_sel, 3);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_2);
+	dds_write_n_update(ioupdate, 0x1B, 0x00000840 | (delay_for_dds_2 & 0x7));
 	write_property(dds_sel, 4);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_3);
+	dds_write_n_update(ioupdate, 0x1B, 0x00000840 | (delay_for_dds_3 & 0x7));
 
 }
 
@@ -115,14 +103,9 @@ void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
 }
 
 
-static void dds_sync(shared_memory_t *mem) {
+static void dds_sync(shared_memory_t *mem, uint8_t delay_for_dds_0, uint8_t delay_for_dds_1, uint8_t delay_for_dds_2, uint8_t delay_for_dds_3) {
 
-
-	log_info("DDS syncing started");
-	int rev_maj = read_property(mem->fpga_rev_major);
-	int rev_min = read_property(mem->fpga_rev_minor);
-	log_info("DDS sync cameleon version is %d.%d", rev_maj, rev_min);
-
+	log_info("DDS syncing started -> delays(%d,%d,%d,%d)", delay_for_dds_0, delay_for_dds_1, delay_for_dds_2, delay_for_dds_3);
 	//reset dds
 	write_property(mem->dds_reset, 1);
 	usleep(2);
@@ -131,7 +114,7 @@ static void dds_sync(shared_memory_t *mem) {
 	//DAC CAL
 	hw_all_dds_dac_cal(mem->dds_ioupdate,mem->dds_sel);
 	//CAL_W_SYNC
-	hw_all_dds_cal_w_sync(mem->dds_ioupdate, mem->dds_sel, rev_maj, rev_min);
+	hw_all_dds_cal_w_sync(mem->dds_ioupdate, mem->dds_sel, delay_for_dds_0, delay_for_dds_1, delay_for_dds_2, delay_for_dds_3);
 	//DAC CAL
 	hw_all_dds_dac_cal(mem->dds_ioupdate, mem->dds_sel);
 	//normal config
@@ -142,14 +125,13 @@ static void dds_sync(shared_memory_t *mem) {
 	log_info("DDS syncing done");
 
 }
-
-void hw_transmitter_init() {
+void hw_transmitter_init(uint8_t delay_for_dds_0, uint8_t delay_for_dds_1, uint8_t delay_for_dds_2, uint8_t delay_for_dds_3) {
 	log_info("hw_transmitter_init started");
 	log_info("hw_transmitter_init stop sequence and lock, to be sure that they are not running");
 	stop_sequence();
 	stop_lock();
 
-	spi_dds = (spi_t) {
+	spi_dds = (spi_t){
 		.dev_path = "/dev/spidev32766.0",
 			.fd = -1,
 			.speed = 80000000,
@@ -159,13 +141,35 @@ void hw_transmitter_init() {
 			.delay = 0,
 	};
 
-	shared_memory_t * mem = shared_memory_acquire();
+	shared_memory_t* mem = shared_memory_acquire();
 	spi_open(&spi_dds);
 
-	dds_sync(mem);
+	dds_sync(mem, delay_for_dds_0, delay_for_dds_1, delay_for_dds_2, delay_for_dds_3);
 	spi_close(&spi_dds);
 
 	shared_memory_release(mem);
 	log_info("hw_transmitter_init done");
+}
+void hw_transmitter_auto_init() {
+
+
+	//DEFAULT DELAY VALUE UP TO CAMELEON 4 '2.1'
+	uint32_t delay_for_dds_0 = 2;
+	uint32_t delay_for_dds_1 = 2;
+	uint32_t delay_for_dds_2 = 2;
+	uint32_t delay_for_dds_3 = 2;
+
+	fpga_revision_t fpga = read_fpga_revision();
+
+	//DELAYS FOR CAMELEON 4 '3.0'
+	if (fpga.rev_major == 3 && fpga.rev_minor == 0) {
+		delay_for_dds_0 = 3;
+		delay_for_dds_1 = 3;
+		delay_for_dds_2 = 3;
+		delay_for_dds_3 = 3;
+	}
+	log_info("hw_transmitter_auto_init detect cameleon %d.%d",fpga.rev_major, fpga.rev_minor);
+
+	hw_transmitter_init(delay_for_dds_0, delay_for_dds_1, delay_for_dds_2, delay_for_dds_3);
 }
 
