@@ -57,24 +57,35 @@ void hw_all_dds_dac_cal(property_t ioupdate, property_t dds_sel) {
 
 void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, uint8_t delay_for_dds_0, uint8_t delay_for_dds_1,uint8_t delay_for_dds_2,uint8_t delay_for_dds_3) {
 
-
+	
 
 	write_property(dds_sel, 1);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000840 | (delay_for_dds_0 & 0x7));
+	uint32_t value = 0x00000840 | (delay_for_dds_0 & 0x7);
+	log_info("DDS 0 delay=0x%X", value);
+	dds_write_n_update(ioupdate, 0x1B, value);
+
 	write_property(dds_sel, 2);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000840 | (delay_for_dds_1 & 0x7));
+	value = 0x00000840 | (delay_for_dds_1 & 0x7);
+	log_info("DDS 1 delay=0x%X", value);
+	dds_write_n_update(ioupdate, 0x1B, value);
+
 	write_property(dds_sel, 3);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000840 | (delay_for_dds_2 & 0x7));
+	value = 0x00000840 | (delay_for_dds_2 & 0x7);
+	log_info("DDS 2 delay=0x%X", value);
+	dds_write_n_update(ioupdate, 0x1B, value);
+
 	write_property(dds_sel, 4);
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	dds_write_n_update(ioupdate, 0x1B, 0x00000840 | (delay_for_dds_3 & 0x7));
+	value = 0x00000840 | (delay_for_dds_3 & 0x7);
+	log_info("DDS 3 delay=0x%X", value);
+	dds_write_n_update(ioupdate, 0x1B, value);
 
 }
 
