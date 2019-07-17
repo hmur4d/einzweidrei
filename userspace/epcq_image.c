@@ -40,29 +40,11 @@ void wr(int32_t* csr_base_ptr, int cmd_reg, int value){
     *csr_ptr= value;
 }
 
-int rd(int32_t* csr_base_ptr, int cmd_reg){
-    int* csr_ptr=csr_base_ptr+cmd_reg;
-    return *csr_ptr;
-}
-
-
-int rd_flash(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int addr){
-    wr(csr_base_ptr,0x4,0x00000000); //use 1 line
-    wr(csr_base_ptr,0,0x101);
-    wr(csr_base_ptr,5,0x03);
-    return rd(mem_base_ptr,addr);
-}
-
 void write_enable(int32_t* csr_base_ptr){
 	wr(csr_base_ptr,0x7,0x00000006);
 	wr(csr_base_ptr,0x8,0x1);
 }
-void erase_sector(int32_t* csr_base_ptr){
-    wr(csr_base_ptr,7,0x004D8);
-    wr(csr_base_ptr,9,0x00000);
-    wr(csr_base_ptr,0xA,1);
-    wr(csr_base_ptr,8,1);
-}
+
 void erase_die(int32_t* csr_base_ptr){
     write_enable(csr_base_ptr);
     wr(csr_base_ptr,7,0x004C4);
@@ -70,38 +52,6 @@ void erase_die(int32_t* csr_base_ptr){
     wr(csr_base_ptr,0xA,1);
     wr(csr_base_ptr,8,1);
 }
-
-
-void write_memory(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int addr, int value){
-	wr(csr_base_ptr,0x4,0x00000000); //use 1 line
-	wr(csr_base_ptr,0x0,0x00000101);
-	wr(csr_base_ptr,8,1);
-	wr(csr_base_ptr,0x6,0x00007002);
-	wr(mem_base_ptr,addr,value);
-}
-
-void rd_memory(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int32_t start_addr, int32_t nb_of_bytes, int32_t* rd_data){
-    int* new_mem_base= mem_base_ptr+start_addr;
-    wr(csr_base_ptr,0x4,0x00000000); //use 1 line
-    wr(csr_base_ptr,0,0x101);
-    wr(csr_base_ptr,5,0x03);
-    for(int i=0; i< (nb_of_bytes/4); i++){
-        rd_data[i] = rd(new_mem_base, i);
-    }
-}
-
-
-void write_memory_block(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int nb_of_bytes, int32_t* wr_data){
-	wr(csr_base_ptr,0x4,0x00000000); //use 1 line
-	wr(csr_base_ptr,0x0,0x00000101);
-	wr(csr_base_ptr,8,1);
-	wr(csr_base_ptr,0x6,0x00007002);
-	for(int i=0; i< (nb_of_bytes/4)-1; i++){
-        wr(mem_base_ptr,i,wr_data[i]);
-        printf("written address %d / %d  : %x \n",i, (nb_of_bytes/4),wr_data[i]); 
-    }
-}
-
 
 void fastwrite_memory_block(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int nb_of_bytes, int32_t* wr_data){
 	write_enable(csr_base_ptr);
