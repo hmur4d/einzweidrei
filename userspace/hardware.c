@@ -133,13 +133,8 @@ void init_lock_shape() {
 }
 
 void hardware_init() {
-	shared_memory_t* mem = shared_memory_acquire();
-	log_info("FPGA ID=%d, TYPE=%d, REV_MAJOR=%d, REV_MINOR=%d\n", 
-		read_property(mem->fpga_id),
-		read_property(mem->fpga_type), 
-		read_property(mem->fpga_rev_major), 
-		read_property(mem->fpga_rev_minor));
-	shared_memory_release(mem);
+
+	read_fpga_revision();
 
 	hw_transmitter_init();
 	hw_receiver_init();
@@ -147,3 +142,26 @@ void hardware_init() {
 
 	init_lock_shape();
 }
+fpga_revision_t read_fpga_revision() {
+	fpga_revision_t fpga;
+
+	shared_memory_t* mem = shared_memory_acquire();
+	fpga.id = read_property(mem->fpga_id);
+	fpga.type = read_property(mem->fpga_type);
+	fpga.rev_major = read_property(mem->fpga_rev_major);
+	fpga.rev_minor = read_property(mem->fpga_rev_minor);
+	fpga.type_major_minor =	fpga.type << mem->fpga_type.bit_offset 
+								| fpga.rev_major << mem->fpga_rev_major.bit_offset 
+								| fpga.rev_minor << mem->fpga_rev_minor.bit_offset;
+	shared_memory_release(mem);
+
+	log_info("FPGA ID=%d, TYPE=%d, REV_MAJOR=%d, REV_MINOR=%d\n",
+		fpga.id,
+		fpga.type,
+		fpga.rev_major,
+		fpga.rev_minor);
+	
+	return fpga;
+
+}
+

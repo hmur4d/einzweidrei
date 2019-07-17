@@ -12,6 +12,8 @@
 #define ENV_HW_REVISION "HARDWARE_REVISION"
 #define ENV_HW_LOCK_ACTIVATED "HARDWARE_LOCK_ACTIVATED"
 
+
+
 //--
 
 char* config_log_file() {

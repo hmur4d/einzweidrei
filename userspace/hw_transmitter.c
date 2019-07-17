@@ -63,7 +63,6 @@ void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, int rev_maj,
 	uint32_t delay_for_dds_2 = 0x00000842;
 	uint32_t delay_for_dds_3 = 0x00000842;
 
-
 	//DELAYS FOR CAMELEON 4 '3.0'
 	if (rev_maj == 3 && rev_min == 0) {
 		delay_for_dds_0 = 0x00000843;
@@ -88,7 +87,6 @@ void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, int rev_maj,
 	usleep(2);
 	//set CAL_W_SYNC=1 and SYNC IN DELAY
 	dds_write_n_update(ioupdate, 0x1B, delay_for_dds_3);
-
 
 }
 

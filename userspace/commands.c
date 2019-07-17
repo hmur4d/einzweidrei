@@ -8,6 +8,7 @@
 #include "sequence_params.h"
 #include "hardware.h"
 #include "lock_interrupts.h"
+#include "config.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -159,15 +160,17 @@ static void cmd_test(clientsocket_t* client, header_t* header, const void* body)
 	log_debug("Received test message");
 }
 
+
+
 static void who_are_you(clientsocket_t* client, header_t* header, const void* body) {
 	reset_header(header);
 
 	//TODO implement this
-
-	int fpgaVersion = 109;
-	int hpsVersion = 100;
+	fpga_revision_t fpga = read_fpga_revision();
+	int fpgaVersion = fpga.type_major_minor;
+	int hpsVersion = HPS_REVISION;
 	unsigned char mac_address[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-	int versionID = 400;
+	int versionID = 400;// fpga.id;
 
 	clientsocket_get_mac_address(client, mac_address);
 
@@ -184,11 +187,11 @@ static void who_are_you(clientsocket_t* client, header_t* header, const void* bo
 	data[0] = versionID;
 	data[1] = mac_address[3] << 24 | mac_address[2] << 16 | mac_address[1] << 8 | mac_address[0];
 	data[2] = mac_address[5] << 8 | mac_address[4];
-	data[3] = 5; //number of hsmc slots
-	data[4] = 0;
-	data[5] = 0;
-	data[6] = 0;
-	data[7] = 0;
+	data[3] = fpga.id; 
+	data[4] = fpga.type;
+	data[5] = fpga.rev_major;
+	data[6] = fpga.rev_minor;
+	data[7] = hpsVersion;
 	data[8] = 0;
 
 	if (!send_message(client, header, data)) {

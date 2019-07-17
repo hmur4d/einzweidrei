@@ -20,6 +20,14 @@ typedef struct {
 	uint8_t len;
 	uint32_t delay;
 }spi_t;
+typedef struct {
+
+	uint32_t id;
+	uint16_t rev_major;
+	uint16_t rev_minor;
+	uint8_t type;
+	uint32_t type_major_minor;
+}fpga_revision_t;
 
 
 int spi_open(spi_t * spi);
@@ -32,5 +40,7 @@ void stop_lock();
 void hardware_init();
 
 float read_fpga_temperature();
+
+fpga_revision_t read_fpga_revision();
 
 #endif
