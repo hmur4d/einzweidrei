@@ -35,35 +35,35 @@ int32_t* map_mem_base_ptr() {
 }
 
 
-void wr(int* csr_base_ptr, int cmd_reg, int value){
+void wr(int32_t* csr_base_ptr, int cmd_reg, int value){
     int* csr_ptr=csr_base_ptr+cmd_reg;
     *csr_ptr= value;
 }
 
-int rd(int* csr_base_ptr, int cmd_reg){
+int rd(int32_t* csr_base_ptr, int cmd_reg){
     int* csr_ptr=csr_base_ptr+cmd_reg;
     return *csr_ptr;
 }
 
 
-int rd_flash(int* csr_base_ptr, int* mem_base_ptr, int addr){
+int rd_flash(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int addr){
     wr(csr_base_ptr,0x4,0x00000000); //use 1 line
     wr(csr_base_ptr,0,0x101);
     wr(csr_base_ptr,5,0x03);
     return rd(mem_base_ptr,addr);
 }
 
-void write_enable(int* csr_base_ptr){
+void write_enable(int32_t* csr_base_ptr){
 	wr(csr_base_ptr,0x7,0x00000006);
 	wr(csr_base_ptr,0x8,0x1);
 }
-void erase_sector(int* csr_base_ptr){
+void erase_sector(int32_t* csr_base_ptr){
     wr(csr_base_ptr,7,0x004D8);
     wr(csr_base_ptr,9,0x00000);
     wr(csr_base_ptr,0xA,1);
     wr(csr_base_ptr,8,1);
 }
-void erase_die(int* csr_base_ptr){
+void erase_die(int32_t* csr_base_ptr){
     write_enable(csr_base_ptr);
     wr(csr_base_ptr,7,0x004C4);
     wr(csr_base_ptr,9,0x00000);
@@ -72,7 +72,7 @@ void erase_die(int* csr_base_ptr){
 }
 
 
-void write_memory(int* csr_base_ptr, int* mem_base_ptr, int addr, int value){
+void write_memory(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int addr, int value){
 	wr(csr_base_ptr,0x4,0x00000000); //use 1 line
 	wr(csr_base_ptr,0x0,0x00000101);
 	wr(csr_base_ptr,8,1);
@@ -80,7 +80,7 @@ void write_memory(int* csr_base_ptr, int* mem_base_ptr, int addr, int value){
 	wr(mem_base_ptr,addr,value);
 }
 
-void rd_memory(int* csr_base_ptr, int* mem_base_ptr, int start_addr, int nb_of_bytes, int rd_data[]){
+void rd_memory(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int32_t start_addr, int32_t nb_of_bytes, int32_t* rd_data){
     int* new_mem_base= mem_base_ptr+start_addr;
     wr(csr_base_ptr,0x4,0x00000000); //use 1 line
     wr(csr_base_ptr,0,0x101);
@@ -91,7 +91,7 @@ void rd_memory(int* csr_base_ptr, int* mem_base_ptr, int start_addr, int nb_of_b
 }
 
 
-void write_memory_block(int* csr_base_ptr, int* mem_base_ptr, int nb_of_bytes, int wr_data[]){
+void write_memory_block(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int nb_of_bytes, int32_t* wr_data){
 	wr(csr_base_ptr,0x4,0x00000000); //use 1 line
 	wr(csr_base_ptr,0x0,0x00000101);
 	wr(csr_base_ptr,8,1);
@@ -103,7 +103,7 @@ void write_memory_block(int* csr_base_ptr, int* mem_base_ptr, int nb_of_bytes, i
 }
 
 
-void fastwrite_memory_block(int* csr_base_ptr, int* mem_base_ptr, int nb_of_bytes, int wr_data[]){
+void fastwrite_memory_block(int32_t* csr_base_ptr, int32_t* mem_base_ptr, int nb_of_bytes, int32_t* wr_data){
 	write_enable(csr_base_ptr);
 	wr(csr_base_ptr,0x1,0x00000001); 
 	wr(csr_base_ptr,0x4,0x00000220); 
@@ -116,7 +116,7 @@ void fastwrite_memory_block(int* csr_base_ptr, int* mem_base_ptr, int nb_of_byte
 }
 
 
-void nvcr_set(int* csr_base_ptr){
+void nvcr_set(int32_t* csr_base_ptr){
     write_enable(csr_base_ptr);
     wr(csr_base_ptr,0x7,0x000002B1);
     wr(csr_base_ptr,0xA,0x0000FFFE);
@@ -125,8 +125,8 @@ void nvcr_set(int* csr_base_ptr){
 
 
 int epcq_image_main(int argc, char** argv) {
-	int* csr_base_ptr = map_csr_base_ptr();
-	int* mem_base_ptr = map_mem_base_ptr();
+	int32_t* csr_base_ptr = map_csr_base_ptr();
+	int32_t* mem_base_ptr = map_mem_base_ptr();
     int rpd_size;
 
      //open file rpd
