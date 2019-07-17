@@ -25,6 +25,7 @@
     <ClCompile Include="hw_receiver.c" />
     <ClCompile Include="sequencer_interrupts.c" />
     <ClCompile Include="lock_interrupts.c" />
+    <ClCompile Include="epcq_image.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />

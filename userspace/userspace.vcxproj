@@ -121,6 +121,7 @@
     <ClCompile Include="commands.c" />
     <ClCompile Include="command_handlers.c" />
     <ClCompile Include="config.c" />
+    <ClCompile Include="epcq_image.c" />
     <ClCompile Include="hardware.c" />
     <ClCompile Include="hw_gradient.c" />
     <ClCompile Include="hw_transmitter.c" />
