@@ -5,21 +5,33 @@
 #include <sys/mman.h>
 #include <linux/types.h>
 
-#define BASE_CSR 0xff220100
 #define BASE_MEM 0xC8000000
 
+int32_t* map_csr_base_ptr() {
+	int fd = open("/dev/mem", O_RDWR | O_SYNC);
 
-int* get_mem_base_ptr(void) {
-	int fi; 
-	void *bridge_map;
-	fi = open("/dev/mem", O_RDWR | O_SYNC);
-	bridge_map = mmap(NULL, 0x3ffffff, PROT_WRITE, MAP_SHARED, fi, BASE_MEM);
-	if (bridge_map == MAP_FAILED) {
-		perror("mmap mem");
-		close(fi);
+	//EPCQ_CONTROLLER = 0xff220040, but for some reason we cannot mmap it directly
+	int span = 2000;
+	int32_t* mapped_ptr = (int32_t*)mmap(NULL, span, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0xff220000);
+	if (mapped_ptr == MAP_FAILED) {
+		perror("mmap csr failed");
+		exit(1);
 	}
-	close(fi);
-	return bridge_map; 
+	
+	close(fd);
+	return mapped_ptr + 0x40;
+}
+
+int32_t* map_mem_base_ptr() {
+	int fd = open("/dev/mem", O_RDWR | O_SYNC);
+	int32_t* mapped_ptr = mmap(NULL, 0x3ffffff, PROT_WRITE, MAP_SHARED, fd, BASE_MEM);
+	if (mapped_ptr == MAP_FAILED) {
+		perror("mmap mem failed");
+		exit(1);
+	}
+
+	close(fd);
+	return mapped_ptr;
 }
 
 
@@ -113,20 +125,8 @@ void nvcr_set(int* csr_base_ptr){
 
 
 int epcq_image_main(int argc, char** argv) {
-    int* csr_base_ptr ;
-    int fi; 
-	void *bridge_map;
-	fi = open("/dev/mem", O_RDWR | O_SYNC);
-	//EPCQ_CONTROLLER = 0xff220040
-	bridge_map = mmap(NULL, 2000, PROT_WRITE | PROT_READ, MAP_SHARED, fi, 0xff220000);
-	if (bridge_map == MAP_FAILED) {
-		perror("mmap csr");
-		close(fi);
-	}
-	csr_base_ptr = (int*)bridge_map+0x40; //because stupid mmap cannot do it 
-	
-	
-	int* mem_base_ptr = get_mem_base_ptr();
+	int* csr_base_ptr = map_csr_base_ptr();
+	int* mem_base_ptr = map_mem_base_ptr();
     int rpd_size;
 
      //open file rpd
@@ -147,5 +147,5 @@ int epcq_image_main(int argc, char** argv) {
      fastwrite_memory_block(csr_base_ptr,mem_base_ptr,rpd_size,wr_value_array);
      
 	 return 0;
-    }
+}
     
