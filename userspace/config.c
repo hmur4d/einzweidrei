@@ -31,11 +31,6 @@ char* config_memory_file() {
 	return filename == NULL ? DEFAULT_DEV_MEM : filename;
 }
 
-int config_hardware_revision() {
-	char* revision = getenv(ENV_HW_REVISION);
-	return revision == NULL ? HW_REV_4v2 : atoi(revision);
-}
-
 bool config_hardware_lock_activated() {
 	
 	char* lock_activated = getenv(ENV_HW_LOCK_ACTIVATED);

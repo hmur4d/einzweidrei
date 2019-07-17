@@ -70,13 +70,14 @@ uint8_t write_wm_i2c(int i2c_fd, uint8_t wm_addr, uint8_t reg, uint8_t wr_data) 
 }
 
 void hw_gradient_init() {
-	int hw_revision = config_hardware_revision();
-	log_info("hw_gradient_init started for HW_REVISION = %d", hw_revision);
+
+	fpga_revision_t fpga = read_fpga_revision();
+
 	log_info("hw_gradient_init stop sequence and lock, to be sure that they are not running");
 	stop_sequence();
 	stop_lock();
 
-	if (hw_revision == HW_REV_4v1 || hw_revision == HW_REV_4v0) {
+	if (fpga.rev_major == 0 || fpga.rev_major == 1) {
 
 		spi_wm = (spi_t) {
 			.dev_path = "/dev/spidev32766.3",
@@ -124,7 +125,7 @@ void hw_gradient_init() {
 		spi_close(&spi_wm);
 
 	}
-	else if (hw_revision == HW_REV_4v2) {
+	else if (fpga.rev_major >= 2) {
 
 		int i2c_fd = open("/dev/i2c-0", O_RDWR);
 		shared_memory_t * mem = shared_memory_acquire();
