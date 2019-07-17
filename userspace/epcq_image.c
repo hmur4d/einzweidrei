@@ -32,6 +32,12 @@ static void show_progress_bar(int value, int max) {
 	fflush(stdout);
 }
 
+bool check_file_extension(char* filename, char* extension) {
+	int len = strlen(filename);
+	int extlen = strlen(extension);
+	return len > extlen && (strcmp(filename + len - extlen, extension) == 0);
+}
+
 static int32_t* read_image_file(char* filename, int* nbytes) {
 	printf("image file: %s\n", filename);
 	FILE* f = fopen(filename, "r");
@@ -153,6 +159,11 @@ int epcq_image_main(int argc, char** argv) {
 	}
 
 	char * filename = argv[1];
+	if (!check_file_extension(filename, ".rpd")) {
+		fprintf(stderr, "Not a .rpd file!\n");
+		exit(1);
+	}
+
 	int size = 0;
 	int32_t* data = read_image_file(filename, &size);
 
