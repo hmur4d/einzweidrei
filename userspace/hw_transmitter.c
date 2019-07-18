@@ -35,13 +35,20 @@ static void dds_write_n_update(property_t ioupdate, uint8_t address, uint32_t da
 
 
 
-static void dds_write_n_verify(property_t ioupdate, uint8_t address, uint32_t data) {
+
+static void dds_write_n_verify_mask(property_t ioupdate, uint8_t address, uint32_t data, uint32_t mask) {
 	dds_write(address, data);
 	ioupdate_pulse(ioupdate);
 	int rd_data = dds_read(address);
-	if (rd_data != data) log_error("ERROR DDS WR : wr - %8x but rd - %8x ", data, rd_data);
+	if ((rd_data & mask) != data) log_error("ERROR DDS WR : wr - %8x but rd - %8x ", data, (rd_data & mask));
 
 }
+
+static void dds_write_n_verify(property_t ioupdate, uint8_t address, uint32_t data) {
+	dds_write_n_verify_mask(ioupdate, address, data, 0xFFFFFFFF);
+
+}
+
 void hw_all_dds_dac_cal(property_t ioupdate, property_t dds_sel) {
 	for (int i = 1; i <= 4; i++) {
 		write_property(dds_sel, i);
@@ -55,38 +62,17 @@ void hw_all_dds_dac_cal(property_t ioupdate, property_t dds_sel) {
 	}
 }
 
-void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, uint8_t delay_for_dds_0, uint8_t delay_for_dds_1,uint8_t delay_for_dds_2,uint8_t delay_for_dds_3) {
-
-	
-
-	write_property(dds_sel, 1);
-	usleep(2);
-	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	uint32_t value = 0x00000840 | (delay_for_dds_0 & 0x7);
-	log_info("DDS 0 delay=0x%X", value);
-	dds_write_n_verify(ioupdate, 0x1B, value);
-
-	write_property(dds_sel, 2);
-	usleep(2);
-	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	value = 0x00000840 | (delay_for_dds_1 & 0x7);
-	log_info("DDS 1 delay=0x%X", value);
-	dds_write_n_verify(ioupdate, 0x1B, value);
-
-	write_property(dds_sel, 3);
-	usleep(2);
-	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	value = 0x00000840 | (delay_for_dds_2 & 0x7);
-	log_info("DDS 2 delay=0x%X", value);
-	dds_write_n_verify(ioupdate, 0x1B, value);
-
-	write_property(dds_sel, 4);
-	usleep(2);
-	//set CAL_W_SYNC=1 and SYNC IN DELAY
-	value = 0x00000840 | (delay_for_dds_3 & 0x7);
-	log_info("DDS 3 delay=0x%X", value);
-	dds_write_n_verify(ioupdate, 0x1B, value);
-
+void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, uint8_t delay_for_dds[]) {
+	for (int i = 0; i <=3; i++) {
+		write_property(dds_sel, i+1);
+		usleep(2);
+		//set 3wire, OSK enable, sine output enable
+		dds_write_n_verify(ioupdate, 0x00, 0x0001010A);
+		//set CAL_W_SYNC=1 and SYNC IN DELAY
+		uint32_t value = 0x00000840 | (delay_for_dds[i] & 0x7);
+		log_info("DDS [%d] delay=0x%X",i, value);
+		dds_write_n_verify_mask(ioupdate, 0x1B, value,0xFFFF);
+	}
 }
 
 void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
@@ -114,9 +100,9 @@ void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
 }
 
 
-static void dds_sync(shared_memory_t *mem, uint8_t delay_for_dds_0, uint8_t delay_for_dds_1, uint8_t delay_for_dds_2, uint8_t delay_for_dds_3) {
+static void dds_sync(shared_memory_t *mem, uint8_t delay_for_dds[]) {
 
-	log_info("DDS syncing started -> delays(%d,%d,%d,%d)", delay_for_dds_0, delay_for_dds_1, delay_for_dds_2, delay_for_dds_3);
+	log_info("DDS syncing started -> delays(%d,%d,%d,%d)", delay_for_dds[0], delay_for_dds[1], delay_for_dds[2], delay_for_dds[3]);
 	//reset dds
 	write_property(mem->dds_reset, 1);
 	usleep(2);
@@ -125,7 +111,7 @@ static void dds_sync(shared_memory_t *mem, uint8_t delay_for_dds_0, uint8_t dela
 	//DAC CAL
 	hw_all_dds_dac_cal(mem->dds_ioupdate,mem->dds_sel);
 	//CAL_W_SYNC
-	hw_all_dds_cal_w_sync(mem->dds_ioupdate, mem->dds_sel, delay_for_dds_0, delay_for_dds_1, delay_for_dds_2, delay_for_dds_3);
+	hw_all_dds_cal_w_sync(mem->dds_ioupdate, mem->dds_sel, delay_for_dds);
 	//DAC CAL
 	hw_all_dds_dac_cal(mem->dds_ioupdate, mem->dds_sel);
 	//normal config
@@ -136,11 +122,8 @@ static void dds_sync(shared_memory_t *mem, uint8_t delay_for_dds_0, uint8_t dela
 	log_info("DDS syncing done");
 
 }
-void hw_transmitter_init(uint8_t delay_for_dds_0, uint8_t delay_for_dds_1, uint8_t delay_for_dds_2, uint8_t delay_for_dds_3) {
+void hw_transmitter_init(uint8_t delay_for_dds[]) {
 	log_info("hw_transmitter_init started");
-	log_info("hw_transmitter_init stop sequence and lock, to be sure that they are not running");
-	stop_sequence();
-	stop_lock();
 
 	spi_dds = (spi_t){
 		.dev_path = "/dev/spidev32766.0",
@@ -155,32 +138,35 @@ void hw_transmitter_init(uint8_t delay_for_dds_0, uint8_t delay_for_dds_1, uint8
 	shared_memory_t* mem = shared_memory_acquire();
 	spi_open(&spi_dds);
 
-	dds_sync(mem, delay_for_dds_0, delay_for_dds_1, delay_for_dds_2, delay_for_dds_3);
+	dds_sync(mem, delay_for_dds);
 	spi_close(&spi_dds);
 
 	shared_memory_release(mem);
 	log_info("hw_transmitter_init done");
 }
 void hw_transmitter_auto_init() {
-
+	log_info("hw_transmitter_init stop sequence and lock, to be sure that they are not running");
+	stop_sequence();
+	stop_lock();
 
 	//DEFAULT DELAY VALUE UP TO CAMELEON 4 '2.1'
-	uint32_t delay_for_dds_0 = 2;
-	uint32_t delay_for_dds_1 = 2;
-	uint32_t delay_for_dds_2 = 2;
-	uint32_t delay_for_dds_3 = 2;
+	uint8_t delay_for_dds[4];
+	delay_for_dds[0] = 2;
+	delay_for_dds[1] = 2;
+	delay_for_dds[2] = 2;
+	delay_for_dds[3] = 2;
 
 	fpga_revision_t fpga = read_fpga_revision();
 
 	//DELAYS FOR CAMELEON 4 '3.0'
 	if (fpga.rev_major == 3 && fpga.rev_minor == 0) {
-		delay_for_dds_0 = 3;
-		delay_for_dds_1 = 3;
-		delay_for_dds_2 = 3;
-		delay_for_dds_3 = 3;
+		delay_for_dds[0] = 3;
+		delay_for_dds[1] = 3;
+		delay_for_dds[2] = 3;
+		delay_for_dds[3] = 3;
 	}
 	log_info("hw_transmitter_auto_init detect cameleon %d.%d",fpga.rev_major, fpga.rev_minor);
 
-	hw_transmitter_init(delay_for_dds_0, delay_for_dds_1, delay_for_dds_2, delay_for_dds_3);
+	hw_transmitter_init(delay_for_dds);
 }
 

@@ -136,7 +136,7 @@ void hardware_init() {
 
 	read_fpga_revision();
 
-	hw_transmitter_init();
+	hw_transmitter_auto_init();
 	hw_receiver_init();
 	hw_gradient_init();
 

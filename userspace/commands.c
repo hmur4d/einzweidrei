@@ -274,7 +274,13 @@ static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* b
 		shared_memory_release(mem);
 	}else if (header->param1 & 2) {
 		//init stops lock sequence, so we need to save and restore its status...
-		hw_transmitter_init( header->param2, header->param3, header->param4, header->param5);
+		uint8_t dds_delays[4];
+		dds_delays[0] = header->param2;
+		dds_delays[1] = header->param3;
+		dds_delays[2] = header->param4;
+		dds_delays[3] = header->param5;
+
+		hw_transmitter_init(dds_delays);
 
 	}
 }
