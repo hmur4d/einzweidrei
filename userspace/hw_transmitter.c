@@ -151,19 +151,19 @@ void hw_transmitter_auto_init() {
 
 	//DEFAULT DELAY VALUE UP TO CAMELEON 4 '2.1'
 	uint8_t delay_for_dds[4];
-	delay_for_dds[0] = 2;
-	delay_for_dds[1] = 2;
-	delay_for_dds[2] = 2;
-	delay_for_dds[3] = 2;
+	delay_for_dds[0] = 0;
+	delay_for_dds[1] = 0;
+	delay_for_dds[2] = 0;
+	delay_for_dds[3] = 0;
 
 	fpga_revision_t fpga = read_fpga_revision();
 
 	//DELAYS FOR CAMELEON 4 '3.0'
 	if (fpga.rev_major == 3 && fpga.rev_minor == 0) {
-		delay_for_dds[0] = 3;
-		delay_for_dds[1] = 3;
-		delay_for_dds[2] = 3;
-		delay_for_dds[3] = 3;
+		delay_for_dds[0] = 0;
+		delay_for_dds[1] = 0;
+		delay_for_dds[2] = 0;
+		delay_for_dds[3] = 0;
 	}
 	log_info("hw_transmitter_auto_init detect cameleon %d.%d",fpga.rev_major, fpga.rev_minor);
 
