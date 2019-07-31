@@ -5,6 +5,17 @@
 
 case "$1" in
   start)
+        echo "Checking FPGA image..."
+        FPGA_IMAGE=`devmem 0xff200014`
+        if [ "$FPGA_IMAGE" = "0x40FC00FC" ]; then
+            # select user image
+            devmem 0xff22006c 32 0x1000020
+            # disable watchdog
+            devmem 0xff220068 32 0
+            # reload
+            devmem 0xff220078 32 1
+        fi
+
         echo "Starting cameleon..."
         source /opt/RS2D/cameleon.conf
         insmod /opt/RS2D/modcameleon.ko
