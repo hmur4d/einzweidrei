@@ -73,12 +73,14 @@ void hw_gradient_init() {
 
 	fpga_revision_t fpga = read_fpga_revision();
 
-	log_info("hw_gradient_init stop sequence and lock, to be sure that they are not running");
+	
 	stop_sequence();
 	stop_lock();
 
-	if (fpga.rev_major == 0 || fpga.rev_major == 1) {
+	bool useSPI = (fpga.rev_major == 0) || (fpga.rev_major == 1) || ((fpga.rev_major == 2) && (fpga.rev_minor == 0));
 
+	if (useSPI) {
+		log_info("hw_gradient_init with SPI");
 		spi_wm = (spi_t) {
 			.dev_path = "/dev/spidev32766.3",
 				.fd = -1,
@@ -125,8 +127,8 @@ void hw_gradient_init() {
 		spi_close(&spi_wm);
 
 	}
-	else if (fpga.rev_major >= 2) {
-
+	else {
+		log_info("hw_gradient_init with I2C");
 		int i2c_fd = open("/dev/i2c-0", O_RDWR);
 		shared_memory_t * mem = shared_memory_acquire();
 		write_property(mem->wm_reset, 0);
