@@ -8,12 +8,21 @@ case "$1" in
         echo "Checking FPGA image..."
         FPGA_IMAGE=`devmem 0xff200014`
         if [ "$FPGA_IMAGE" = "0x40FC00FC" ]; then
-            # select user image
-            devmem 0xff22006c 32 0x1000020
-            # disable watchdog
-            devmem 0xff220068 32 0
-            # reload
-            devmem 0xff220078 32 1
+		    # check if the reboot is due to nCONF pin
+			FPGA_RECONF_COND=`devmem 0xff220060 32`
+			if [ "$FPGA_RECONF_COND" = "0x00000000" ]; then
+				# set type of image : user
+				devmem 0xff220070 32 0x1
+				# select user image
+				devmem 0xff22006c 32 0x1000020
+				# disable watchdog
+				devmem 0xff220068 32 0
+				# reload
+				devmem 0xff220078 32 1
+			else
+				echo "PROBLEM WITH USER APPLICATION"
+				break
+			fi
         fi
 
         echo "Starting cameleon..."

@@ -2,9 +2,12 @@
 #include "shared_memory.h"
 #include "hw_transmitter.h"
 #include "log.h"
+#include "config.h"
 
 
 spi_t spi_dds;
+
+float last_sync_temperature = 0;
 
 static void dds_write(uint8_t addr, uint32_t data) {
 	char tx_buff[5] = { addr,data >> 24,data >> 16,data >> 8,data };
@@ -123,7 +126,8 @@ static void dds_sync(shared_memory_t *mem, uint8_t delay_for_dds[]) {
 
 }
 void hw_transmitter_init(uint8_t delay_for_dds[]) {
-	log_info("hw_transmitter_init started");
+	last_sync_temperature = read_fpga_temperature();
+	log_info("hw_transmitter_init started, FPGA temp = %.2f",last_sync_temperature);
 
 	spi_dds = (spi_t){
 		.dev_path = "/dev/spidev32766.0",
@@ -151,22 +155,26 @@ void hw_transmitter_auto_init() {
 
 	//DEFAULT DELAY VALUE 
 	uint8_t delay_for_dds[4];
-	delay_for_dds[0] = 0;
-	delay_for_dds[1] = 0;
-	delay_for_dds[2] = 0;
-	delay_for_dds[3] = 0;
+	delay_for_dds[0] = config_DDS_delay(0);
+	delay_for_dds[1] = config_DDS_delay(1);
+	delay_for_dds[2] = config_DDS_delay(2);
+	delay_for_dds[3] = config_DDS_delay(3);
 
 	fpga_revision_t fpga = read_fpga_revision();
+	log_info("hw_transmitter_auto_init detect cameleon %d.%d", fpga.rev_major, fpga.rev_minor);
 
-
-	if (fpga.rev_major == 2 && fpga.rev_minor == 0) {
-		delay_for_dds[0] = 1;
-		delay_for_dds[1] = 1;
-		delay_for_dds[2] = 1;
-		delay_for_dds[3] = 1;
+	if (delay_for_dds[0] == -1 && delay_for_dds[1] == -1 && delay_for_dds[2] == -1 && delay_for_dds[3] == -1) {
+		if (fpga.rev_major == 2 && fpga.rev_minor == 0) {
+			delay_for_dds[0] = 1;
+			delay_for_dds[1] = 1;
+			delay_for_dds[2] = 1;
+			delay_for_dds[3] = 1;
+		}
+		
 	}
-	log_info("hw_transmitter_auto_init detect cameleon %d.%d",fpga.rev_major, fpga.rev_minor);
-
+	else {
+		log_info("hw_transmitter_auto_init use delay in cameleon.conf", fpga.rev_major, fpga.rev_minor);
+	}
 	hw_transmitter_init(delay_for_dds);
 }
 
