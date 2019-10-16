@@ -12,6 +12,11 @@
 #define ENV_HW_REVISION "HARDWARE_REVISION"
 #define ENV_HW_LOCK_ACTIVATED "HARDWARE_LOCK_ACTIVATED"
 
+#define ENV_HW_DDS_DELAY_0 "DDS_DELAY_0"
+#define ENV_HW_DDS_DELAY_1 "DDS_DELAY_1"
+#define ENV_HW_DDS_DELAY_2 "DDS_DELAY_2"
+#define ENV_HW_DDS_DELAY_3 "DDS_DELAY_3"
+
 
 
 //--
@@ -35,4 +40,18 @@ bool config_hardware_lock_activated() {
 	
 	char* lock_activated = getenv(ENV_HW_LOCK_ACTIVATED);
 	return lock_activated == NULL ? true : atoi(lock_activated)!=0;
+}
+
+int config_DDS_delay(int index) {
+	char* delay = NULL;
+	if(index == 0) {
+		delay = getenv(ENV_HW_DDS_DELAY_0);
+	}else if (index == 1) {
+		delay = getenv(ENV_HW_DDS_DELAY_1);
+	}else if (index == 2) {
+		delay = getenv(ENV_HW_DDS_DELAY_2);
+	}else if (index == 3) {
+		delay = getenv(ENV_HW_DDS_DELAY_3);
+	}
+	return delay == NULL ? -1 : atoi(delay);
 }
