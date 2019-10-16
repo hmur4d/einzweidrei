@@ -2,135 +2,55 @@
 #include "shared_memory.h"
 #include "log.h"
 #include "config.h"
+#include "hardware.h"
 
-#define MAX_RXDATA_BYTES 4194304
-
-//25,488 to read 4194304 bytes with mmap + mcopy
-
-void test_read_rxdata_full(uint32_t size, int print_count) {
-	char* rxdata_file = "/dev/rxdata";
-	int fd = open(rxdata_file, O_RDONLY);
-	if (fd < 0) {
-		log_error_errno("Unable to open rxdata (%s)", rxdata_file);
-		return;
-	}
-
-	int nbytes = size;
-	int32_t* buffer = malloc(size);
-
-	struct timespec tstart = { 0,0 }, tend = { 0,0 };
-
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
-	read(fd, buffer, nbytes);
-	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("read (%d bytes): %.3f ms", nbytes,
-		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
-
-	for (int i = 0; i < print_count; i++) {
-		printf("%d: %d\n", i, buffer[i]);
-	}
-
-	free(buffer);
-	close(fd);
+static void lmk_write(spi_t spi_lmk,int16_t addr, int8_t data) {
+	char tx_buff[3];
+	tx_buff[0] = (addr >> 8) & 0x0F;
+	tx_buff[1] =  addr;
+	tx_buff[2] = data;
+	char rx_buff[3];
+	printf("Write lmk register 0x%X = 0x%X\n", addr, data);
+	spi_send(spi_lmk, tx_buff, rx_buff);
 }
-
-
-void test_read_rxdata_partial(int nwords, int print_count) {
-	struct timespec tstart = { 0,0 }, tend = { 0,0 };
-
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
-
-	char* rxdata_file = "/dev/rxdata";
-	int fd = open(rxdata_file, O_RDONLY);
-	if (fd < 0) {
-		log_error_errno("Unable to open rxdata (%s)", rxdata_file);
-		return;
-	}
-
-	clock_gettime(CLOCK_MONOTONIC, &tend);
-	log_info("open rxdata: %.3f ms", 
-		(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
-
-
-	int nbytes = nwords * sizeof(int32_t);
-	int32_t* buffer = malloc(nbytes);
-
-
-	while (true) {
-		printf("type enter to read %d words\n", nwords);
-		fflush(stdout);
-		getchar();
-
-		clock_gettime(CLOCK_MONOTONIC, &tstart);
-		if (lseek(fd, 0, SEEK_SET) < 0) {
-			log_error_errno("unable to lseek to 0");
-			close(fd);
-			return;
-		}
-
-		int nread = read(fd, buffer, nbytes);
-		clock_gettime(CLOCK_MONOTONIC, &tend);
-		log_info("read+seek (%d bytes): %.3f ms", nread,
-			(tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000.0f);
-
-		for (int i = 0; i < print_count; i++) {
-			printf("%d: %d\n", i, buffer[i]);
-		}
-	}
-
-	free(buffer);
-	close(fd);
-}
-
-
-void test_read_lockdata_partial(int nwords, int print_count) {
-	char* lockdata_file = "/dev/lockdata";
-	int fd = open(lockdata_file, O_RDONLY);
-	if (fd < 0) {
-		log_error_errno("Unable to open lockdata (%s)", lockdata_file);
-		return;
-	}
-
-	int nbytes = nwords * sizeof(int64_t);
-	int64_t* buffer = malloc(nbytes);
-
-	while (true) {
-		printf("type enter to read %d words\n", nwords);
-		fflush(stdout);
-		getchar();
-
-		if (lseek(fd, 0, SEEK_SET) < 0) {
-			log_error_errno("unable to lseek to 0");
-			close(fd);
-			return;
-		}
-
-		read(fd, buffer, nbytes);
-		for (int i = 0; i < print_count; i++) {
-			printf("%x %llx\n", i, buffer[i]);
-		}
-	}
-
-	free(buffer);
-	close(fd);
-}
-
 
 int test_main(int argc, char ** argv) {
 	if (!log_init(config_log_level(), config_log_file())) {
 		return 1;
 	}
 
-	/*
-	printf("type enter to read full data\n");
-	fflush(stdout);
-	getchar();
-	test_read_rxdata_full(MAX_RXDATA_BYTES, 100);
-	*/
+	spi_t spi_lmk;
+	spi_lmk = (spi_t) {
+		.dev_path = "/dev/spidev32766.6",
+			.fd = -1,
+			.speed = 50000,
+			.bits = 8,
+			.len = 3,
+			.mode = 0,
+			.delay = 0
+	};
+	spi_open(&spi_lmk);
+	int32_t i;
+	while (1) {
+		printf("all dds sync on? \n");
+		scanf("%d", &i);
+		if (i == 1) {
+			lmk_write(spi_lmk, 0x127, 0xc7); //dds0 sync_in on
+			lmk_write(spi_lmk, 0x12f, 0xf7); //dds1 sync_in on
+			lmk_write(spi_lmk, 0x137, 0xc7); //dds2 sync_in on
+			lmk_write(spi_lmk, 0x107, 0xf7); //dds3 sync_in on
+		}
 
-	//test_read_rxdata_partial(1024*1024/4, 10); //1Mo
+		printf("all dds sync off? \n");
+		scanf("%d", &i);
+		if (i == 1) {
+			lmk_write(spi_lmk, 0x127, 0x07); //dds0 sync_in off
+			lmk_write(spi_lmk, 0x12f, 0x07); //dds1 sync_in off
+			lmk_write(spi_lmk, 0x137, 0x07); //dds2 sync_in off
+			lmk_write(spi_lmk, 0x107, 0x07); //dds3 sync_in off
+		}
 
-	test_read_lockdata_partial(10, 1);
-
+	}
+	spi_close(&spi_lmk);
 	return 0;
 }
