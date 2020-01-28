@@ -137,8 +137,10 @@ void init_lock() {
 	log_info("Write LockShape at 0x%x size in bytes=%d, first value=0x%x", desti, size_byte, lock_shapes[0]);
 	memcpy(desti, lock_shapes, size_byte);
 
+
 	write_property(mem->lock_dds_reset_en, 1);
 	write_property(mem->lock_nco_reset_en, 1);
+
 	shared_memory_release(mem);
 }
 
