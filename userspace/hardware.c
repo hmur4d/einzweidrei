@@ -126,7 +126,7 @@ float read_fpga_temperature() {
 	return t;
 }
 
-void init_lock_shape() {
+void init_lock() {
 	uint32_t lock_shapes[512];
 	for (int i = 0; i < 512; i++) {
 		lock_shapes[i] = 0x0FFF0000; //amp=100%, phase=0° comme shape par defaut
@@ -136,6 +136,9 @@ void init_lock_shape() {
 	uint32_t size_byte = sizeof(lock_shapes);
 	log_info("Write LockShape at 0x%x size in bytes=%d, first value=0x%x", desti, size_byte, lock_shapes[0]);
 	memcpy(desti, lock_shapes, size_byte);
+
+	write_property(mem->lock_dds_reset_en, 1);
+	write_property(mem->lock_nco_reset_en, 1);
 	shared_memory_release(mem);
 }
 
@@ -148,7 +151,8 @@ void hardware_init() {
 	hw_receiver_init();
 	hw_gradient_init();
 
-	init_lock_shape();
+	init_lock();
+
 }
 fpga_revision_t read_fpga_revision() {
 	fpga_revision_t fpga;

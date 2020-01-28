@@ -117,6 +117,20 @@ bool shared_memory_init(const char* memory_file) {
 		.bit_offset = 0,
 		.name = "lock_sweep",
 	};
+	sharedmem.lock_dds_reset_en = (property_t){
+	.read_ptr = NULL,
+	.write_ptr = sharedmem.lwbridge + 16376,
+	.bit_size = 1,
+	.bit_offset = 8,
+	.name = "lock_dds_reset_en",
+	};
+	sharedmem.lock_nco_reset_en = (property_t){
+	.read_ptr = NULL,
+	.write_ptr = sharedmem.lwbridge + 16376,
+	.bit_size = 1,
+	.bit_offset = 4,
+	.name = "lock_nco_reset_en",
+	};
 	sharedmem.lock_on_off = (property_t) {
 		.read_ptr = NULL,
 		.write_ptr = sharedmem.lwbridge + 16377,

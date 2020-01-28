@@ -84,8 +84,8 @@ void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
 		usleep(2);
 		//set 3wire, OSK enable, sine output enable
 		dds_write_n_verify(ioupdate, 0x00, 0x0001010A);
-		//set SYNC_CLK enable, Matched latency, parallel_data_port_enable
-		dds_write_n_verify(ioupdate, 0x01, 0x00408B00);
+		//set SYNC_CLK enable, Matched latency, parallel_data_port_enable, sync_out_disable
+		dds_write_n_verify(ioupdate, 0x01, 0x00408800);
 		log_info("DDS %d configured", i);
 	}
 
