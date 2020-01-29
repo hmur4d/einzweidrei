@@ -5,6 +5,7 @@
 #include "hw_transmitter.h"
 #include "hw_receiver.h"
 #include "hw_gradient.h"
+#include "hw_clock.h"
 #include "std_includes.h"
 
 #define HW_REV_4v2 2
