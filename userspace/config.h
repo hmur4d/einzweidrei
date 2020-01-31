@@ -11,7 +11,7 @@
 
 #define TEMPERATURE_FILE	"/sys/devices/platform/sopc@0/ffc02200.i2c/i2c-0/0-0048/hwmon/hwmon0/temp1_input"
 
-#define HPS_REVISION		7
+#define HPS_REVISION		507
 // HPS_REVISION		1 : base
 // HPS_REVISION		2 : delay (1,1,1,1) pour cam4 2.0 
 // HPS_REVISION		3 : annulé
@@ -27,6 +27,11 @@
 
 */
 //--
+
+
+// HPS_REVISION 300+ : test 
+// HPS_REVISION 500+ : ulm
+
 
 char* config_log_file();
 int config_log_level();
