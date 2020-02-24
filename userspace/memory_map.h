@@ -53,7 +53,6 @@ Memory map, copied as-is from CameleonNIOS
 #define RAM_REGISTERS_SELECTED                          100
 #define RAM_REGISTERS_NUMBER_OF_REGISTERS               189
 
-
 #define RAM_REGISTER_RX_ENABLED_SELECTED                5
 
 #define RAM_REGISTER_GAIN_RX0_SELECTED                  71
@@ -106,7 +105,7 @@ Memory map, copied as-is from CameleonNIOS
 #define RAM_REGISTERS_LOCK_OFFSET_STEP                   0x00000004
 #define RAM_REGISTERS_LOCK_OFFSET                        (RAM_OFFSET_STEP * (RAM_INTERFACE_NUMBER_OF_RAMS + 1))
 #define RAM_REGISTERS_LOCK_SELECTED                      1000
-#define RAM_REGISTERS_LOCK_NUMBER_OF_REGISTERS           30
+#define RAM_REGISTERS_LOCK_NUMBER_OF_REGISTERS           40
 
 
 #define RAM_REGISTER_LOCK_GAIN_RX_SELECTED               12
