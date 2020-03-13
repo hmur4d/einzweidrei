@@ -138,7 +138,7 @@ void init_lock() {
 	memcpy(desti, lock_shapes, size_byte);
 
 
-	write_property(mem->lock_dds_reset_en, 1);
+	write_property(mem->lock_dds_reset_en, 0);
 	write_property(mem->lock_nco_reset_en, 1);
 
 	shared_memory_release(mem);
