@@ -44,22 +44,25 @@ int load_profiles() {
 		char dir_name[] = SHIM_PROFILES_FOLDER;
 
 		char *filename = strcat(dir_name, dir->d_name);
-		fp = fopen(filename, "r");
-		if (fp == NULL) {
-			log_error("Unable ot open file");
-			return -1;
-		}
 
-		shim_profiles[j].name = malloc(strlen(dir->d_name));
-		strncpy(shim_profiles[j].name, dir->d_name, strlen(dir->d_name));
+		if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
+			fp = fopen(filename, "r");
+			if (fp == NULL) {
+				log_error("Unable ot open file");
+				return -1;
+			}
 
-		while (fgets(line, sizeof(line), fp) != NULL) {
-			shim_profiles[j].coeffs[i] = atoi(line);
-			i++;
+			shim_profiles[j].name = malloc(strlen(dir->d_name));
+			strncpy(shim_profiles[j].name, dir->d_name, strlen(dir->d_name));
+
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				shim_profiles[j].coeffs[i] = atoi(line);
+				i++;
+			}
+			i = 0;
+			j++;
+			fclose(fp);
 		}
-		i = 0;
-		j++;
-		fclose(fp);
 	}
 	closedir(d);
 
@@ -92,7 +95,7 @@ int load_profiles_map() {
 			
 			if (strcmp(shim_profiles[j].name, line) == 0) {
 				profiles_map[i]=j;
-				printf("map[%d]=%d\n", i, j);
+				printf("Shim[%d] is '%s' and is at index %d\n",i, line, j);
 				break;
 			}
 		}
@@ -107,9 +110,7 @@ int shim_config_main(int argc, char** argv) {
 	init_trace_calibrations_struct();
 
 	load_profiles();
-	for (int i = 0; i < SHIM_PROFILES_COUNT; i++) {
-		print(shim_profiles[i]);
-	}
+
 	load_profiles_map();
 
 	return 0;
