@@ -27,6 +27,7 @@
     <ClCompile Include="lock_interrupts.c" />
     <ClCompile Include="epcq_image.c" />
     <ClCompile Include="hw_clock.c" />
+    <ClCompile Include="shim_config_files.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />
@@ -65,6 +66,7 @@
     <ClInclude Include="sequencer_interrupts.h" />
     <ClInclude Include="lock_interrupts.h" />
     <ClInclude Include="hw_clock.h" />
+    <ClInclude Include="shim_config_files.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

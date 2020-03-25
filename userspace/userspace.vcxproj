@@ -112,6 +112,7 @@
     <ClInclude Include="ram.h" />
     <ClInclude Include="sequence_params.h" />
     <ClInclude Include="shared_memory.h" />
+    <ClInclude Include="shim_config_files.h" />
     <ClInclude Include="std_includes.h" />
     <ClInclude Include="udp_broadcaster.h" />
     <ClInclude Include="workqueue.h" />
@@ -140,6 +141,7 @@
     <ClCompile Include="ram.c" />
     <ClCompile Include="sequence_params.c" />
     <ClCompile Include="shared_memory.c" />
+    <ClCompile Include="shim_config_files.c" />
     <ClCompile Include="test.c" />
     <ClCompile Include="udp_broadcaster.c" />
     <ClCompile Include="workqueue.c" />

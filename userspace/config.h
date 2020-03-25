@@ -10,6 +10,8 @@
 #define UDP_PORT			70
 
 #define TEMPERATURE_FILE	"/sys/devices/platform/sopc@0/ffc02200.i2c/i2c-0/0-0048/hwmon/hwmon0/temp1_input"
+#define SHIM_PROFIL_DIR	"/opt/RS2D/shim_profils/"
+#define SHIM_BOARD_FILE	"/opt/RS2D/amps_board.txt/"
 
 #define HPS_REVISION		607
 // HPS_REVISION		1 : base
