@@ -10,14 +10,16 @@
 #define TRACE_COUNT 64
 
 typedef struct {
-	int32_t coeffs[TRACE_COUNT];
+	int32_t ram_values[TRACE_COUNT];
+	float_t coeffs[TRACE_COUNT];
 	char* name;
 
 } shim_profile_t;
 
 typedef struct {
-	double gain;
-	int zero;
+	float_t gains[TRACE_COUNT];
+	int32_t zeros[TRACE_COUNT];
+	uint32_t id;
 
 } trace_calibration_t;
 
