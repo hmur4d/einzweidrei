@@ -22,6 +22,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 	int device_address = header->param2;
 	int readback = header->param3;
 	int nbytes = header->body_size;
+	
 
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C

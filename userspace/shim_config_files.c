@@ -213,13 +213,14 @@ int load_calibrations(int board_id) {
 }
 
 int compile_ram(float_t max_current, int8_t nb_bit) {
+
+	// by default max_current = 800.0, nb_bit = 20
+
 	int32_t ram_value;
 	float_t g, coeff,temp;
 
 	int32_t max_pos = (2 << (nb_bit - 2)) - 1;
 	int32_t max_neg = -(2 << (nb_bit - 2));
-
-	printf("max pos=%d max neg=%d\n", max_pos, max_neg);
 
 	for (int i = 0; i < SHIM_PROFILES_COUNT; i++) {
 		if (strcmp(shim_profiles[i].name, UNUSED) != 0) {
@@ -236,7 +237,6 @@ int compile_ram(float_t max_current, int8_t nb_bit) {
 				}
 				shim_profiles[i].ram_values[j] = ram_value;
 			}
-			print_profile(shim_profiles[i]);
 		}
 	}
 

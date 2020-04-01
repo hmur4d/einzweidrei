@@ -49,7 +49,7 @@ Memory map, copied as-is from CameleonNIOS
 
 /************************RAM_REGISTERS*************************/
 #define RAM_REGISTERS_OFFSET_STEP                       0x00000004
-#define RAM_REGISTERS_OFFSET                            (RAM_OFFSET_STEP * RAM_INTERFACE_NUMBER_OF_RAMS)
+#define RAM_REGISTERS_OFFSET                            (RAM_OFFSET_STEP * 87)
 #define RAM_REGISTERS_SELECTED                          100
 #define RAM_REGISTERS_NUMBER_OF_REGISTERS               189
 
@@ -103,7 +103,7 @@ Memory map, copied as-is from CameleonNIOS
 
 /************************RAM_REGISTERS_LOCK************************/
 #define RAM_REGISTERS_LOCK_OFFSET_STEP                   0x00000004
-#define RAM_REGISTERS_LOCK_OFFSET                        (RAM_OFFSET_STEP * (RAM_INTERFACE_NUMBER_OF_RAMS + 1))
+#define RAM_REGISTERS_LOCK_OFFSET                        (RAM_OFFSET_STEP * 88)
 #define RAM_REGISTERS_LOCK_SELECTED                      1000
 #define RAM_REGISTERS_LOCK_NUMBER_OF_REGISTERS           40
 
