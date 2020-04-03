@@ -3,12 +3,10 @@
 #include "dirent.h"
 #include "shim_config_files.h"
 
-
-
 shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
 trace_calibration_t trace_calibrations;
 int profiles_map[SHIM_PROFILES_COUNT];
-
+int amps_board_id;
 
 char* substring(char* src, char* cstart, char* cstop) {
 	int start = strcspn(src,cstart) + 1;
@@ -23,6 +21,7 @@ char* substring(char* src, char* cstart, char* cstop) {
 void init_shim_profiles_struct() {
 	for (int i = 0; i < SHIM_PROFILES_COUNT; i++) {
 		shim_profiles[i].name = UNUSED;
+		profiles_map[i] = -1;
 	}
 }
 void init_trace_calibrations_struct() {
@@ -243,15 +242,22 @@ int compile_ram(float_t max_current, int8_t nb_bit) {
 	return 0;
 }
 
-int shim_config_main(int argc, char** argv) {
+int init_shim() {
 	init_shim_profiles_struct();
 	init_trace_calibrations_struct();
 
 	load_profiles();
 	load_profiles_map();
-	load_calibrations(2096);
+	
+	amps_board_id = 2096;
+	load_calibrations(amps_board_id);
 
-	compile_ram(800.0, 20);
+	compile_ram(SHIM_TRACE_MILLIS_AMP_MAX, SHIM_DAC_NB_BIT);
 
+	return 0;
+}
+
+int shim_config_main(int argc, char** argv) {
+	init_shim();
 	return 0;
 }

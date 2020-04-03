@@ -20,6 +20,7 @@ Command handlers: command id and implementation.
 #define CMD_WRITE_IRQ                               0x18
 #define CMD_READ_PIO                                0x1a
 #define CMD_CAM_INIT                                0x1e
+#define CMD_SHIM_INFO								0x1f
 
 
 //not yet implemented, copy-pasted from Cameleon NIOS
@@ -50,6 +51,7 @@ Command handlers: command id and implementation.
 #define DEVICE_FEATURE_SEQUENCER                    300
 #define DEVICE_FEATURE_CAMELEON                     400
 #define DEVICE_FEATURE_GRADIENT                     800
+#define DEVICE_FEATURE_SHIM                         900
 #define DEVICE_FEATURE_UNKNOWN                      -1
 
 #define CMD_UPDATE                                  0x30
@@ -63,6 +65,11 @@ Command handlers: command id and implementation.
 #define CMD_TX_MIXER                                2000 + 0x0		//used by compiler
 
 #define CMD_SEQUENCE_CLEAR							4000 + 0x0		//used to know when to clear previous sequence params 
+
+//SHIM
+#define CMD_WRITE_SHIM								9000 + 0x1
+#define CMD_READ_SHIM								9000 + 0x2
+
 
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message

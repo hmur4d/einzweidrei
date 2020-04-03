@@ -9,6 +9,10 @@
 #define SHIM_PROFILES_COUNT 64
 #define TRACE_COUNT 64
 
+#define SHIM_TRACE_MILLIS_AMP_MAX 800
+#define SHIM_DAC_NB_BIT 20
+
+
 typedef struct {
 	int32_t ram_values[TRACE_COUNT];
 	float_t coeffs[TRACE_COUNT];
@@ -22,5 +26,7 @@ typedef struct {
 	uint32_t id;
 
 } trace_calibration_t;
+
+int init_shim();
 
 #endif

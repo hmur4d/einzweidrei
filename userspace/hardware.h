@@ -5,6 +5,7 @@
 #include "hw_transmitter.h"
 #include "hw_receiver.h"
 #include "hw_gradient.h"
+#include "shim_config_files.h"
 #include "hw_clock.h"
 #include "std_includes.h"
 

@@ -154,6 +154,7 @@ void hardware_init() {
 	hw_gradient_init();
 
 	init_lock();
+	init_shim();
 
 }
 fpga_revision_t read_fpga_revision() {

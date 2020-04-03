@@ -13,6 +13,11 @@
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
 
+extern shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
+extern int profiles_map[SHIM_PROFILES_COUNT];
+extern int amps_board_id;
+
+
 static void cmd_close(clientsocket_t* client, header_t* header, const void* body) {
 	clientsocket_close(client);
 }
@@ -314,6 +319,54 @@ static void cmd_lock_sweep_on_off(clientsocket_t* client, header_t* header, cons
 	shared_memory_release(mem);
 }
 
+static void get_shim_info(clientsocket_t* client, header_t* header, const void* body) {
+	reset_header(header);
+	int i;
+
+	header->cmd = CMD_SHIM_INFO;
+	header->param1 = SHIM_TRACE_MILLIS_AMP_MAX;
+	header->param2 = SHIM_DAC_NB_BIT;
+	header->param3 = amps_board_id;
+	header->param4 = 0;
+	header->param5 = 0;
+	header->param6 = 0;
+
+
+	char str_temp[SHIM_PROFILES_COUNT*32];// = malloc(64 * 33);
+	int j = 0;
+	for (i = 0; i < SHIM_PROFILES_COUNT; i++) {
+		if (profiles_map[i] != -1) {
+			int namesize = strlen(shim_profiles[profiles_map[i]].name);
+			strcpy(str_temp +j, shim_profiles[profiles_map[i]].name);
+			str_temp[j + namesize] = ';';
+			
+			printf("add %d char at %d\n", namesize, j);
+			j += namesize + 1;
+		}
+	}
+	str_temp[j] = '\0';
+	char* data = malloc(j);
+	strcpy(data, str_temp);
+	header->body_size =j;
+
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+	free(data);
+}
+
+static void write_shim(clientsocket_t* client, header_t* header, const void* body) {
+	int32_t value = header->param2;
+	int32_t index = header->param1;
+	reset_header(header);
+	header->param6 = 0;
+	header->body_size = 0;
+	int8_t  data[0];
+	log_info("Writing shim #%d named %s value=%d", index, shim_profiles[profiles_map[index]].name, value);
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
 //--
 
 bool register_all_commands() {
@@ -341,7 +394,8 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_LOCK_SEQ_ON_OFF, cmd_lock_sequence_on_off);
 	success &= register_command_handler(CMD_LOCK_SWEEP_ON_OFF, cmd_lock_sweep_on_off);
 	success &= register_command_handler(CMD_LOCK_ON_OFF, cmd_lock_on_off);
-
+	success &= register_command_handler(CMD_SHIM_INFO, get_shim_info);
+	success &= register_command_handler(CMD_WRITE_SHIM, write_shim);
 
 	return success;
 }

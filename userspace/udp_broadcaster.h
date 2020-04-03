@@ -17,6 +17,7 @@ typedef struct  {
 	device_info_t sequence;
 	device_info_t gradient;
 	device_info_t lock;
+	device_info_t shim;
 }udp_info_t;
 
 

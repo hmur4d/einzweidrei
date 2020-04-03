@@ -11,6 +11,7 @@
 #define ENV_DEV_MEM		"DEV_MEM"
 #define ENV_HW_REVISION "HARDWARE_REVISION"
 #define ENV_HW_LOCK_ACTIVATED "HARDWARE_LOCK_ACTIVATED"
+#define ENV_HW_SHIM_ACTIVATED "HARDWARE_SHIM_ACTIVATED"
 
 #define ENV_HW_DDS_DELAY_0 "DDS_DELAY_0"
 #define ENV_HW_DDS_DELAY_1 "DDS_DELAY_1"
@@ -40,6 +41,12 @@ bool config_hardware_lock_activated() {
 	
 	char* lock_activated = getenv(ENV_HW_LOCK_ACTIVATED);
 	return lock_activated == NULL ? true : atoi(lock_activated)!=0;
+}
+
+bool config_hardware_shim_activated() {
+
+	char* shim_activated = getenv(ENV_HW_SHIM_ACTIVATED);
+	return shim_activated == NULL ? true : atoi(shim_activated) != 0;
 }
 
 int config_DDS_delay(int index) {

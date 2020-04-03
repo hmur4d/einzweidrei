@@ -39,6 +39,12 @@ static void init_device_info(udp_info_t * pUDPinfo) {
 		.feature = config_hardware_lock_activated() ? DEVICE_FEATURE_LOCK: DEVICE_FEATURE_UNKNOWN,
 		.cmdPort = COMMAND_PORT,
 		.dataPort = LOCK_PORT,
+	};	
+	pUDPinfo->shim = (device_info_t){
+		.type = DEVICE_TYPE_CAMELEON4,
+		.feature = config_hardware_shim_activated() ? DEVICE_FEATURE_SHIM : DEVICE_FEATURE_UNKNOWN,
+		.cmdPort = COMMAND_PORT,
+		.dataPort = -1,
 	};
 
 	return;
