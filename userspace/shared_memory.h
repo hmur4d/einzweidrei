@@ -55,6 +55,10 @@ typedef struct {
 	property_t fpga_rev_major;
 	property_t fpga_rev_minor;
 
+	property_t shim_trace_sat_0;
+	property_t shim_trace_sat_1;
+
+
 	int32_t* lwbridge;
 	int32_t* rams;
 } shared_memory_t;

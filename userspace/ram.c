@@ -2,6 +2,9 @@
 #include "memory_map.h"
 #include "log.h"
 
+int get_offset_byte(int ram_index, int index) {
+	return ram_index * RAM_OFFSET_STEP + index * RAM_REGISTERS_OFFSET_STEP;
+}
 
 bool ram_find(unsigned int ram_id, int span_bytes, ram_descriptor_t* ram) {
 	ram->id = ram_id;

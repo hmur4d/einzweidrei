@@ -358,11 +358,63 @@ static void get_shim_info(clientsocket_t* client, header_t* header, const void* 
 static void write_shim(clientsocket_t* client, header_t* header, const void* body) {
 	int32_t value = header->param2;
 	int32_t index = header->param1;
+	uint32_t sat_0 = 0, sat_1 = 0;
+
+	int profile_index = profiles_map[index];
+	int err = 0;
+	
+	int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0+ index);
+
+	log_info("writing shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[profile_index].name, index, value, ram_offset_byte);
+	shared_memory_t* mem = shared_memory_acquire();
+	*(mem->rams + ram_offset_byte/4) = value;
+	//check trace saturation if any
+	sat_0 = read_property(mem->shim_trace_sat_0);
+	sat_1 = read_property(mem->shim_trace_sat_1);
+	shared_memory_release(mem);
+	
+	
 	reset_header(header);
-	header->param6 = 0;
-	header->body_size = 0;
+	header->param1 = sat_0;
+	header->param2 = sat_1;
+	header->param6 = err;
+
 	int8_t  data[0];
-	log_info("Writing shim #%d named %s value=%d", index, shim_profiles[profiles_map[index]].name, value);
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
+
+static void read_shim(clientsocket_t* client, header_t* header, const void* body) {
+	int32_t value = 0;
+	int32_t index = header->param1;
+
+
+	int profile_index = profiles_map[index];
+	int err = 0;
+
+	int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0 + index);
+
+		
+	shared_memory_t* mem = shared_memory_acquire();
+	value = *(mem->rams + ram_offset_byte/4);
+	shared_memory_release(mem);
+	//sign bit recopy
+	if (((value >> (SHIM_DAC_NB_BIT - 1)) & 1) == 1) {
+		uint32_t mask = (0xFFFFFFFF >> SHIM_DAC_NB_BIT) << SHIM_DAC_NB_BIT;
+		value = value | mask;
+		log_info("reading shim negatif %d, mask = 0x%X", value, mask);
+	}
+	log_info("reading shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[profile_index].name, index, value, ram_offset_byte);
+	
+
+
+	reset_header(header);
+
+	header->param2 = value;
+	header->param6 = err;
+
+	int8_t  data[0];
 	if (!send_message(client, header, data)) {
 		log_error("Unable to send response!");
 	}
@@ -396,6 +448,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_LOCK_ON_OFF, cmd_lock_on_off);
 	success &= register_command_handler(CMD_SHIM_INFO, get_shim_info);
 	success &= register_command_handler(CMD_WRITE_SHIM, write_shim);
+	success &= register_command_handler(CMD_READ_SHIM, read_shim);
 
 	return success;
 }

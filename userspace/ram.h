@@ -13,6 +13,8 @@ typedef struct {
 	int span_int32;
 } ram_descriptor_t;
 
+int get_offset_byte(int ram_index, int index);
+
 bool ram_find(unsigned int ram_id, int span_bytes, ram_descriptor_t* ram);
 
 #endif

@@ -40,18 +40,22 @@ Memory map, copied as-is from CameleonNIOS
 #define FLASH_DC_B0_OFFSET                          0xa
 
 /************************RAM_INTERFACE************************/
-#define RAM_INTERFACE_NUMBER_OF_RAMS                87
+//#define RAM_INTERFACE_NUMBER_OF_RAMS                87
 #define RAM_OFFSET_STEP                             0x00008000
 
 #define RAM_FILTER0_SELECTED                        66
 #define RAM_FILTER0_OFFSET                          (RAM_OFFSET_STEP * RAM_FILTER0_SELECTED)
 
+#define RAM_SHIM_MATRIX_C0							93
+#define RAM_CURRENT_ZERO_OFFSETS					157
+
 
 /************************RAM_REGISTERS*************************/
 #define RAM_REGISTERS_OFFSET_STEP                       0x00000004
-#define RAM_REGISTERS_OFFSET                            (RAM_OFFSET_STEP * 87)
+#define RAM_REGISTERS_INDEX							87
+#define RAM_REGISTERS_OFFSET                            (RAM_OFFSET_STEP * RAM_REGISTERS_INDEX)
 #define RAM_REGISTERS_SELECTED                          100
-#define RAM_REGISTERS_NUMBER_OF_REGISTERS               189
+//#define RAM_REGISTERS_NUMBER_OF_REGISTERS               189
 
 #define RAM_REGISTER_RX_ENABLED_SELECTED                5
 
@@ -101,11 +105,14 @@ Memory map, copied as-is from CameleonNIOS
 
 #define RAM_REGISTER_RF_SWITCH_OFFSET					(RAM_REGISTERS_OFFSET + RAM_REGISTERS_OFFSET_STEP * RAM_REGISTER_RF_SWITCH_SELECTED )
 
+#define RAM_REGISTER_SHIM_0								189
+
 /************************RAM_REGISTERS_LOCK************************/
 #define RAM_REGISTERS_LOCK_OFFSET_STEP                   0x00000004
-#define RAM_REGISTERS_LOCK_OFFSET                        (RAM_OFFSET_STEP * 88)
+#define RAM_REGISTERS_LOCK_INDEX							88
+#define RAM_REGISTERS_LOCK_OFFSET                        (RAM_OFFSET_STEP * RAM_REGISTERS_LOCK_INDEX)
 #define RAM_REGISTERS_LOCK_SELECTED                      1000
-#define RAM_REGISTERS_LOCK_NUMBER_OF_REGISTERS           40
+//#define RAM_REGISTERS_LOCK_NUMBER_OF_REGISTERS           40
 
 
 #define RAM_REGISTER_LOCK_GAIN_RX_SELECTED               12

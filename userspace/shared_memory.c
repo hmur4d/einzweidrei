@@ -194,6 +194,20 @@ bool shared_memory_init(const char* memory_file) {
 			.bit_offset = 0,
 			.name = "fpga_rev_minor",
 	};
+	sharedmem.shim_trace_sat_0 = (property_t){
+		.read_ptr = sharedmem.lwbridge + 16366,
+		.write_ptr = NULL,
+		.bit_size = 32,
+		.bit_offset = 0,
+		.name = "shim_trace_sat_0",
+	};
+	sharedmem.shim_trace_sat_1 = (property_t){
+		.read_ptr = sharedmem.lwbridge + 16367,
+		.write_ptr = NULL,
+		.bit_size = 32,
+		.bit_offset = 0,
+		.name = "shim_trace_sat_1",
+	};
 
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
 	if (sharedmem.rams == MAP_FAILED) {
