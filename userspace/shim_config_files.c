@@ -2,6 +2,10 @@
 #include "log.h"
 #include "dirent.h"
 #include "shim_config_files.h"
+#include "ram.h"
+#include "shared_memory.h"
+#include "memory_map.h"
+
 
 shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
 trace_calibration_t trace_calibrations;
@@ -25,7 +29,7 @@ void init_shim_profiles_struct() {
 	}
 }
 void init_trace_calibrations_struct() {
-	for (int i = 0; i < TRACE_COUNT; i++) {
+	for (int i = 0; i < SHIM_TRACE_COUNT; i++) {
 		trace_calibrations.gains[i] = 0.0;
 		trace_calibrations.zeros[i] = 0;
 	}
@@ -34,28 +38,28 @@ void init_trace_calibrations_struct() {
 
 void print_profile(shim_profile_t sp) {
 	printf("[%s]\n", sp.name);
-	for (int i = 0; i < TRACE_COUNT - 1; i++) {
+	for (int i = 0; i < SHIM_TRACE_COUNT - 1; i++) {
 		printf("%.3f, ", sp.coeffs[i]);
 	}
-	printf("%.3f\n", sp.coeffs[TRACE_COUNT - 1]);
-	for (int i = 0; i < TRACE_COUNT - 1; i++) {
+	printf("%.3f\n", sp.coeffs[SHIM_TRACE_COUNT - 1]);
+	for (int i = 0; i < SHIM_TRACE_COUNT - 1; i++) {
 		printf("%d, ", sp.ram_values[i]);
 	}
-	printf("%.d\n", sp.ram_values[TRACE_COUNT - 1]);
+	printf("%.d\n", sp.ram_values[SHIM_TRACE_COUNT - 1]);
 }
 
 void print_calib(trace_calibration_t trace) {
 	printf("Board ID = %d\n", trace.id);
 	printf("G = ");
-	for (int i = 0; i < TRACE_COUNT - 1; i++) {
+	for (int i = 0; i < SHIM_TRACE_COUNT - 1; i++) {
 		printf("%f, ", trace.gains[i]);
 	}
-	printf("%f\n", trace.gains[TRACE_COUNT - 1]);
+	printf("%f\n", trace.gains[SHIM_TRACE_COUNT - 1]);
 	printf("Z = ");
-	for (int i = 0; i < TRACE_COUNT - 1; i++) {
+	for (int i = 0; i < SHIM_TRACE_COUNT - 1; i++) {
 		printf("%d, ", trace.zeros[i]);
 	}
-	printf("%d\n", trace.zeros[TRACE_COUNT - 1]);
+	printf("%d\n", trace.zeros[SHIM_TRACE_COUNT - 1]);
 }
 
 
@@ -223,7 +227,7 @@ int compile_ram(float_t max_current, int8_t nb_bit) {
 
 	for (int i = 0; i < SHIM_PROFILES_COUNT; i++) {
 		if (strcmp(shim_profiles[i].name, UNUSED) != 0) {
-			for (int j = 0; j < TRACE_COUNT; j++) {
+			for (int j = 0; j < SHIM_TRACE_COUNT; j++) {
 				
 				g=trace_calibrations.gains[j];
 				coeff = shim_profiles[i].coeffs[j];
@@ -242,6 +246,28 @@ int compile_ram(float_t max_current, int8_t nb_bit) {
 	return 0;
 }
 
+int write_shim_matrix() {
+	int trace_index = 0, profile_index = 0;
+	int32_t* ram_values;
+	char* profile_name;
+	shared_memory_t *mem= shared_memory_acquire();
+	for (profile_index = 0; profile_index < SHIM_PROFILES_COUNT; profile_index++) {
+		if (profiles_map[profile_index] != -1) {
+			ram_values = shim_profiles[profiles_map[profile_index]].ram_values;
+			profile_name = shim_profiles[profiles_map[profile_index]].name;
+			printf("write_shim_matrix profile [%s], profile index = %d\n", profile_name, profile_index);
+			for (trace_index = 0; trace_index < SHIM_TRACE_COUNT; trace_index++) {
+				int32_t ram_offset_byte = get_offset_byte(RAM_SHIM_MATRIX_C0 + trace_index, profile_index);
+				*(mem->rams + ram_offset_byte / 4) = ram_values[trace_index];
+				printf("write_shim_matrix offset = 0x%x\n", ram_offset_byte);
+				printf("write_shim_matrix ram [%d] at index = %d, value = %d\n", (RAM_SHIM_MATRIX_C0 + trace_index), profile_index, ram_values[trace_index]);
+			}
+		}
+	}
+	shared_memory_release(mem);
+	return 0;
+}
+
 int init_shim() {
 	init_shim_profiles_struct();
 	init_trace_calibrations_struct();
@@ -253,6 +279,8 @@ int init_shim() {
 	load_calibrations(amps_board_id);
 
 	compile_ram(SHIM_TRACE_MILLIS_AMP_MAX, SHIM_DAC_NB_BIT);
+
+	write_shim_matrix();
 
 	return 0;
 }

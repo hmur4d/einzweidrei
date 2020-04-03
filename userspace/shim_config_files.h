@@ -7,22 +7,22 @@
 #define PROFILES_MAP_FILE "/opt/RS2D/shim_config/profiles_map"
 #define UNUSED "UNUSED"
 #define SHIM_PROFILES_COUNT 64
-#define TRACE_COUNT 64
+#define SHIM_TRACE_COUNT 64
 
 #define SHIM_TRACE_MILLIS_AMP_MAX 800
 #define SHIM_DAC_NB_BIT 20
 
 
 typedef struct {
-	int32_t ram_values[TRACE_COUNT];
-	float_t coeffs[TRACE_COUNT];
+	int32_t ram_values[SHIM_TRACE_COUNT];
+	float_t coeffs[SHIM_TRACE_COUNT];
 	char* name;
 
 } shim_profile_t;
 
 typedef struct {
-	float_t gains[TRACE_COUNT];
-	int32_t zeros[TRACE_COUNT];
+	float_t gains[SHIM_TRACE_COUNT];
+	int32_t zeros[SHIM_TRACE_COUNT];
 	uint32_t id;
 
 } trace_calibration_t;
