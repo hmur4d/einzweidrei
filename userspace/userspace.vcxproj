@@ -96,6 +96,7 @@
     <ClInclude Include="generated\hps_arm_a9_1.h" />
     <ClInclude Include="generated\hps_bridges.h" />
     <ClInclude Include="hardware.h" />
+    <ClInclude Include="hw_amps.h" />
     <ClInclude Include="hw_clock.h" />
     <ClInclude Include="hw_gradient.h" />
     <ClInclude Include="hw_transmitter.h" />
@@ -125,6 +126,7 @@
     <ClCompile Include="config.c" />
     <ClCompile Include="epcq_image.c" />
     <ClCompile Include="hardware.c" />
+    <ClCompile Include="hw_amps.c" />
     <ClCompile Include="hw_clock.c" />
     <ClCompile Include="hw_gradient.c" />
     <ClCompile Include="hw_transmitter.c" />

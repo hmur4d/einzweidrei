@@ -14,7 +14,7 @@
 #define MOTHER_BOARD_ADDRESS 0x0
 
 extern shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
-extern int profiles_map[SHIM_PROFILES_COUNT];
+extern shim_value_t shim_values[SHIM_PROFILES_COUNT];
 extern int amps_board_id;
 
 
@@ -332,27 +332,22 @@ static void get_shim_info(clientsocket_t* client, header_t* header, const void* 
 	header->param6 = 0;
 
 
-	char str_temp[SHIM_PROFILES_COUNT*32];// = malloc(64 * 33);
-	int j = 0;
-	for (i = 0; i < SHIM_PROFILES_COUNT; i++) {
-		if (profiles_map[i] != -1) {
-			int namesize = strlen(shim_profiles[profiles_map[i]].name);
-			strcpy(str_temp +j, shim_profiles[profiles_map[i]].name);
-			str_temp[j + namesize] = ';';
-			
-			printf("add %d char at %d\n", namesize, j);
-			j += namesize + 1;
-		}
-	}
-	str_temp[j] = '\0';
-	char* data = malloc(j);
-	strcpy(data, str_temp);
-	header->body_size =j;
+	char str_temp[SHIM_PROFILES_COUNT*256];// = malloc(64 * 33);
 
-	if (!send_message(client, header, data)) {
+	for (i = 0; i < SHIM_PROFILES_COUNT; i++) {
+		char* str = shim_value_tostring(shim_values[i]);
+		printf("len=%d", strlen(str_temp));
+		strcat(str_temp, str);
+	}
+	header->body_size = strlen(str_temp);
+	//char* data = malloc(data_size);
+	//strcpy(data, str_temp);
+
+
+	if (!send_message(client, header, str_temp)) {
 		log_error("Unable to send response!");
 	}
-	free(data);
+
 }
 
 static void write_shim(clientsocket_t* client, header_t* header, const void* body) {
@@ -360,12 +355,12 @@ static void write_shim(clientsocket_t* client, header_t* header, const void* bod
 	int32_t index = header->param1;
 	uint32_t sat_0 = 0, sat_1 = 0;
 
-	int profile_index = profiles_map[index];
+	int profile_index = index;
 	int err = 0;
 	
 	int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0+ index);
 
-	log_info("writing shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[profile_index].name, index, value, ram_offset_byte);
+	log_info("writing shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[profile_index].filename, index, value, ram_offset_byte);
 	shared_memory_t* mem = shared_memory_acquire();
 	*(mem->rams + ram_offset_byte/4) = value;
 	//check trace saturation if any
@@ -390,7 +385,7 @@ static void read_shim(clientsocket_t* client, header_t* header, const void* body
 	int32_t index = header->param1;
 
 
-	int profile_index = profiles_map[index];
+	int profile_index = index;
 	int err = 0;
 
 	int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0 + index);
@@ -405,7 +400,7 @@ static void read_shim(clientsocket_t* client, header_t* header, const void* body
 		value = value | mask;
 		log_info("reading shim negatif %d, mask = 0x%X", value, mask);
 	}
-	log_info("reading shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[profile_index].name, index, value, ram_offset_byte);
+	log_info("reading shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[profile_index].filename, index, value, ram_offset_byte);
 	
 
 

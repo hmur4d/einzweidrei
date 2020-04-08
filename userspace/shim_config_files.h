@@ -5,6 +5,7 @@
 #define SHIM_PROFILES_FOLDER "/opt/RS2D/shim_config/profiles/"
 #define SHIM_CALIBRATIONS_FOLDER "/opt/RS2D/shim_config/calibrations/"
 #define PROFILES_MAP_FILE "/opt/RS2D/shim_config/profiles_map"
+#define SHIM_FILE "/opt/RS2D/shim_config/Shim_d2o.cfg"
 #define UNUSED "UNUSED"
 #define SHIM_PROFILES_COUNT 64
 #define SHIM_TRACE_COUNT 64
@@ -16,7 +17,7 @@
 typedef struct {
 	int32_t ram_values[SHIM_TRACE_COUNT];
 	float_t coeffs[SHIM_TRACE_COUNT];
-	char* name;
+	char* filename;
 
 } shim_profile_t;
 
@@ -27,6 +28,19 @@ typedef struct {
 
 } trace_calibration_t;
 
+typedef struct {
+	char* filename;
+	float_t factor;
+	int32_t binary;
+	int8_t group_ID;
+	int8_t order;
+	char* name;
+
+} shim_value_t;
+
 int init_shim();
+char* shim_value_tostring(shim_value_t sv);
 
 #endif
+
+

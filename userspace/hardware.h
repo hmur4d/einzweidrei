@@ -7,6 +7,7 @@
 #include "hw_gradient.h"
 #include "shim_config_files.h"
 #include "hw_clock.h"
+#include "hw_amps.h"
 #include "std_includes.h"
 
 #define HW_REV_4v2 2
