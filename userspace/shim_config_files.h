@@ -4,7 +4,6 @@
 
 #define SHIM_PROFILES_FOLDER "/opt/RS2D/shim_config/profiles/"
 #define SHIM_CALIBRATIONS_FOLDER "/opt/RS2D/shim_config/calibrations/"
-#define PROFILES_MAP_FILE "/opt/RS2D/shim_config/profiles_map"
 #define SHIM_FILE "/opt/RS2D/shim_config/Shim_d2o.cfg"
 #define UNUSED "UNUSED"
 #define SHIM_PROFILES_COUNT 64
