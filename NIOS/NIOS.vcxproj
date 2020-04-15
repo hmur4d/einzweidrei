@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -17,6 +17,87 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\NIOS\CameleonNios\ad5664r_spi_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\ad5664r_spi_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\ads6445_spi_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\ads6445_spi_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\all_includes.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\alt_error_handler.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\cameleon_utilities.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\cameleon_utilities_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\com_utilities.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\dac3484_spi_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\dac3484_spi_routine.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\eeprom_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\eeprom_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\emitters_calibration_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\emitters_calibration_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\i2c_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\i2c_utilities.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\iniche_init.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\isr_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\isr_utilities.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\lm95235_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\lm95235_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\maxII_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\maxII_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\mb86064_spi_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\mb86064_spi_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\MCP23008.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\memory_map.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\monitoring_isr_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\monitoring_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\monitoring_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\monitoring_task.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\monitoring_utilities.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\network_config.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\opencores_i2c.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\opencores_i2c_regs.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\os_utilities.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\pio_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\pio_utilities.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\receivers_calibration_reg.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\receivers_calibration_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\socket1_task.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\socket2_task.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\socket3_task.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\socket4_task.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\sockets_routines.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\sockets_utilities.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\socket_manager.h" />
+    <ClInclude Include="..\..\NIOS\CameleonNios\trace.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\NIOS\CameleonNios\ad5664r_spi_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\ads6445_spi_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\alt_error_handler.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\cameleon_utilities_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\dac3484_spi_routine.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\eeprom_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\emitters_calibration.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\i2c_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\iniche_init.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\isr_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\lm95235_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\maxII_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\mb86064_spi_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\MCP23008.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\monitoring_isr_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\monitoring_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\monitoring_task.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\network_config.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\opencores_i2c.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\optimizations.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\os_utilities.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\receivers_calibration.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\socket1_task.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\socket2_task.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\socket3_task.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\socket4_task.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\sockets_routines.c" />
+    <ClCompile Include="..\..\NIOS\CameleonNios\socket_manager.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -114,87 +195,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\ad5664r_spi_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\ads6445_spi_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\alt_error_handler.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\cameleon_utilities_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\dac3484_spi_routine.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\eeprom_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\emitters_calibration.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\i2c_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\iniche_init.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\isr_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\lm95235_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\maxII_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\mb86064_spi_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\MCP23008.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\monitoring_isr_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\monitoring_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\monitoring_task.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\network_config.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\opencores_i2c.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\optimizations.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\os_utilities.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\receivers_calibration.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket1_task.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket2_task.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket3_task.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket4_task.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\sockets_routines.c" />
-    <ClCompile Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket_manager.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\ad5664r_spi_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\ad5664r_spi_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\ads6445_spi_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\ads6445_spi_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\all_includes.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\alt_error_handler.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\cameleon_utilities.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\cameleon_utilities_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\com_utilities.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\dac3484_spi_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\dac3484_spi_routine.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\eeprom_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\eeprom_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\emitters_calibration_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\emitters_calibration_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\i2c_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\i2c_utilities.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\iniche_init.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\isr_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\isr_utilities.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\lm95235_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\lm95235_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\maxII_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\maxII_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\mb86064_spi_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\mb86064_spi_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\MCP23008.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\memory_map.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\monitoring_isr_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\monitoring_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\monitoring_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\monitoring_task.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\monitoring_utilities.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\network_config.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\opencores_i2c.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\opencores_i2c_regs.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\os_utilities.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\pio_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\pio_utilities.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\receivers_calibration_reg.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\receivers_calibration_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket1_task.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket2_task.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket3_task.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket4_task.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\sockets_routines.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\sockets_utilities.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\socket_manager.h" />
-    <ClInclude Include="..\..\..\..\..\altera\NIOS\CameleonNios\trace.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
