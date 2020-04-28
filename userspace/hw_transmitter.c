@@ -86,8 +86,8 @@ void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
 		usleep(2);
 		//set 3wire, OSK enable, sine output enable
 		ret = dds_write_n_verify(i, ioupdate, 0x00, 0x0001010A);
-		//set SYNC_CLK enable, Matched latency, parallel_data_port_enable
-		ret += dds_write_n_verify(i, ioupdate, 0x01, 0x00408B00);
+		//set SYNC_CLK and SYNC_OUT disable, Matched latency ENABLE, parallel_data_port_enable
+		ret += dds_write_n_verify(i, ioupdate, 0x01, 0x00408000);
 		if (ret == 0) {
 			log_info("OK : DDS %d configured", i);
 		}
@@ -101,8 +101,8 @@ void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
 	usleep(2);
 	//set 3wire, OSK enable, sine output enable
 	ret = dds_write_n_verify(4, ioupdate, 0x00, 0x0001010A);
-	//set SYNC_CLK enable, Matched latency, parallel_data_port_enable
-	ret += dds_write_n_verify(4, ioupdate, 0x01, 0x00808800);
+	//set SYNC_CLK and SYNC_OUT disable, Matched latency, parallel_data_port_enable
+	ret += dds_write_n_verify(4, ioupdate, 0x01, 0x00808000);
 
 	ret += dds_write_n_verify(4, ioupdate, 0x13, 0x8ce703af);
 	ret += dds_write_n_verify(4, ioupdate, 0x14, 0xffff0000);
