@@ -13,7 +13,7 @@
 #define SHIM_PROFIL_DIR	"/opt/RS2D/shim_profils/"
 #define SHIM_BOARD_FILE	"/opt/RS2D/amps_board.txt/"
 
-#define HPS_REVISION		607
+#define HPS_REVISION		8
 // HPS_REVISION		1 : base
 // HPS_REVISION		2 : delay (1,1,1,1) pour cam4 2.0 
 // HPS_REVISION		3 : annulé
@@ -21,7 +21,7 @@
 // HPS_REVISION		5 : delay DDS dans cameleon.conf
 // HPS_REVISION		6 : sync temperature
 // HPS_REVISION		7 : add lock DDS and NCO reset enable control pour FPGA 208 avec nouveau lock
-// HPS_REVISION		607 : etude lock freq
+// HPS_REVISION		8 : etude lock freq - shimHandler - datafield table for FPGA 210
 /*
 	HPS_REVISION = 1 mise en place de numero de version
 

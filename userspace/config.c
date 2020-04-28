@@ -46,7 +46,7 @@ bool config_hardware_lock_activated() {
 bool config_hardware_shim_activated() {
 
 	char* shim_activated = getenv(ENV_HW_SHIM_ACTIVATED);
-	return shim_activated == NULL ? true : atoi(shim_activated) != 0;
+	return shim_activated == NULL ? false : atoi(shim_activated) != 0;
 }
 
 int config_DDS_delay(int index) {

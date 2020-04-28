@@ -153,7 +153,8 @@ void hw_transmitter_init(uint8_t delay_for_dds[]) {
 
 	dds_sync(mem, delay_for_dds);
 	//spi_close(&spi_dds);
-	
+
+	/*
 	// A/B activation
 	for (int j = 1; j <= 4; j++) {
 		write_property(mem->dds_sel, j);
@@ -166,7 +167,7 @@ void hw_transmitter_init(uint8_t delay_for_dds[]) {
 		usleep(16);
 		write_property(mem->dds_ioupdate, 0);
 		write_property(mem->dds_sel, 0);
-	}
+	}*/
 	
 	/*
 	while (1) {
