@@ -40,6 +40,7 @@ int config_log_level();
 char* config_memory_file();
 bool config_hardware_lock_activated();
 bool config_hardware_shim_activated();
+bool config_hardware_AB_activated();
 int config_DDS_delay(int index);
 
 #endif

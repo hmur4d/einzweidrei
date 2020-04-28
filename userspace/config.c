@@ -12,6 +12,7 @@
 #define ENV_HW_REVISION "HARDWARE_REVISION"
 #define ENV_HW_LOCK_ACTIVATED "HARDWARE_LOCK_ACTIVATED"
 #define ENV_HW_SHIM_ACTIVATED "HARDWARE_SHIM_ACTIVATED"
+#define ENV_HW_AB_ACTIVATED "HARDWARE_AB_ACTIVATED"
 
 #define ENV_HW_DDS_DELAY_0 "DDS_DELAY_0"
 #define ENV_HW_DDS_DELAY_1 "DDS_DELAY_1"
@@ -47,6 +48,12 @@ bool config_hardware_shim_activated() {
 
 	char* shim_activated = getenv(ENV_HW_SHIM_ACTIVATED);
 	return shim_activated == NULL ? false : atoi(shim_activated) != 0;
+}
+
+bool config_hardware_AB_activated() {
+
+	char* ab_activated = getenv(ENV_HW_AB_ACTIVATED);
+	return ab_activated == NULL ? false : atoi(ab_activated) != 0;
 }
 
 int config_DDS_delay(int index) {

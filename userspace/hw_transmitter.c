@@ -6,6 +6,13 @@
 
 
 spi_t spi_dds;
+spi_t spi_lmk;
+
+uint32_t CF1[4] = { 0x0001010A,0x0001010A,0x0001010A,0x0001010A };		// set 3wire, OSK enable, sine output enable
+uint32_t CF2[4] = { 0x00408000,0x00408000,0x00408000,0x00808000 };		// set SYNC_CLK and SYNC_OUT disable, Matched latency ENABLE, parallel_data_port_enable for DDS0-3 and 
+uint32_t CF4[4] = { 0x00052120,0x00052120,0x00052120,0x00052120 };		// Default value required
+uint32_t USR0[4] = { 0x00000840 ,0x00000840 ,0x00000840 ,0x00000840 };	// set CAL_W_SYNC=1 and SYNC IN DELAY
+uint32_t DIG_RAMP[4] = { 0x2048 ,0x2048 ,0x2048 ,0x2048 };				// value of B for 64 when AB is used B=64
 
 float last_sync_temperature = 0;
 
@@ -52,7 +59,7 @@ static uint32_t dds_write_n_verify(uint32_t dds, property_t ioupdate, uint8_t ad
 	return dds_write_n_verify_mask(dds, ioupdate, address, data, 0xFFFFFFFF);
 
 }
-
+/*
 void hw_all_dds_dac_cal(property_t ioupdate, property_t dds_sel) {
 	for (int i = 1; i <= 4; i++) {
 		write_property(dds_sel, i);
@@ -104,8 +111,8 @@ void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
 	//set SYNC_CLK and SYNC_OUT disable, Matched latency, parallel_data_port_enable
 	ret += dds_write_n_verify(4, ioupdate, 0x01, 0x00808000);
 
-	ret += dds_write_n_verify(4, ioupdate, 0x13, 0x8ce703af);
-	ret += dds_write_n_verify(4, ioupdate, 0x14, 0xffff0000);
+//	ret += dds_write_n_verify(4, ioupdate, 0x13, 0x8ce703af);
+//	ret += dds_write_n_verify(4, ioupdate, 0x14, 0xffff0000);
 
 	if (ret == 0)log_info("OK : DDS %d configured", 4);
 	else log_info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ERROR : DDS %d NOT CONFIGURED XXXXXXXXXXXXXXXXXXXXXXXXXXXX ", 4);
@@ -134,25 +141,128 @@ static void dds_sync(shared_memory_t* mem, uint8_t delay_for_dds[]) {
 	log_info("DDS syncing done");
 
 }
-void hw_transmitter_init(uint8_t delay_for_dds[]) {
+*/
+
+static void lmk_write(spi_t spi_lmk, int16_t addr, int8_t data) {
+	char tx_buff[3];
+	tx_buff[0] = (addr >> 8) & 0x0F;
+	tx_buff[1] = addr;
+	tx_buff[2] = data;
+	char rx_buff[3];
+	printf("Write lmk register 0x%X = 0x%X\n", addr, data);
+	spi_send(spi_lmk, tx_buff, rx_buff);
+}
+
+void init_DDS() {
+	spi_dds = (spi_t){
+		   .dev_path = "/dev/spidev32766.0",
+		   .fd = -1,
+		   .speed = 80000000,
+		   .bits = 8,
+		   .len = 5,
+		   .mode = 0,
+		   .delay = 0,
+	};
+	bool enable_AB = config_hardware_AB_activated(); //set the AB activated from cameleon.conf
+	for (int i = 0; i < 4; i++) {
+		USR0[i] |= config_DDS_delay(i) & 0x7; //set the DDS delay from cameleon.conf
+		if (enable_AB) {
+			CF2[i] |= 0x00890000; // set enable_profil and enable_dig_ramp and program_modulus_enable
+			CF2[i] &= 0xFFBFFFFF; // set parallel_port enable bit to 0
+		}
+	}
+
+	shared_memory_t *mem = shared_memory_acquire();
+
+	//reset dds
+	write_property(mem->dds_reset, 1);
+	usleep(2);
+	write_property(mem->dds_reset, 0);
+
+	spi_open(&spi_dds);
+	int ret = 0;
+	for (int i = 0; i < 4; i++) {
+		write_property(mem->dds_sel, i + 1);
+		usleep(2);
+		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x0, CF1[i]);
+		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1, CF2[i]);
+		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x3, CF4[i]);
+		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x5, DIG_RAMP[i]);
+		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1B, USR0[i]);
+	}
+
+	spi_close(&spi_dds);
+	shared_memory_release(mem);
+}
+
+void sync_DDS(bool state) {
+
+	spi_lmk = (spi_t){
+		.dev_path = "/dev/spidev32766.6",
+			.fd = -1,
+			.speed = 50000,
+			.bits = 8,
+			.len = 3,
+			.mode = 0,
+			.delay = 0
+	};
+	spi_dds = (spi_t){
+	   .dev_path = "/dev/spidev32766.0",
+	   .fd = -1,
+	   .speed = 80000000,
+	   .bits = 8,
+	   .len = 5,
+	   .mode = 0,
+	   .delay = 0,
+	};
+	shared_memory_t* mem = shared_memory_acquire();
+	
+	if (state) {
+		printf("Enable LMK sync signal\n");
+		spi_open(&spi_lmk);
+		lmk_write(spi_lmk, 0x127, 0xc7); //dds0 sync_in on
+		lmk_write(spi_lmk, 0x12f, 0xf7); //dds1 sync_in on
+		lmk_write(spi_lmk, 0x137, 0xc7); //dds2 sync_in on
+		lmk_write(spi_lmk, 0x107, 0xf7); //dds3 sync_in on
+		spi_close(&spi_lmk);
+		printf("Do a DAC CALIBRATION for all DDS\n");
+		//open SPI for DDS
+		spi_open(&spi_dds);
+		for (int i = 0; i <4; i++) {
+			write_property(mem->dds_sel, i+1);
+			usleep(2);
+			dds_write_n_update(mem->dds_ioupdate, 0x03, CF4[i] | 0x01000000);	//set bit DAC_CAL to 1 (bit 24)
+			//DAC_CAL  finishes after 16 cycles of SYNC, so 12.8ns * 16 = 205ns 
+			usleep(2);
+			dds_write_n_update(mem->dds_ioupdate, 0x03, CF4[i]);				//set DAC_CAL 0
+		}
+		spi_close(&spi_dds);
+
+	}
+	else{
+		printf("Disable LMK sync signal\n");
+		spi_open(&spi_lmk);
+		lmk_write(spi_lmk, 0x127, 0x07); //dds0 sync_in off
+		lmk_write(spi_lmk, 0x12f, 0x07); //dds1 sync_in off
+		lmk_write(spi_lmk, 0x137, 0x07); //dds2 sync_in off
+		lmk_write(spi_lmk, 0x107, 0x07); //dds3 sync_in off
+		spi_close(&spi_lmk);
+	}
+
+	shared_memory_release(mem);
+}
+
+
+void hw_transmitter_init() {
+
 	last_sync_temperature = read_fpga_temperature();
 	log_info("hw_transmitter_init started, FPGA temp = %.2f", last_sync_temperature);
 
-	spi_dds = (spi_t){
-		.dev_path = "/dev/spidev32766.0",
-			.fd = -1,
-			.speed = 80000000,
-			.bits = 8,
-			.len = 5,
-			.mode = 0,
-			.delay = 0,
-	};
+	init_DDS();
 
-	shared_memory_t* mem = shared_memory_acquire();
-	spi_open(&spi_dds);
+	sync_DDS(true);
+	sync_DDS(false);
 
-	dds_sync(mem, delay_for_dds);
-	//spi_close(&spi_dds);
 
 	/*
 	// A/B activation
@@ -183,37 +293,7 @@ void hw_transmitter_init(uint8_t delay_for_dds[]) {
 	*/
 
 
-	spi_close(&spi_dds);
-	shared_memory_release(mem);
 	log_info("hw_transmitter_init done");
 }
-void hw_transmitter_auto_init() {
-	log_info("hw_transmitter_init stop sequence and lock, to be sure that they are not running");
-	stop_sequence();
-	stop_lock();
 
-	//DEFAULT DELAY VALUE 
-	uint8_t delay_for_dds[4];
-	delay_for_dds[0] = config_DDS_delay(0);
-	delay_for_dds[1] = config_DDS_delay(1);
-	delay_for_dds[2] = config_DDS_delay(2);
-	delay_for_dds[3] = config_DDS_delay(3);
-
-	fpga_revision_t fpga = read_fpga_revision();
-	log_info("hw_transmitter_auto_init detect cameleon %d.%d", fpga.rev_major, fpga.rev_minor);
-
-	if (delay_for_dds[0] == -1 && delay_for_dds[1] == -1 && delay_for_dds[2] == -1 && delay_for_dds[3] == -1) {
-		if (fpga.rev_major == 2 && fpga.rev_minor == 0) {
-			delay_for_dds[0] = 1;
-			delay_for_dds[1] = 1;
-			delay_for_dds[2] = 1;
-			delay_for_dds[3] = 1;
-		}
-
-	}
-	else {
-		log_info("hw_transmitter_auto_init use delay in cameleon.conf", fpga.rev_major, fpga.rev_minor);
-	}
-	hw_transmitter_init(delay_for_dds);
-}
 
