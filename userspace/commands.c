@@ -266,7 +266,7 @@ static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* b
 	log_info("cmd_cam_init");
 	read_fpga_temperature();
 
-	if (header->param1 & 1) {
+	if (header->param1 == 1) {
 		shared_memory_t * mem = shared_memory_acquire();
 		int32_t lock_status = read_property(mem->lock_sequence_on_off);
 		shared_memory_release(mem);
@@ -278,17 +278,21 @@ static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* b
 		mem = shared_memory_acquire();
 		write_property(mem->lock_sequence_on_off, lock_status);
 		shared_memory_release(mem);
-	}else if (header->param1 & 2) {
-		sync_DDS(true);
-		sync_DDS(false);
-		/*uint8_t dds_delays[4];
+	}else if (header->param1 == 2 || header->param1 == 3) {
+
+		uint8_t dds_delays[4];
 		dds_delays[0] = header->param2;
 		dds_delays[1] = header->param3;
 		dds_delays[2] = header->param4;
 		dds_delays[3] = header->param5;
 
-		hw_transmitter_init(dds_delays);
-		*/
+		change_DDS_delays(dds_delays);
+
+		sync_DDS(true);
+		if (header->param1 == 3) {
+			sync_DDS(false);
+		}
+		
 	}
 }
 

@@ -41,6 +41,10 @@ char* config_memory_file();
 bool config_hardware_lock_activated();
 bool config_hardware_shim_activated();
 bool config_hardware_AB_activated();
+bool config_hardware_SYNC_ONCE_activated();
+bool config_hardware_I2S_OUTPUT_activated();
+bool config_hardware_QTH_CLK_activated();
+bool config_hardware_SFP_CLK_activated();
 int config_DDS_delay(int index);
 
 #endif

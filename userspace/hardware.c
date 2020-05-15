@@ -4,9 +4,9 @@
 #include "sequence_params.h"
 #include "config.h"
 #include "memory_map.h"
+#include "hw_transmitter.h"
 
 extern float last_sync_temperature;
-
 
 int spi_open(spi_t * spi) {
 	int ret;

@@ -58,6 +58,8 @@ typedef struct {
 	property_t shim_trace_sat_0;
 	property_t shim_trace_sat_1;
 
+	property_t i2s_output_disbale;
+
 
 	int32_t* lwbridge;
 	int32_t* rams;

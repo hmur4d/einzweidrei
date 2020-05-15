@@ -153,6 +153,26 @@ static void lmk_write(spi_t spi_lmk, int16_t addr, int8_t data) {
 	spi_send(spi_lmk, tx_buff, rx_buff);
 }
 
+void change_DDS_delays(uint8_t *delays) {
+
+
+	shared_memory_t* mem = shared_memory_acquire();
+
+	spi_open(&spi_dds);
+	int ret = 0;
+	for (int i = 0; i < 4; i++) {
+		write_property(mem->dds_sel, i + 1);
+		usleep(2);
+		uint32_t value = USR0[i];
+		value &= 0xFFFFFFF8; // force bit 0-1-2 to 0
+		value |= delays[i]; // set the new delay
+		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1B, value);
+	}
+
+	spi_close(&spi_dds);
+	shared_memory_release(mem);
+}
+
 void init_DDS() {
 	spi_dds = (spi_t){
 		   .dev_path = "/dev/spidev32766.0",
@@ -261,8 +281,22 @@ void hw_transmitter_init() {
 	init_DDS();
 
 	sync_DDS(true);
-	sync_DDS(false);
+	if (config_hardware_SYNC_ONCE_activated()) {
+		sync_DDS(false);
+	}
 
+	uint32_t lmk_reg_value = 0x00;
+	if (config_hardware_QTH_CLK_activated()) {
+		lmk_reg_value |= 2;
+	}
+
+	if (config_hardware_SFP_CLK_activated()) {
+		lmk_reg_value |= 1;
+	}
+
+	spi_open(&spi_lmk);
+	lmk_write(spi_lmk, 0x10F, lmk_reg_value); //QTH en , SFP en
+	spi_close(&spi_lmk);
 
 	/*
 	// A/B activation

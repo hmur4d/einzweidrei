@@ -71,6 +71,8 @@ uint8_t write_wm_i2c(int i2c_fd, uint8_t wm_addr, uint8_t reg, uint8_t wr_data) 
 
 void hw_gradient_init() {
 
+
+
 	fpga_revision_t fpga = read_fpga_revision();
 
 	
@@ -78,6 +80,10 @@ void hw_gradient_init() {
 	stop_lock();
 
 	bool useSPI = (fpga.rev_major == 0) || (fpga.rev_major == 1) || ((fpga.rev_major == 2) && (fpga.rev_minor == 0));
+
+
+
+
 
 	if (useSPI) {
 		log_info("hw_gradient_init with SPI");
@@ -174,7 +180,12 @@ void hw_gradient_init() {
 		close(i2c_fd);
 	}
 
+	if (!config_hardware_I2S_OUTPUT_activated()) {
+		shared_memory_t* mem = shared_memory_acquire();
+		write_property(mem->i2s_output_disbale, 1);
+		shared_memory_release(mem);
 
+	}
 
 	log_info("hw_gradient_init done");
 };
