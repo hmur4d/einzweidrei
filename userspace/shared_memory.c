@@ -166,12 +166,12 @@ bool shared_memory_init(const char* memory_file) {
 			.bit_offset = 0,
 			.name = "rxext_bit_aligned",
 	};
-	sharedmem.fpga_id = (property_t){
+	sharedmem.fw_rev_major = (property_t){
 		.read_ptr = sharedmem.lwbridge + 4,
 			.write_ptr = NULL,
 			.bit_size = 32,
 			.bit_offset = 0,
-			.name = "fpga_id",
+			.name = "fw_rev_major",
 	};
 	sharedmem.fpga_type = (property_t){
 		.read_ptr = sharedmem.lwbridge + 5,
@@ -180,19 +180,26 @@ bool shared_memory_init(const char* memory_file) {
 			.bit_offset = 28,
 			.name = "fpga_type",
 	};
-	sharedmem.fpga_rev_major = (property_t){
+	sharedmem.board_rev_major = (property_t){
 		.read_ptr = sharedmem.lwbridge + 5,
 			.write_ptr = NULL,
 			.bit_size = 12,
 			.bit_offset = 16,
-			.name = "fpga_rev_major",
+			.name = "board_rev_major",
 	};
-	sharedmem.fpga_rev_minor = (property_t){
+	sharedmem.board_rev_minor = (property_t){
 		.read_ptr = sharedmem.lwbridge + 5,
 			.write_ptr = NULL,
 			.bit_size = 16,
 			.bit_offset = 0,
-			.name = "fpga_rev_minor",
+			.name = "board_rev_minor",
+	};
+	sharedmem.fw_rev_minor = (property_t){
+	.read_ptr = sharedmem.lwbridge + 6,
+		.write_ptr = NULL,
+		.bit_size = 16,
+		.bit_offset = 0,
+		.name = "fw_rev_minor",
 	};
 	sharedmem.shim_trace_sat_0 = (property_t){
 		.read_ptr = sharedmem.lwbridge + 16366,
@@ -208,12 +215,12 @@ bool shared_memory_init(const char* memory_file) {
 		.bit_offset = 0,
 		.name = "shim_trace_sat_1",
 	};
-	sharedmem.i2s_output_disbale = (property_t){
+	sharedmem.i2s_output_disable = (property_t){
 	.read_ptr = sharedmem.lwbridge + 16370,
-	.write_ptr = NULL,
+	.write_ptr = sharedmem.lwbridge + 16370,
 	.bit_size = 1,
 	.bit_offset = 12,
-	.name = "i2s_output_disbale",
+	.name = "i2s_output_disable",
 	};
 
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);

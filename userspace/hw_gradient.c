@@ -79,7 +79,7 @@ void hw_gradient_init() {
 	stop_sequence();
 	stop_lock();
 
-	bool useSPI = (fpga.rev_major == 0) || (fpga.rev_major == 1) || ((fpga.rev_major == 2) && (fpga.rev_minor == 0));
+	bool useSPI = (fpga.board_rev_major == 0) || (fpga.board_rev_major == 1) || ((fpga.board_rev_major == 2) && (fpga.board_rev_minor == 0));
 
 
 
@@ -182,7 +182,7 @@ void hw_gradient_init() {
 
 	if (!config_hardware_I2S_OUTPUT_activated()) {
 		shared_memory_t* mem = shared_memory_acquire();
-		write_property(mem->i2s_output_disbale, 1);
+		write_property(mem->i2s_output_disable, 1);
 		shared_memory_release(mem);
 
 	}

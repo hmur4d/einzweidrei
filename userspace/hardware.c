@@ -154,27 +154,32 @@ void hardware_init() {
 	hw_gradient_init();
 
 	init_lock();
-	init_shim();
+	if (config_hardware_shim_activated()) {
+		init_shim();
+	}
+	
 
 }
 fpga_revision_t read_fpga_revision() {
 	fpga_revision_t fpga;
 
 	shared_memory_t* mem = shared_memory_acquire();
-	fpga.id = read_property(mem->fpga_id);
+	fpga.fw_rev_major = read_property(mem->fw_rev_major);
+	fpga.fw_rev_minor = read_property(mem->fw_rev_minor);
 	fpga.type = read_property(mem->fpga_type);
-	fpga.rev_major = read_property(mem->fpga_rev_major);
-	fpga.rev_minor = read_property(mem->fpga_rev_minor);
+	fpga.board_rev_major = read_property(mem->board_rev_major);
+	fpga.board_rev_minor = read_property(mem->board_rev_minor);
 	fpga.type_major_minor =	fpga.type << mem->fpga_type.bit_offset 
-								| fpga.rev_major << mem->fpga_rev_major.bit_offset 
-								| fpga.rev_minor << mem->fpga_rev_minor.bit_offset;
+								| fpga.board_rev_major << mem->fw_rev_major.bit_offset 
+								| fpga.board_rev_minor << mem->fw_rev_minor.bit_offset;
 	shared_memory_release(mem);
 
-	log_info("FPGA ID=%d, TYPE=%d, REV_MAJOR=%d, REV_MINOR=%d\n",
-		fpga.id,
+	log_info("FPGA FW rev = %d.%d TYPE=Cam%d, board rev = %d.%d\n",
+		fpga.fw_rev_major,
+		fpga.fw_rev_minor,
 		fpga.type,
-		fpga.rev_major,
-		fpga.rev_minor);
+		fpga.board_rev_major,
+		fpga.board_rev_minor);
 	
 	return fpga;
 

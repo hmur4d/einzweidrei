@@ -287,11 +287,11 @@ void hw_transmitter_init() {
 
 	uint32_t lmk_reg_value = 0x00;
 	if (config_hardware_QTH_CLK_activated()) {
-		lmk_reg_value |= 2;
+		lmk_reg_value |= 0x10;
 	}
 
 	if (config_hardware_SFP_CLK_activated()) {
-		lmk_reg_value |= 1;
+		lmk_reg_value |= 0x1;
 	}
 
 	spi_open(&spi_lmk);

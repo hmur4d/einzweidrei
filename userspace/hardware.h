@@ -25,9 +25,10 @@ typedef struct {
 }spi_t;
 typedef struct {
 
-	uint32_t id;
-	uint16_t rev_major;
-	uint16_t rev_minor;
+	uint32_t fw_rev_major;
+	uint32_t fw_rev_minor;
+	uint16_t board_rev_major;
+	uint16_t board_rev_minor;
 	uint8_t type;
 	uint32_t type_major_minor;
 }fpga_revision_t;

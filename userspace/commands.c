@@ -193,12 +193,12 @@ static void who_are_you(clientsocket_t* client, header_t* header, const void* bo
 	data[0] = versionID;
 	data[1] = mac_address[3] << 24 | mac_address[2] << 16 | mac_address[1] << 8 | mac_address[0];
 	data[2] = mac_address[5] << 8 | mac_address[4];
-	data[3] = fpga.id; 
+	data[3] = fpga.fw_rev_major; 
 	data[4] = fpga.type;
-	data[5] = fpga.rev_major;
-	data[6] = fpga.rev_minor;
+	data[5] = fpga.board_rev_major;
+	data[6] = fpga.board_rev_minor;
 	data[7] = hpsVersion;
-	data[8] = 0;
+	data[8] = fpga.fw_rev_minor;
 
 	if (!send_message(client, header, data)) {
 		log_error("Unable to send response!");
