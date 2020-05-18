@@ -146,7 +146,6 @@ void init_lock() {
 
 void hardware_init() {
 	
-
 	read_fpga_revision();
 	//hw_clock_use_s1();
 	hw_transmitter_init();
