@@ -210,7 +210,8 @@ void init_DDS() {
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x5, DIG_RAMP[i]);
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1B, USR0[i]);
 	}
-
+	write_property(mem->dds_sel, 1);
+	usleep(2);
 	spi_close(&spi_dds);
 	shared_memory_release(mem);
 }
