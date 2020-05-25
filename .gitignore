@@ -3,3 +3,8 @@ ssh.password
 *.vcxproj.user
 */obj/*
 */bin/*
+/cameleon.sln
+/common/common.vcxproj
+/kernelspace/kernelspace.vcxproj
+/make-config/make-config.vcxproj
+/userspace/userspace.vcxproj
