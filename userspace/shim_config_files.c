@@ -161,6 +161,7 @@ int load_profiles(shim_profile_t * profile) {
 			if (version_ok == false) {
 				log_error("unknown profile version = %d", version);
 			}
+			free(str_value);
 		}
 		else if (strstr(line, "Conn_") != NULL && version_ok) {
 			cpt_conn++;
@@ -173,6 +174,7 @@ int load_profiles(shim_profile_t * profile) {
 			//printf("coeff[%d]=%0.3f\n", cpt_I_global, value);
 			cpt_I++;
 			cpt_I_global++;
+			free(str_value);
 		}
 
 	}
@@ -244,6 +246,7 @@ int load_shim_file() {
 			else {
 				field += 1;
 			}
+			free(str_value);
 		}
 		else if (strstr(line, "filename") != NULL) {
 			char* str_value = substring(line, "=", ";");
@@ -257,6 +260,7 @@ int load_shim_file() {
 			else {
 				field += 2;
 			}
+			free(str_value);
 		}
 		else if (strstr(line, "factor") != NULL) {
 			char* str_value = substring(line, "=", ";");
@@ -269,6 +273,7 @@ int load_shim_file() {
 			else {
 				field += 4;
 			}
+			free(str_value);
 		}
 		else if (strstr(line, "groupID") != NULL) {
 			char* str_value = substring(line, "=", ";");
@@ -280,6 +285,7 @@ int load_shim_file() {
 			else {
 				field += 8;
 			}
+			free(str_value);
 		}
 		else if (strstr(line, "order") != NULL) {
 			char* str_value = substring(line, "=", ";");
@@ -291,11 +297,13 @@ int load_shim_file() {
 			else {
 				field += 16;
 			}
+			free(str_value);
 		}
 		if (field == 31) {
 			field = 0;
-
-			printf("shim[%d] = %s\n",shim_cpt, shim_value_tostring(shim_values[shim_cpt]));
+			char* str = shim_value_tostring(shim_values[shim_cpt]);
+			printf("shim[%d] = %s\n",shim_cpt, str);
+			free(str);
 			shim_cpt++;
 		}
 		
@@ -334,6 +342,7 @@ int load_calibrations(int board_id) {
 			if (version_ok == false) {
 				printf("unknown calibration version = %d in %s\n", version, filename);
 			}
+			free(str_value);
 		}
 		else if (strstr(line, "Conn_") != NULL && version_ok) {
 			cpt_conn++;
@@ -343,12 +352,14 @@ int load_calibrations(int board_id) {
 			float_t value = (float_t)atof(str_value);
 			trace_calibrations.gains[cpt_G] = value;
 			cpt_G++;
+			free(str_value);
 		}
 		else if (strstr(line, "Z_") != NULL && version_ok && cpt_conn > 0) {
 			char* str_value = substring(line, "=", ";");
 			float_t value = (float_t)atof(str_value);
 			trace_calibrations.zeros[cpt_Z] = value;
 			cpt_Z++;
+			free(str_value);
 		}
 
 	}

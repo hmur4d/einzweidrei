@@ -343,6 +343,7 @@ static void get_shim_info(clientsocket_t* client, header_t* header, const void* 
 		char* str = shim_value_tostring(shim_values[i]);
 		printf("len=%d", strlen(str_temp));
 		strcat(str_temp, str);
+		free(str);
 	}
 	header->body_size = strlen(str_temp);
 	//char* data = malloc(data_size);
