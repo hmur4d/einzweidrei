@@ -427,7 +427,7 @@ int init_shim() {
 	load_calibrations(amps_board_id);
 
 	compile_ram(SHIM_TRACE_MILLIS_AMP_MAX, SHIM_DAC_NB_BIT);
-	//write_shim_matrix();
+	write_shim_matrix();
 
 	return 0;
 }

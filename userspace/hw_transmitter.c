@@ -257,6 +257,8 @@ void sync_DDS(bool state) {
 			usleep(2);
 			dds_write_n_update(mem->dds_ioupdate, 0x03, CF4[i]);				//set DAC_CAL 0
 		}
+		write_property(mem->dds_sel, 1);
+		usleep(2);
 		spi_close(&spi_dds);
 
 	}
