@@ -156,6 +156,9 @@ void hardware_init() {
 	if (config_hardware_shim_activated()) {
 		init_shim();
 	}
+	else {
+		log_info("Shim not activated");
+	}
 	
 
 }

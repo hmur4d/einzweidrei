@@ -14,7 +14,7 @@
 
 
 typedef struct {
-	int32_t ram_values[SHIM_TRACE_COUNT];
+	int32_t binary[SHIM_TRACE_COUNT];
 	float_t coeffs[SHIM_TRACE_COUNT];
 	char* filename;
 
@@ -38,7 +38,9 @@ typedef struct {
 } shim_value_t;
 
 int init_shim();
-char* shim_value_tostring(shim_value_t sv);
+int reload_profiles();
+void write_profiles();
+void shim_value_tostring(shim_value_t sv, char * str);
 
 #endif
 

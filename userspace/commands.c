@@ -9,6 +9,7 @@
 #include "hardware.h"
 #include "lock_interrupts.h"
 #include "config.h"
+#include "shim_config_files.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -327,28 +328,30 @@ static void cmd_lock_sweep_on_off(clientsocket_t* client, header_t* header, cons
 static void get_shim_info(clientsocket_t* client, header_t* header, const void* body) {
 	reset_header(header);
 	int i;
-
+	int err = reload_profiles();
+	if (err != 0) {
+		log_error("Error during profile reload");
+	}
 	header->cmd = CMD_SHIM_INFO;
 	header->param1 = SHIM_TRACE_MILLIS_AMP_MAX;
 	header->param2 = SHIM_DAC_NB_BIT;
 	header->param3 = amps_board_id;
-	header->param4 = 0;
+	header->param4 = err;
 	header->param5 = 0;
 	header->param6 = 0;
 
-
-	char str_temp[SHIM_PROFILES_COUNT*256];// = malloc(64 * 33);
+	
+	char *str_temp=malloc(SHIM_PROFILES_COUNT*256);// = malloc(64 * 33);
+	char str[256];
 
 	for (i = 0; i < SHIM_PROFILES_COUNT; i++) {
-		char* str = shim_value_tostring(shim_values[i]);
-		printf("len=%d", strlen(str_temp));
-		strcat(str_temp, str);
-		free(str);
+		if (shim_values[i].name != NULL) {
+			shim_value_tostring(shim_values[i], str);
+			strcat(str_temp, str);
+		}
 	}
 	header->body_size = strlen(str_temp);
-	//char* data = malloc(data_size);
-	//strcpy(data, str_temp);
-
+	log_info("body =%s", str_temp);
 
 	if (!send_message(client, header, str_temp)) {
 		log_error("Unable to send response!");

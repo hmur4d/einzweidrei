@@ -13,11 +13,14 @@ shim_value_t shim_values[SHIM_PROFILES_COUNT];
 trace_calibration_t trace_calibrations;
 int amps_board_id;
 
+
+
+
 char* substring(char* src, char* cstart, char* cstop) {
 	int start = strcspn(src,cstart) + 1;
 	int stop = strcspn(src, cstop);
 	int len = stop - start;
-	char* dest = (char*)malloc(sizeof(char) * (len + 1));
+	char* dest = malloc(len + 1);
 	strncpy(dest, (char*)(src + start), len);
 	dest[len] = '\0';
 	return dest;
@@ -75,13 +78,26 @@ int32_t invert(int32_t value) {
 
 void init_shim_values_struct() {
 	for (int i = 0; i < SHIM_PROFILES_COUNT; i++) {
-		shim_values[i].name = UNUSED;
-		shim_values[i].filename = UNUSED;
+		free(shim_values[i].name);
+		shim_values[i].name = NULL;
+		free(shim_values[i].filename);
+		shim_values[i].filename =NULL;
 		shim_values[i].factor = 0.0f;
 		shim_values[i].binary = 0;
 		shim_values[i].group_ID = -1;
 		shim_values[i].order = -1;
 		
+	}
+}
+void init_shim_profile_struct() {
+	for (int i = 0; i < SHIM_PROFILES_COUNT; i++) {
+		free(shim_profiles[i].filename);
+		shim_profiles[i].filename = NULL;
+		for (int j = 0; j < SHIM_TRACE_COUNT; j++) {
+			shim_profiles[i].binary[j] = 0;
+			shim_profiles[i].coeffs[j] = 0;
+		}
+
 	}
 }
 void init_trace_calibrations_struct() {
@@ -92,16 +108,15 @@ void init_trace_calibrations_struct() {
 	trace_calibrations.id = -1;
 }
 
-char * shim_value_tostring(shim_value_t sv) {
-	char *s=malloc(256);
-	sprintf(s,"[name=%s, file=%s, factor=%0.3f, binary=%d, groupID=%d, order=%d];",
+void shim_value_tostring(shim_value_t sv, char * str) {
+
+	sprintf(str,"[name=%s, file=%s, factor=%0.3f, binary=%d, groupID=%d, order=%d];",
 		sv.name,
 		sv.filename,
 		sv.factor,
 		sv.binary,
 		sv.group_ID,
 		sv.order);
-	return s;
 }
 
 void print_profile(shim_profile_t sp) {
@@ -111,19 +126,19 @@ void print_profile(shim_profile_t sp) {
 	}
 	printf("%.3f\n", sp.coeffs[SHIM_TRACE_COUNT - 1]);
 	for (int i = 0; i < SHIM_TRACE_COUNT - 1; i++) {
-		printf("%d, ", sp.ram_values[i]);
+		printf("%d, ", sp.binary[i]);
 	}
-	printf("%d\n", sp.ram_values[SHIM_TRACE_COUNT - 1]);
+	printf("%d\n", sp.binary[SHIM_TRACE_COUNT - 1]);
 }
 
 void print_calib(trace_calibration_t trace) {
 	printf("Board ID = %d\n", trace.id);
-	printf("G = ");
+	printf("G = \n");
 	for (int i = 0; i < SHIM_TRACE_COUNT - 1; i++) {
-		printf("%f, ", trace.gains[i]);
+		printf("%.3f, ", trace.gains[i]);
 	}
-	printf("%f\n", trace.gains[SHIM_TRACE_COUNT - 1]);
-	printf("Z = ");
+	printf("%.3f\n", trace.gains[SHIM_TRACE_COUNT - 1]);
+	printf("Z = \n");
 	for (int i = 0; i < SHIM_TRACE_COUNT - 1; i++) {
 		printf("%d, ", trace.zeros[i]);
 	}
@@ -186,11 +201,24 @@ int load_profiles(shim_profile_t * profile) {
 }
 
 int load_profile_used_in_shim_file() {
+	int cpt = 0;
+	int err = 0;
 	for (int i = 0; i < SHIM_PROFILES_COUNT;i++) {
-		shim_profiles[i].filename = shim_values[i].filename;
-		load_profiles(&shim_profiles[i]);
+		if (shim_values[i].filename != NULL) {
+			free(shim_profiles[i].filename);
+			shim_profiles[i].filename = malloc(strlen(shim_values[i].filename));
+			strcpy(shim_profiles[i].filename, shim_values[i].filename);
+			err = load_profiles(&shim_profiles[i]);
+			if (err == 0) {
+				cpt++;
+			}
+			else { 
+				break; 
+			}
+		}
 	}
-	return 0;
+	log_info("%d profiles loaded", cpt);
+	return err;
 }
 
 /*
@@ -238,6 +266,7 @@ int load_shim_file() {
 			char* str_value = substring(line, "=", ";");
 			remove_char(str_value, '"');
 			remove_char(str_value, ' ');
+			free(shim_values[shim_cpt].name);
 			shim_values[shim_cpt].name = str_value;
 			if ((field & 1) == 1) {
 				log_error("error in shim file");
@@ -246,12 +275,12 @@ int load_shim_file() {
 			else {
 				field += 1;
 			}
-			free(str_value);
 		}
 		else if (strstr(line, "filename") != NULL) {
 			char* str_value = substring(line, "=", ";");
 			remove_char(str_value, '"');
 			remove_char(str_value, ' ');
+			free(shim_values[shim_cpt].filename);
 			shim_values[shim_cpt].filename = str_value;
 			if ((field & 2) == 2) {
 				log_error("error in shim file");
@@ -260,7 +289,6 @@ int load_shim_file() {
 			else {
 				field += 2;
 			}
-			free(str_value);
 		}
 		else if (strstr(line, "factor") != NULL) {
 			char* str_value = substring(line, "=", ";");
@@ -301,21 +329,17 @@ int load_shim_file() {
 		}
 		if (field == 31) {
 			field = 0;
-			char* str = shim_value_tostring(shim_values[shim_cpt]);
-			printf("shim[%d] = %s\n",shim_cpt, str);
-			free(str);
 			shim_cpt++;
 		}
 		
 	}
 	fclose(fp);
+	log_info("shim file loaded =%s, %d profiles used", SHIM_FILE, shim_cpt);
 	return 0;
 }
 
 int load_calibrations(int board_id) {
 
-
-	printf("Load calibrations for board ID = %d\n", board_id);
 
 	FILE* fp;
 	char line[128];
@@ -365,7 +389,11 @@ int load_calibrations(int board_id) {
 	}
 	if (version_ok) {
 		trace_calibrations.id = board_id;
-		print_calib(trace_calibrations);
+		log_info("Calibration loaded for board_id='%d', filename='%s'", board_id, filename);
+		//print_calib(trace_calibrations);
+	}
+	else {
+		log_error("Bad calibration file version, board_id='%d', filename='%s'", board_id, filename);
 	}
 	fclose(fp);
 	
@@ -383,65 +411,94 @@ int compile_ram(float_t max_current, int8_t nb_bit) {
 	float_t g, coeff;
 
 	for (int i = 0; i < SHIM_PROFILES_COUNT; i++) {
-		if (strcmp(shim_profiles[i].filename, UNUSED) != 0) {
+		if (shim_profiles[i].filename != NULL) {
 			for (int j = 0; j < SHIM_TRACE_COUNT; j++) {
 				
 				g=trace_calibrations.gains[j];
 				coeff = shim_profiles[i].coeffs[j];
 				ram_value = invert(float_to_binary(coeff * g / max_current, nb_bit));
-				shim_profiles[i].ram_values[j] = ram_value;
+				shim_profiles[i].binary[j] = ram_value;
 			}
 		}
 	}
 
 	return 0;
 }
-
+/*
 int write_shim_matrix() {
+	log_info("Write shim matrix coef to RAM");
 	int trace_index = 0, profile_index = 0;
-	int32_t* ram_values;
-	char* profile_name;
+	int32_t* binary;
+	
 	shared_memory_t *mem= shared_memory_acquire();
 	for (profile_index = 0; profile_index < SHIM_PROFILES_COUNT; profile_index++) {
 
-		ram_values = shim_profiles[profile_index].ram_values;
-		profile_name = shim_profiles[profile_index].filename;
-		printf("write_shim_matrix profile [%s], profile index = %d\n", profile_name, profile_index);
+		binary = shim_profiles[profile_index].binary;
+
 		for (trace_index = 0; trace_index < SHIM_TRACE_COUNT; trace_index++) {
 			int32_t ram_offset_byte = get_offset_byte(RAM_SHIM_MATRIX_C0 + trace_index, profile_index);
-			*(mem->rams + ram_offset_byte / 4) = ram_values[trace_index];
-			printf("write_shim_matrix offset = 0x%x\n", ram_offset_byte);
-			printf("write_shim_matrix ram [%d] at index = %d, value = %d\n", (RAM_SHIM_MATRIX_C0 + trace_index), profile_index, ram_values[trace_index]);
+			*(mem->rams + ram_offset_byte / 4) = binary[trace_index];
+			
 		}
-		
 	}
+	shared_memory_release(mem);
+	return 0;
+}*/
+int write_shim_matrix() {
+	log_info("Write shim matrix coef to FPGA on-chip memory");
+	int trace_index = 0, profile_index = 0;
+
+	shared_memory_t* mem = shared_memory_acquire();
+	
+	printf("Writting RAM ");
+	for (trace_index = 0; trace_index < SHIM_TRACE_COUNT; trace_index++) {
+		int ram_index = RAM_SHIM_MATRIX_C0 + trace_index;
+		printf(".");
+		for (profile_index = 0; profile_index < SHIM_PROFILES_COUNT; profile_index++) {
+			int32_t ram_offset_byte = get_offset_byte(ram_index, profile_index);
+			*(mem->rams + ram_offset_byte / 4) = shim_profiles[profile_index].binary[trace_index];
+		}
+	}
+	printf("done!\n");
 	shared_memory_release(mem);
 	return 0;
 }
 
 int read_amps_board_id() {
 
-
+	log_info("Read board ID : not implemented, used default constant board_id");
 	return 2105;
 }
 
 int init_shim() {
+	log_info("init_shim started");
 
-
-	init_shim_values_struct();
 	init_trace_calibrations_struct();
-
-	load_shim_file();
-	load_profile_used_in_shim_file();
-
 	amps_board_id = read_amps_board_id();
-	load_calibrations(amps_board_id);
+	int err=load_calibrations(amps_board_id);
 
+	err+=reload_profiles();
+
+	write_profiles();
+
+	return err;
+}
+
+int reload_profiles() {
+	init_shim_values_struct();
+	init_shim_profile_struct();
+	int err = 0;
+	err+=load_shim_file();
+	err+=load_profile_used_in_shim_file();
+	return err;
+}
+
+void write_profiles() {
 	compile_ram(SHIM_TRACE_MILLIS_AMP_MAX, SHIM_DAC_NB_BIT);
 	write_shim_matrix();
-
-	return 0;
 }
+
+
 
 int shim_config_main(int argc, char** argv) {
 	char* memory_file = config_memory_file();
@@ -449,6 +506,13 @@ int shim_config_main(int argc, char** argv) {
 		log_error("Unable to open shared memory (%s), exiting", memory_file);
 		return 1;
 	}
-	init_shim();
-	return 0;
+	int err = 0;
+	for (int i = 0; i < 1000; i++) {
+		printf("%d\n", i);
+
+		err+=init_shim();
+	}
+	
+	//
+	return err;
 }

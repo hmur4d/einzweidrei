@@ -74,9 +74,7 @@ static void accept_lock_client(clientsocket_t* client) {
 //--
 
 int cameleon_main(int argc, char ** argv) {
-	if (!log_init(config_log_level(), config_log_file())) {
-		return 1;
-	}
+
 
 	log_info("Starting main program");
 	char* memory_file = config_memory_file();
