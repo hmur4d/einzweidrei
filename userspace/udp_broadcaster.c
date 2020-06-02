@@ -124,7 +124,6 @@ bool udp_broadcaster_start() {
 		log_error("Unable to create udp thread!");
 		return false;
 	}
-
 	initialized = true;
 	return true;
 }
