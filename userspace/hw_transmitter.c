@@ -215,7 +215,7 @@ void init_DDS() {
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x5, DIG_RAMP[i]);
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1B, USR0[i]);
 	}
-	write_property(mem->dds_sel, 1);
+	write_property(mem->dds_sel, 0);
 	usleep(2);
 	spi_close(&spi_dds);
 	shared_memory_release(mem);
@@ -262,7 +262,7 @@ void sync_DDS(bool alwaysSync) {
 			usleep(2);
 			dds_write_n_update(mem->dds_ioupdate, 0x03, CF4[i]);				//set DAC_CAL 0
 		}
-		write_property(mem->dds_sel, 1);
+		write_property(mem->dds_sel, 0);
 		usleep(2);
 		spi_close(&spi_dds);
 
