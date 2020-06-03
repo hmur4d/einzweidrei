@@ -187,9 +187,14 @@ void init_DDS() {
 	for (int i = 0; i < 4; i++) {
 		USR0[i] |= config_DDS_delay(i) & 0x7; //set the DDS delay from cameleon.conf
 		if (enable_AB) {
+			log_debug("AB activated for channel DDS%d\n",i);
 			CF2[i] |= 0x00890000; // set enable_profil and enable_dig_ramp and program_modulus_enable
 			CF2[i] &= 0xFFBFFFFF; // set parallel_port enable bit to 0
 		}
+		else {
+			log_debug("AB not activated for channel DDS%d\n", i );
+		}
+		log_debug("CF2[%d]=0x%x", i , CF2[i]);
 	}
 
 	shared_memory_t *mem = shared_memory_acquire();
@@ -216,7 +221,7 @@ void init_DDS() {
 	shared_memory_release(mem);
 }
 
-void sync_DDS(bool state) {
+void sync_DDS(bool alwaysSync) {
 
 	spi_lmk = (spi_t){
 		.dev_path = "/dev/spidev32766.6",
@@ -238,7 +243,7 @@ void sync_DDS(bool state) {
 	};
 	shared_memory_t* mem = shared_memory_acquire();
 	
-	if (state) {
+	if (alwaysSync) {
 		printf("Enable LMK sync signal\n");
 		spi_open(&spi_lmk);
 		lmk_write(spi_lmk, 0x127, 0xc7); //dds0 sync_in on
