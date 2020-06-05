@@ -306,34 +306,6 @@ void hw_transmitter_init() {
 	lmk_write(spi_lmk, 0x10F, lmk_reg_value); //QTH en , SFP en
 	spi_close(&spi_lmk);
 
-	/*
-	// A/B activation
-	for (int j = 1; j <= 4; j++) {
-		write_property(mem->dds_sel, j);
-		dds_write(0x01, 0x00898000); //enable prog mod
-		write_property(mem->dds_ioupdate, 1);
-		usleep(16);
-		write_property(mem->dds_ioupdate, 0);
-		dds_write(0x05, 2048); //B=64
-		write_property(mem->dds_ioupdate, 1);
-		usleep(16);
-		write_property(mem->dds_ioupdate, 0);
-		write_property(mem->dds_sel, 0);
-	}*/
-	
-	/*
-	while (1) {
-		int i;
-		printf("select dds : \n");
-		scanf("%d", &i);
-		write_property(mem->dds_sel, i);
-		printf("send tram : \n");
-		scanf("%d", &i);
-		dds_write_n_verify(mem->dds_ioupdate, 0x00, 0x0001010A);
-
-	}
-	*/
-
 
 	log_info("hw_transmitter_init done");
 }

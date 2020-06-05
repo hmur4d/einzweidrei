@@ -47,7 +47,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		return;
 	}
 
-	log_debug("writing rams: id=%d 0x%x - %d bytes - value=%d", ram.id, ram.offset_bytes, ram.span_bytes,*((uint32_t*)body));
+	log_info("writing rams: id=%d 0x%x - %d bytes - value=0x%x", ram.id, ram.offset_bytes, ram.span_bytes,*((uint32_t*)body));
 	shared_memory_t* mem = shared_memory_acquire();
 	memcpy(mem->rams + ram.offset_int32, body, ram.span_bytes);
 	shared_memory_release(mem);
