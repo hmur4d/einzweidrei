@@ -6,6 +6,7 @@
 #include "shared_memory.h"
 #include "memory_map.h"
 #include "config.h"
+#include "ram.h"
 
 
 shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
@@ -469,10 +470,13 @@ int write_trace_zeros() {
 
 	shared_memory_t* mem = shared_memory_acquire();
 	int ram_index = RAM_CURRENT_ZERO_OFFSETS;
+	ram_descriptor_t ram;
+	ram_find(ram_index, 64*2, &ram);
 	printf("Writting RAM_CURRENT_ZERO_OFFSETS ...");
 	for (trace_index = 0; trace_index < SHIM_TRACE_COUNT; trace_index++) {
 		int32_t ram_offset_byte = get_offset_byte(ram_index, trace_index);
 		*(mem->rams + ram_offset_byte / 4) = trace_calibrations.zeros[trace_index];
+		//printf("\n0x%x =  %d", 0xc0000000 + ram.offset_bytes+trace_index, trace_calibrations.zeros[trace_index]);
 	}
 	printf("done!\n");
 	shared_memory_release(mem);

@@ -328,7 +328,7 @@ static void cmd_lock_sweep_on_off(clientsocket_t* client, header_t* header, cons
 static void get_shim_info(clientsocket_t* client, header_t* header, const void* body) {
 	reset_header(header);
 	int i;
-	int err = reload_profiles();
+	int err = init_shim();
 	if (err != 0) {
 		log_error("Error during profile reload");
 	}

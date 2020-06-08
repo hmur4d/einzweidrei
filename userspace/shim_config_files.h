@@ -37,6 +37,8 @@ typedef struct {
 
 } shim_value_t;
 
+int write_trace_zeros();
+
 int init_shim();
 int reload_profiles();
 void write_profiles();
