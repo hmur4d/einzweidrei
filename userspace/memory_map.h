@@ -48,6 +48,7 @@ Memory map, copied as-is from CameleonNIOS
 
 #define RAM_SHIM_MATRIX_C0							93
 #define RAM_CURRENT_ZERO_OFFSETS					157
+#define RAM_SHIM_DAC_WORDS							158
 
 
 /************************RAM_REGISTERS*************************/

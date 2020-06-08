@@ -466,27 +466,36 @@ int write_shim_matrix() {
 	printf("done!\n");
 	return 0;
 }
-int write_trace_zeros() {
-	log_info("Write trace zeros to FPGA on-chip memory");
-	int trace_index = 0;
+int write_trace_offset(int32_t * zeros) {
+	log_info("Write trace offset to FPGA on-chip memory");
 
 	shared_memory_t* mem = shared_memory_acquire();
 	int ram_index = RAM_CURRENT_ZERO_OFFSETS;
 	ram_descriptor_t ram;
-	ram_find(ram_index, 64*2, &ram);
+	ram_find(ram_index, SHIM_TRACE_COUNT * 4, &ram);
 	printf("Writting RAM_CURRENT_ZERO_OFFSETS ...");
-	for (trace_index = 0; trace_index < SHIM_TRACE_COUNT; trace_index++) {
-		int32_t ram_offset_byte = get_offset_byte(ram_index, trace_index);
-		*(mem->rams + ram_offset_byte / 4) = trace_calibrations.zeros[trace_index];
-		//printf("\n0x%x =  %d", 0xc0000000 + ram.offset_bytes+trace_index, trace_calibrations.zeros[trace_index]);
-	}
-
+	memcpy(mem->rams + ram.offset_int32, zeros, SHIM_TRACE_COUNT * 4);
 	write_property(mem->shim_amps_refresh, 1);
 	write_property(mem->shim_amps_refresh, 0);
 	shared_memory_release(mem);
 	printf("done!\n");
 	return 0;
 }
+
+int read_DAC_words(int32_t *dac_words) {
+	log_info("Read DAC words from FPGA memory");
+
+	shared_memory_t* mem = shared_memory_acquire();
+	int ram_index = RAM_SHIM_DAC_WORDS;
+	ram_descriptor_t ram;
+	ram_find(ram_index, SHIM_TRACE_COUNT * 4, &ram);
+	printf("reading RAM_SHIM_DAC_WORDS ...");
+	memcpy(dac_words, mem->rams + ram.offset_int32, SHIM_TRACE_COUNT * 4);
+	shared_memory_release(mem);
+	printf("done!\n");
+	return 0;
+}
+
 int read_amps_board_id() {
 
 	log_info("Read board ID : not implemented, used default constant board_id");
@@ -499,7 +508,7 @@ int init_shim() {
 	init_trace_calibrations_struct();
 	amps_board_id = read_amps_board_id();
 	int err=load_calibrations(amps_board_id);
-	write_trace_zeros();
+	write_trace_offset(trace_calibrations.zeros);
 
 	err+=reload_profiles();
 
@@ -530,13 +539,18 @@ int shim_config_main(int argc, char** argv) {
 		log_error("Unable to open shared memory (%s), exiting", memory_file);
 		return 1;
 	}
-	int err = 0;
-	for (int i = 0; i < 1000; i++) {
-		printf("%d\n", i);
-
-		err+=init_shim();
+	init_shim();
+	int32_t dac_words[SHIM_TRACE_COUNT];
+	for (int i = 0; i < SHIM_TRACE_COUNT; i++) {
+		dac_words[i] = trace_calibrations.zeros[i];
+	}
+	write_trace_offset(dac_words);
+	read_DAC_words(dac_words);
+	for (int i = 0; i < SHIM_TRACE_COUNT; i++) {
+		int32_t word = dac_words[i];
+		printf("DAC[%d]=%d\n", i, word);
 	}
 	
 	//
-	return err;
+	return 0;
 }

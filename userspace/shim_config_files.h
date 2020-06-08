@@ -37,7 +37,10 @@ typedef struct {
 
 } shim_value_t;
 
-int write_trace_zeros();
+
+int write_trace_offset(int32_t* zeros);
+
+int read_DAC_words(int32_t* dac_words);
 
 int init_shim();
 int reload_profiles();
