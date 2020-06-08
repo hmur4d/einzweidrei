@@ -463,7 +463,21 @@ int write_shim_matrix() {
 	shared_memory_release(mem);
 	return 0;
 }
+int write_trace_zeros() {
+	log_info("Write trace zeros to FPGA on-chip memory");
+	int trace_index = 0;
 
+	shared_memory_t* mem = shared_memory_acquire();
+	int ram_index = RAM_CURRENT_ZERO_OFFSETS;
+	printf("Writting RAM_CURRENT_ZERO_OFFSETS ...");
+	for (trace_index = 0; trace_index < SHIM_TRACE_COUNT; trace_index++) {
+		int32_t ram_offset_byte = get_offset_byte(ram_index, trace_index);
+		*(mem->rams + ram_offset_byte / 4) = trace_calibrations.zeros[trace_index];
+	}
+	printf("done!\n");
+	shared_memory_release(mem);
+	return 0;
+}
 int read_amps_board_id() {
 
 	log_info("Read board ID : not implemented, used default constant board_id");
@@ -476,11 +490,12 @@ int init_shim() {
 	init_trace_calibrations_struct();
 	amps_board_id = read_amps_board_id();
 	int err=load_calibrations(amps_board_id);
+	//write_trace_zeros();
 
 	err+=reload_profiles();
 
 	write_profiles();
-
+	
 	return err;
 }
 
