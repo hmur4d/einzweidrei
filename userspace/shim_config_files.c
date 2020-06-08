@@ -496,6 +496,18 @@ int read_DAC_words(int32_t *dac_words) {
 	return 0;
 }
 
+int read_trace_currents(int32_t* current_uAmps) {
+	int32_t dac_words[SHIM_TRACE_COUNT];
+	read_DAC_words(dac_words);
+	int dac_zero = (int)pow(2, SHIM_DAC_NB_BIT - 1);
+	for (int i = 0; i < SHIM_TRACE_COUNT; i++) {
+
+		float current = binary_to_float(dac_zero + trace_calibrations.zeros[i]-dac_words[i], SHIM_DAC_NB_BIT)* SHIM_TRACE_MILLIS_AMP_MAX/trace_calibrations.gains[i];
+		current_uAmps[i] = (int)(current * 1000);
+	}
+	return 0;
+}
+
 int read_amps_board_id() {
 
 	log_info("Read board ID : not implemented, used default constant board_id");

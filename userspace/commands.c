@@ -17,6 +17,7 @@
 extern shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
 extern shim_value_t shim_values[SHIM_PROFILES_COUNT];
 extern int amps_board_id;
+extern trace_calibration_t trace_calibrations;
 
 
 static void cmd_close(clientsocket_t* client, header_t* header, const void* body) {
@@ -376,15 +377,18 @@ static void write_shim(clientsocket_t* client, header_t* header, const void* bod
 	sat_0 = read_property(mem->shim_trace_sat_0);
 	sat_1 = read_property(mem->shim_trace_sat_1);
 	shared_memory_release(mem);
-	
+
+	int32_t trace_currents[SHIM_TRACE_COUNT];
+	read_trace_currents(trace_currents);
 	
 	reset_header(header);
 	header->param1 = sat_0;
 	header->param2 = sat_1;
 	header->param6 = err;
+	header->body_size = SHIM_TRACE_COUNT * 4;
 
-	int8_t  data[0];
-	if (!send_message(client, header, data)) {
+
+	if (!send_message(client, header, trace_currents)) {
 		log_error("Unable to send response!");
 	}
 }
@@ -412,7 +416,6 @@ static void read_shim(clientsocket_t* client, header_t* header, const void* body
 	log_info("reading shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[profile_index].filename, index, value, ram_offset_byte);
 	
 
-
 	reset_header(header);
 
 	header->param2 = value;
@@ -420,6 +423,28 @@ static void read_shim(clientsocket_t* client, header_t* header, const void* body
 
 	int8_t  data[0];
 	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
+
+void read_traces(clientsocket_t* client, header_t* header, const void* body) {
+	int32_t datas[SHIM_TRACE_COUNT];
+	
+	if (header->param1 == 0) {
+		//DAC_WORDS
+		read_DAC_words(datas);
+	}else if (header->param1 == 1) {
+		//current in micro ampers
+		read_trace_currents(datas);
+
+	}
+
+	reset_header(header);
+
+	header->body_size = SHIM_TRACE_COUNT * 4;
+
+
+	if (!send_message(client, header, datas)) {
 		log_error("Unable to send response!");
 	}
 }
