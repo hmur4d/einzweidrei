@@ -490,7 +490,7 @@ int init_shim() {
 	init_trace_calibrations_struct();
 	amps_board_id = read_amps_board_id();
 	int err=load_calibrations(amps_board_id);
-	//write_trace_zeros();
+	write_trace_zeros();
 
 	err+=reload_profiles();
 
