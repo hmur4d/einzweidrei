@@ -60,6 +60,7 @@ typedef struct {
 	property_t shim_trace_sat_1;
 
 	property_t i2s_output_disable;
+	property_t shim_amps_refresh;
 
 
 	int32_t* lwbridge;

@@ -460,8 +460,10 @@ int write_shim_matrix() {
 			*(mem->rams + ram_offset_byte / 4) = shim_profiles[profile_index].binary[trace_index];
 		}
 	}
-	printf("done!\n");
+	write_property(mem->shim_amps_refresh, 1);
+	write_property(mem->shim_amps_refresh, 0);
 	shared_memory_release(mem);
+	printf("done!\n");
 	return 0;
 }
 int write_trace_zeros() {
@@ -478,8 +480,11 @@ int write_trace_zeros() {
 		*(mem->rams + ram_offset_byte / 4) = trace_calibrations.zeros[trace_index];
 		//printf("\n0x%x =  %d", 0xc0000000 + ram.offset_bytes+trace_index, trace_calibrations.zeros[trace_index]);
 	}
-	printf("done!\n");
+
+	write_property(mem->shim_amps_refresh, 1);
+	write_property(mem->shim_amps_refresh, 0);
 	shared_memory_release(mem);
+	printf("done!\n");
 	return 0;
 }
 int read_amps_board_id() {
