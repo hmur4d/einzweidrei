@@ -33,7 +33,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C
-		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// � voir le cas ou monitoring temperature du cameleon et ecriture des threshold
+		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// à voir le cas ou monitoring temperature du cameleon et ecriture des threshold
 		return;
 	}
 
