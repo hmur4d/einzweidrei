@@ -360,19 +360,28 @@ static void get_shim_info(clientsocket_t* client, header_t* header, const void* 
 
 }
 
+
 static void write_shim(clientsocket_t* client, header_t* header, const void* body) {
-	int32_t value = header->param2;
-	int32_t index = header->param1;
+	
 	uint32_t sat_0 = 0, sat_1 = 0;
 
-	int profile_index = index;
-	int err = 0;
-	
-	int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0+ index);
 
-	log_info("writing shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[profile_index].filename, index, value, ram_offset_byte);
+	int nb_values = header->body_size / 4;
+	int32_t *values=(int32_t*)body;
+	int32_t index = 0;
+
+	if (header->param3 == 0) {
+		nb_values = 1;
+		values = &(header->param2);
+		index = header->param1;
+	}
+
 	shared_memory_t* mem = shared_memory_acquire();
-	*(mem->rams + ram_offset_byte/4) = value;
+	for(int i=0;i< nb_values;i++) {
+		int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0 + index+i);
+		log_info("writing shim %s, shim_reg[%d]=%d at 0x%X", shim_profiles[index + i].filename, index + i, values[i], ram_offset_byte);
+		*(mem->rams + ram_offset_byte / 4) = values[i];
+	}
 	//check trace saturation if any
 	sat_0 = read_property(mem->shim_trace_sat_0);
 	sat_1 = read_property(mem->shim_trace_sat_1);
@@ -384,13 +393,14 @@ static void write_shim(clientsocket_t* client, header_t* header, const void* bod
 	reset_header(header);
 	header->param1 = sat_0;
 	header->param2 = sat_1;
-	header->param6 = err;
+	header->param6 = 0;
 	header->body_size = SHIM_TRACE_COUNT * 4;
 
 
 	if (!send_message(client, header, trace_currents)) {
 		log_error("Unable to send response!");
 	}
+
 }
 
 static void read_shim(clientsocket_t* client, header_t* header, const void* body) {

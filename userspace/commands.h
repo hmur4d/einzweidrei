@@ -20,7 +20,7 @@ Command handlers: command id and implementation.
 #define CMD_WRITE_IRQ                               0x18
 #define CMD_READ_PIO                                0x1a
 #define CMD_CAM_INIT                                0x1e
-#define CMD_SHIM_INFO								0x1f
+
 
 
 //not yet implemented, copy-pasted from Cameleon NIOS
@@ -69,6 +69,9 @@ Command handlers: command id and implementation.
 //SHIM
 #define CMD_WRITE_SHIM								9000 + 0x1
 #define CMD_READ_SHIM								9000 + 0x2
+#define CMD_SHIM_INFO								9000 + 0
+#define CMD_WRITE_TRACE								9000 + 0x3
+#define CMD_READ_TRACE								9000 + 0x4
 
 
 //not commands, notification from hardware
