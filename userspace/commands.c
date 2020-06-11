@@ -33,7 +33,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C
-		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// à voir le cas ou monitoring temperature du cameleon et ecriture des threshold
+		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// ï¿½ voir le cas ou monitoring temperature du cameleon et ecriture des threshold
 		return;
 	}
 
@@ -437,6 +437,38 @@ static void read_shim(clientsocket_t* client, header_t* header, const void* body
 	}
 }
 
+static void get_artificial_ground_current(clientsocket_t* client, header_t* header, const void* body) {
+	// Current, in microamps, before averaging
+	int64_t current_ua_accumulator = 0;
+	int32_t drop_count = header->param1;
+	int32_t num_averages = header->param2;
+	int32_t num_averages_original = num_averages;
+
+	while (drop_count > 0)
+	{
+		// Todo: Read the artificial current and discard the result.
+		drop_count--;
+	}
+
+	while (num_averages > 0)
+	{
+		// Todo: Read the artificial current and accumulate the result.
+		int32_t current = 0;
+		current_ua_accumulator += current;
+		num_averages--;
+	}
+
+	reset_header(header);
+
+	// The result is the accumulated current divided by the number of averages
+	header->param1 = current_ua_accumulator / num_averages_original;
+
+	int8_t  data[0];
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
+
 void read_traces(clientsocket_t* client, header_t* header, const void* body) {
 	int32_t datas[SHIM_TRACE_COUNT];
 	
@@ -488,6 +520,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_SHIM_INFO, get_shim_info);
 	success &= register_command_handler(CMD_WRITE_SHIM, write_shim);
 	success &= register_command_handler(CMD_READ_SHIM, read_shim);
+	success &= register_command_handler(CMD_ARTIFICIAL_GROUND_CURRENT, get_artificial_ground_current);
 
 	return success;
 }
