@@ -8,3 +8,12 @@ ssh.password
 /kernelspace/kernelspace.vcxproj
 /make-config/make-config.vcxproj
 /userspace/userspace.vcxproj
+**/*.o
+**/*.o.cmd
+kernelspace/.modcameleon.ko.cmd
+kernelspace/.tmp_versions/
+kernelspace/Module.symvers
+kernelspace/modcameleon.ko
+kernelspace/modcameleon.mod.c
+kernelspace/modules.order
+userspace/cameleon

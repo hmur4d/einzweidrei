@@ -72,6 +72,7 @@ Command handlers: command id and implementation.
 #define CMD_SHIM_INFO								9000 + 0
 #define CMD_WRITE_TRACE								9000 + 0x3
 #define CMD_READ_TRACE								9000 + 0x4
+#define CMD_ARTIFICIAL_GROUND_CURRENT				9000 + 0x5
 
 
 //not commands, notification from hardware

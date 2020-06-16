@@ -37,6 +37,11 @@ typedef struct {
 
 } shim_value_t;
 
+typedef struct {
+	float_t current_reference;
+	float_t current_offset;
+	float_t current_calibration;
+} board_calibration_t;
 
 int write_trace_offset(int32_t* zeros);
 

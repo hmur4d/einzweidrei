@@ -13,6 +13,7 @@ shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
 shim_value_t shim_values[SHIM_PROFILES_COUNT];
 trace_calibration_t trace_calibrations;
 int amps_board_id;
+board_calibration_t board_calibration;
 
 
 
@@ -107,6 +108,11 @@ void init_trace_calibrations_struct() {
 		trace_calibrations.zeros[i] = 0;
 	}
 	trace_calibrations.id = -1;
+}
+void init_board_calibration_struct() {
+	board_calibration.current_reference = 0.0f;
+	board_calibration.current_offset = 0.0f;
+	board_calibration.current_calibration = 0.0f;
 }
 
 void shim_value_tostring(shim_value_t sv, char * str) {
@@ -369,6 +375,24 @@ int load_calibrations(int board_id) {
 			}
 			free(str_value);
 		}
+		else if (strstr(line, "CurrentReference") != NULL && version_ok) {
+			char* str_value = substring(line, "=", ";");
+			float_t value = (float_t)atof(str_value);
+			board_calibration.current_reference = value;
+			free(str_value);
+		}
+		else if (strstr(line, "CurrentOffset") != NULL && version_ok) {
+			char* str_value = substring(line, "=", ";");
+			float_t value = (float_t)atof(str_value);
+			board_calibration.current_offset = value;
+			free(str_value);
+		}
+		else if (strstr(line, "CurrentCalibration") != NULL && version_ok) {
+			char* str_value = substring(line, "=", ";");
+			float_t value = (float_t)atof(str_value);
+			board_calibration.current_calibration = value;
+			free(str_value);
+		}
 		else if (strstr(line, "Conn_") != NULL && version_ok) {
 			cpt_conn++;
 		}
@@ -518,6 +542,7 @@ int init_shim() {
 	log_info("init_shim started");
 
 	init_trace_calibrations_struct();
+	init_board_calibration_struct();
 	amps_board_id = read_amps_board_id();
 	int err=load_calibrations(amps_board_id);
 	write_trace_offset(trace_calibrations.zeros);

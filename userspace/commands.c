@@ -10,6 +10,7 @@
 #include "lock_interrupts.h"
 #include "config.h"
 #include "shim_config_files.h"
+#include "hw_amps.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -18,6 +19,7 @@ extern shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
 extern shim_value_t shim_values[SHIM_PROFILES_COUNT];
 extern int amps_board_id;
 extern trace_calibration_t trace_calibrations;
+extern board_calibration_t board_calibration;
 
 
 static void cmd_close(clientsocket_t* client, header_t* header, const void* body) {
@@ -33,7 +35,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C
-		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// à voir le cas ou monitoring temperature du cameleon et ecriture des threshold
+		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// Ã  voir le cas ou monitoring temperature du cameleon et ecriture des threshold
 		return;
 	}
 
@@ -437,6 +439,39 @@ static void read_shim(clientsocket_t* client, header_t* header, const void* body
 	}
 }
 
+static void get_artificial_ground_current(clientsocket_t* client, header_t* header, const void* body) {
+	// Current, in microamps, before averaging
+	int64_t current_ua_accumulator = 0;
+	int32_t drop_count = header->param1;
+	int32_t num_averages = header->param2;
+	int32_t num_averages_original = num_averages;
+
+	while (drop_count > 0)
+	{
+		// Read the artificial current and discard the result.
+		hw_amps_read_artificial_ground(&board_calibration);
+		drop_count--;
+	}
+
+	while (num_averages > 0)
+	{
+		// Read the artificial current and accumulate the result.
+		float current = hw_amps_read_artificial_ground(&board_calibration);
+		current_ua_accumulator += roundf(current * 1e6f);
+		num_averages--;
+	}
+
+	reset_header(header);
+
+	// The result is the accumulated current divided by the number of averages
+	header->param1 = current_ua_accumulator / num_averages_original;
+
+	int8_t  data[0];
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
+
 void read_traces(clientsocket_t* client, header_t* header, const void* body) {
 	int32_t datas[SHIM_TRACE_COUNT];
 	
@@ -488,6 +523,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_SHIM_INFO, get_shim_info);
 	success &= register_command_handler(CMD_WRITE_SHIM, write_shim);
 	success &= register_command_handler(CMD_READ_SHIM, read_shim);
+	success &= register_command_handler(CMD_ARTIFICIAL_GROUND_CURRENT, get_artificial_ground_current);
 
 	return success;
 }
