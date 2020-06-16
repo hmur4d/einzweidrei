@@ -5,18 +5,69 @@
 #include "config.h"
 #include "hardware.h"
 
-static void rd_ads1118(spi_t spi_ads1118, int16_t config) {
+// ADS 1118 Config register
+//                      Field Name                        Description
+//                      SS             /----------------- Start a single conversion
+//                      MUX[2:0]       |///-------------- 100 = AINP is AIN0, and AINN is GND (*)
+//                                     ||||               101 = AINP is AIN1, and AINN is GND
+//                                     ||||               110 = AINP is AIN2, and AINN is GND
+//                                     ||||               111 = AINP is AIN3, and AINN is GND
+//                      PGA[2:0]       ||||///----------- 000 = FSR is +/- 6.144V
+//                                     |||||||            001 = FSR is +/- 4.096V (*)
+//                                     |||||||            010 = FSR is +/- 2.048V
+//                                     |||||||            011 = FSR is +/- 1.024V [... more options omitted ...]
+//                      MODE           |||||||/---------- 1 = Power-down and single-shot mode (*)
+//                      DR[2:0]        ||||||||///------- 100 = 128 SPS
+//                                     |||||||||||        101 = 250 SPS (*) [... more options omitted ...]
+//                      TS_MODE        |||||||||||/------ 0 = ADC Mode (*)
+//                      PULL_UP_EN     ||||||||||||/----- 1 = Pull up resistor enabled on DOUT/DRDY' pin (default) (*)
+//                      NOP[1:0]       |||||||||||||//--- 01 = Valid data,update the Config register (*)
+//                      RESERVED       |||||||||||||||/-- Writing this bit has no effect, always reads as 1
+#define ADS1118_IN0_250sps_pm4V     (0b1100001110101011)
+
+/**
+ * The time to wait between writing the configuration register and reading data, in microseconds (250SPS mode.)
+ * Delay = (1/250sps)*1.1 = 4400 + margin
+ */
+#define ADS1118_SAMPLE_WAIT_250SPS_US (5000)
+/**
+ * The time to wait between writing the configuration register and reading data, in microseconds (128SPS mode.)
+ * Delay = (1/128sps)*1.1 = 8594 + margin
+ */
+#define ADS1118_SAMPLE_WAIT_128SPS_US (10000)
+
+/**
+ * Read from an ADS1118 ADC at the given SPI address.
+ * @param spi_ads1118 The SPI configuration to use
+ * @param config The data to write to the ADS1118 config register
+ * @param delay_us The time to delay (in microseconds) between writing the config register
+ *                 and reading the data.
+ * @return The ADC reading (unconverted)
+ */
+static uint16_t rd_ads1118(spi_t spi_ads1118, int16_t config, int32_t delay_us) {
 	char tx_buff[2];
 	tx_buff[1] = config;
 	tx_buff[0] = config >> 8;
-	char rx_buff[4] = { 0,0,0,0 };
-	int16_t temp; 
+	char rx_buff[2] = { 0,0 };
+	uint16_t result;
 	float temp_f;
+	// Start the conversion
 	spi_send(spi_ads1118, tx_buff, rx_buff);
-	temp = rx_buff[0] << 8 | rx_buff[1];
-	temp = temp >> 2; 
-	temp_f = temp * 0.03125;
-	printf("tx_buffer 0x%X%X ; rx_bufer 0x%01X%01X%01X%01X  temp : %f \n", tx_buff[0], tx_buff[1],rx_buff[0], rx_buff[1], rx_buff[2], rx_buff[3], temp_f);
+
+	// Wait for the conversion to complete.
+	usleep(delay_us);
+
+	// Send 0x0000 to read the data
+	tx_buff[0] = 0;
+	tx_buff[1] = 0;
+	spi_send(spi_ads1118, tx_buff, rx_buff);
+
+	// Todo: Verify endianness of result
+	result = rx_buff[0] << 8 | rx_buff[1];
+	result = result >> 2;
+	temp_f = (float)result * 0.03125f;
+	printf("tx_buffer 0x%X%X ; rx_bufer 0x%01X%01X  temp : %f \n", tx_buff[0], tx_buff[1],rx_buff[0], rx_buff[1], temp_f);
+	return result;
 }
 
 
@@ -58,13 +109,37 @@ void hw_amps_read_temp() {
 		.fd = -1,
 		.speed = 50000,
 		.bits = 8,
-		.len = 4,
+		.len = 2,
 		.mode = 0,
 		.delay = 0
 	};
 	spi_open(&spi_ads1118);
-	rd_ads1118(spi_ads1118, 0xC582);
+	int32_t delay_us = ADS1118_SAMPLE_WAIT_128SPS_US;
+	rd_ads1118(spi_ads1118, 0xC582, delay_us);
 	spi_close(&spi_ads1118);
+}
+
+float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
+	spi_t spi_ads1118 = (spi_t) {
+			.dev_path = "/dev/spidev32766.7",
+			.fd = -1,
+			.speed = 50000,
+			.bits = 8,
+			.len = 2,
+			.mode = 0,
+			.delay = 0
+	};
+	spi_open(&spi_ads1118);
+
+	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
+	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN0_250sps_pm4V, delay_us);
+	spi_close(&spi_ads1118);
+	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
+	const float MAX_VAL = 32768.0f;
+	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
+	float current_amps = -(voltage - board_calibration->current_reference + board_calibration->current_offset);
+	current_amps *= board_calibration->current_calibration;
+	return current_amps;
 }
 
 void hw_amps_read_eeprom(uint8_t addr) {

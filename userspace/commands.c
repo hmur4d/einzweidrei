@@ -10,6 +10,7 @@
 #include "lock_interrupts.h"
 #include "config.h"
 #include "shim_config_files.h"
+#include "hw_amps.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -18,6 +19,7 @@ extern shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
 extern shim_value_t shim_values[SHIM_PROFILES_COUNT];
 extern int amps_board_id;
 extern trace_calibration_t trace_calibrations;
+extern board_calibration_t board_calibration;
 
 
 static void cmd_close(clientsocket_t* client, header_t* header, const void* body) {
@@ -446,15 +448,16 @@ static void get_artificial_ground_current(clientsocket_t* client, header_t* head
 
 	while (drop_count > 0)
 	{
-		// Todo: Read the artificial current and discard the result.
+		// Read the artificial current and discard the result.
+		hw_amps_read_artificial_ground(&board_calibration);
 		drop_count--;
 	}
 
 	while (num_averages > 0)
 	{
-		// Todo: Read the artificial current and accumulate the result.
-		int32_t current = 0;
-		current_ua_accumulator += current;
+		// Read the artificial current and accumulate the result.
+		float current = hw_amps_read_artificial_ground(&board_calibration);
+		current_ua_accumulator += roundf(current * 1e6f);
 		num_averages--;
 	}
 
