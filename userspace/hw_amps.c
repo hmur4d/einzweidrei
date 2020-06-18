@@ -24,6 +24,9 @@
 //                      NOP[1:0]       |||||||||||||//--- 01 = Valid data,update the Config register (*)
 //                      RESERVED       |||||||||||||||/-- Writing this bit has no effect, always reads as 1
 #define ADS1118_IN0_250sps_pm4V     (0b1100001110101011)
+//                      Field Name                        Description
+//                      MUX[2:0]        ///-------------- 101 = AINP is AIN1, and AINN is GND (*)
+#define ADS1118_IN1_250sps_pm4V     (0b1101001110101011)
 
 /**
  * The time to wait between writing the configuration register and reading data, in microseconds (250SPS mode.)
@@ -102,8 +105,7 @@ static void wr_eeprom(spi_t spi_eeprom, int8_t address, int8_t data) {
 	printf("tx_buffer 0x%X%X%X \n", tx_buff[0], tx_buff[1], tx_buff[2]);
 }
 
-
-void hw_amps_read_temp() {
+float hw_amps_read_temp() {
 	spi_t spi_ads1118 = (spi_t) {
 		.dev_path = "/dev/spidev32766.7",
 		.fd = -1,
@@ -115,8 +117,14 @@ void hw_amps_read_temp() {
 	};
 	spi_open(&spi_ads1118);
 	int32_t delay_us = ADS1118_SAMPLE_WAIT_128SPS_US;
-	rd_ads1118(spi_ads1118, 0xC582, delay_us);
+	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN1_250sps_pm4V, delay_us);
 	spi_close(&spi_ads1118);
+	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
+	const float MAX_VAL = 32768.0f;
+	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
+	// For an LM50, remove 0.5V offset and divide by 0.01 V/degC to get degrees C
+	float temperature = (voltage - 0.5f) / 0.01f;
+	return temperature;
 }
 
 float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {

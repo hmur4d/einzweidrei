@@ -73,7 +73,7 @@ Command handlers: command id and implementation.
 #define CMD_WRITE_TRACE								9000 + 0x3
 #define CMD_READ_TRACE								9000 + 0x4
 #define CMD_ARTIFICIAL_GROUND_CURRENT				9000 + 0x5
-
+#define CMD_AMPS_BOARD_TEMPERATURE					9000 + 0x6
 
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message
