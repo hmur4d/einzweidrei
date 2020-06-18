@@ -48,14 +48,13 @@
  * @return The ADC reading (unconverted)
  */
 static uint16_t rd_ads1118(spi_t spi_ads1118, int16_t config, int32_t delay_us) {
-	char tx_buff[2];
+	uint8_t tx_buff[2];
+	uint8_t rx_buff[2];
+	int16_t result;
 	tx_buff[1] = config;
 	tx_buff[0] = config >> 8;
-	char rx_buff[2] = { 0,0 };
-	uint16_t result;
-	float temp_f;
 	// Start the conversion
-	spi_send(spi_ads1118, tx_buff, rx_buff);
+	spi_send(spi_ads1118, (char*)tx_buff, (char*)rx_buff);
 
 	// Wait for the conversion to complete.
 	usleep(delay_us);
@@ -63,13 +62,13 @@ static uint16_t rd_ads1118(spi_t spi_ads1118, int16_t config, int32_t delay_us) 
 	// Send 0x0000 to read the data
 	tx_buff[0] = 0;
 	tx_buff[1] = 0;
-	spi_send(spi_ads1118, tx_buff, rx_buff);
+	spi_send(spi_ads1118, (char*)tx_buff, (char*)rx_buff);
 
 	// Todo: Verify endianness of result
-	result = rx_buff[0] << 8 | rx_buff[1];
+	result = (rx_buff[0] << 8) | rx_buff[1];
 	result = result >> 2;
-	temp_f = (float)result * 0.03125f;
-	printf("tx_buffer 0x%X%X ; rx_bufer 0x%01X%01X  temp : %f \n", tx_buff[0], tx_buff[1],rx_buff[0], rx_buff[1], temp_f);
+	float temp_f = (float)result * 0.03125f;
+	printf("rx_bufer 0x%02X%02X  temp : %f \n", (int)rx_buff[0], (int)rx_buff[1], temp_f);
 	return result;
 }
 
