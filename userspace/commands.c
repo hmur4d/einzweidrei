@@ -466,6 +466,8 @@ static void get_artificial_ground_current(clientsocket_t* client, header_t* head
 	// The result is the accumulated current divided by the number of averages
 	header->param1 = current_ua_accumulator / num_averages_original;
 
+	log_info("commande get_artificial_ground_current : %d", header->param1);
+
 	int8_t  data[0];
 	if (!send_message(client, header, data)) {
 		log_error("Unable to send response!");
@@ -480,7 +482,7 @@ static void get_amps_board_temperature(clientsocket_t* client, header_t* header,
 
 	// The result is the temperature, in milli degrees C.
 	header->param1 = temperature * 1000.0f;
-
+	log_info("commande get_amps_board_temperature : %d", header->param1);
 	int8_t  data[0];
 	if (!send_message(client, header, data)) {
 		log_error("Unable to send response!");

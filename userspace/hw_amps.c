@@ -57,7 +57,7 @@ static uint16_t rd_ads1118(spi_t spi_ads1118, uint16_t config, uint32_t delay_us
 	spi_send(spi_ads1118, (char*)tx_buff, (char*)rx_buff);
 
 	// Wait for the conversion to complete.
-	usleep( delay_us);
+	usleep(delay_us);
 
 	// Send 0x0000 to read the data
 	tx_buff[0] = 0;
@@ -66,7 +66,7 @@ static uint16_t rd_ads1118(spi_t spi_ads1118, uint16_t config, uint32_t delay_us
 
 	// Todo: Verify endianness of result
 	result = (rx_buff[0] << 8) | rx_buff[1];
-	result = result >> 2;
+	//result = result >> 2;
 	printf("rd_ads1118 rx_bufer 0x%02X%02X result : %d\n", (int)rx_buff[0], (int)rx_buff[1], result);
 	return result;
 }
@@ -122,7 +122,7 @@ float hw_amps_read_temp() {
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
 	// For an LM50, remove 0.5V offset and divide by 0.01 V/degC to get degrees C
 	float temperature = (voltage - 0.5f) / 0.01f;
-	printf("hw_amps_read_temp temperature : %.3f\n", temperature);
+	printf("hw_amps_read_temp temperature : %.3f - voltage : %.3f\n", temperature, voltage);
 	return temperature;
 }
 
@@ -146,7 +146,7 @@ float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
 	float current_amps = -(voltage - board_calibration->current_reference + board_calibration->current_offset);
 	current_amps *= board_calibration->current_calibration;
-	printf("hw_amps_read_artificial_ground current_amps : %.3f\n", current_amps);
+	printf("hw_amps_read_artificial_ground current_amps : %.3f - voltage : %.3f\n", current_amps, voltage);
 	return current_amps;
 }
 
