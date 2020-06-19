@@ -472,6 +472,21 @@ static void get_artificial_ground_current(clientsocket_t* client, header_t* head
 	}
 }
 
+static void get_amps_board_temperature(clientsocket_t* client, header_t* header, const void* body) {
+	// Get the board temperature in degrees C
+	float temperature = hw_amps_read_temp();
+
+	reset_header(header);
+
+	// The result is the temperature, in milli degrees C.
+	header->param1 = temperature * 1000.0f;
+
+	int8_t  data[0];
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
+
 void read_traces(clientsocket_t* client, header_t* header, const void* body) {
 	int32_t datas[SHIM_TRACE_COUNT];
 	
@@ -524,6 +539,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_WRITE_SHIM, write_shim);
 	success &= register_command_handler(CMD_READ_SHIM, read_shim);
 	success &= register_command_handler(CMD_ARTIFICIAL_GROUND_CURRENT, get_artificial_ground_current);
+	success &= register_command_handler(CMD_AMPS_BOARD_TEMPERATURE, get_amps_board_temperature);
 
 	return success;
 }
