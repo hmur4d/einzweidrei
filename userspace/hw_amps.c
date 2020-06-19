@@ -118,7 +118,7 @@ float hw_amps_read_temp() {
 	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN0_250sps_pm4V, delay_us);
 	spi_close(&spi_ads1118);
 	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
-	const float MAX_VAL = 32768.0f;
+	const float MAX_VAL = 32767.0f;
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
 	// For an LM50, remove 0.5V offset and divide by 0.01 V/degC to get degrees C
 	float temperature = (voltage - 0.5f) / 0.01f;
@@ -141,7 +141,7 @@ float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
 	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN1_250sps_pm4V, delay_us);
 	spi_close(&spi_ads1118);
 	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
-	const float MAX_VAL = 32768.0f;
+	const float MAX_VAL = 32767.0f;
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
 	float current_amps = -(voltage - board_calibration->current_reference + board_calibration->current_offset);
 	current_amps *= board_calibration->current_calibration;
