@@ -47,7 +47,7 @@
  *                 and reading the data.
  * @return The ADC reading (unconverted)
  */
-static uint16_t rd_ads1118(spi_t spi_ads1118, int16_t config, int32_t delay_us) {
+static uint16_t rd_ads1118(spi_t spi_ads1118, uint16_t config, int32_t delay_us) {
 	uint8_t tx_buff[2];
 	uint8_t rx_buff[2];
 	int16_t result;
@@ -66,7 +66,6 @@ static uint16_t rd_ads1118(spi_t spi_ads1118, int16_t config, int32_t delay_us) 
 
 	// Todo: Verify endianness of result
 	result = (rx_buff[0] << 8) | rx_buff[1];
-	result = result >> 2;
 	float temp_f = (float)result * 0.03125f;
 	printf("rx_bufer 0x%02X%02X  temp : %f \n", (int)rx_buff[0], (int)rx_buff[1], temp_f);
 	return result;
@@ -115,8 +114,8 @@ float hw_amps_read_temp() {
 		.delay = 0
 	};
 	spi_open(&spi_ads1118);
-	int32_t delay_us = ADS1118_SAMPLE_WAIT_128SPS_US;
-	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN1_250sps_pm4V, delay_us);
+	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
+	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN0_250sps_pm4V, delay_us);
 	spi_close(&spi_ads1118);
 	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
 	const float MAX_VAL = 32768.0f;
@@ -139,7 +138,7 @@ float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
 	spi_open(&spi_ads1118);
 
 	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
-	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN0_250sps_pm4V, delay_us);
+	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN1_250sps_pm4V, delay_us);
 	spi_close(&spi_ads1118);
 	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
 	const float MAX_VAL = 32768.0f;
