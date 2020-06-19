@@ -47,7 +47,7 @@
  *                 and reading the data.
  * @return The ADC reading (unconverted)
  */
-static uint16_t rd_ads1118(spi_t spi_ads1118, int16_t config, int32_t delay_us) {
+static uint16_t rd_ads1118(spi_t spi_ads1118, uint16_t config, uint32_t delay_us) {
 	uint8_t tx_buff[2];
 	uint8_t rx_buff[2];
 	int16_t result;
@@ -57,7 +57,7 @@ static uint16_t rd_ads1118(spi_t spi_ads1118, int16_t config, int32_t delay_us) 
 	spi_send(spi_ads1118, (char*)tx_buff, (char*)rx_buff);
 
 	// Wait for the conversion to complete.
-	usleep(delay_us);
+	usleep( delay_us);
 
 	// Send 0x0000 to read the data
 	tx_buff[0] = 0;
@@ -67,8 +67,7 @@ static uint16_t rd_ads1118(spi_t spi_ads1118, int16_t config, int32_t delay_us) 
 	// Todo: Verify endianness of result
 	result = (rx_buff[0] << 8) | rx_buff[1];
 	result = result >> 2;
-	float temp_f = (float)result * 0.03125f;
-	printf("rx_bufer 0x%02X%02X  temp : %f \n", (int)rx_buff[0], (int)rx_buff[1], temp_f);
+	printf("rd_ads1118 rx_bufer 0x%02X%02X result : %d\n", (int)rx_buff[0], (int)rx_buff[1], result);
 	return result;
 }
 
@@ -79,8 +78,8 @@ static void rd_eeprom(spi_t spi_eeprom, int8_t address) {
 	tx_buff[1] = address;
 	tx_buff[0] = 0x3;
 	char rx_buff[3] = { 0,0,0};
-	spi_send(spi_eeprom, tx_buff, rx_buff);
-	printf("tx_buffer 0x%X%X ; rx_bufer 0x%X%X%X\n", tx_buff[0], tx_buff[1], rx_buff[0],rx_buff[1],rx_buff[2]);
+	spi_send(spi_eeprom, (char*)tx_buff, rx_buff);
+	printf("rd_eeprom tx_buffer 0x%X%X ; rx_bufer 0x%X%X%X\n", tx_buff[0], tx_buff[1], rx_buff[0],rx_buff[1],rx_buff[2]);
 }
 
 static void wren_eeprom(spi_t spi_eeprom) {
@@ -90,18 +89,18 @@ static void wren_eeprom(spi_t spi_eeprom) {
 	spi_t spi_eeprom_int = spi_eeprom;
 	spi_eeprom_int.len = 1;
 	spi_send(spi_eeprom_int, tx_buff, rx_buff);
-	printf("tx_buffer 0x%X \n", tx_buff[0]);
+	printf("wren_eeprom tx_buffer 0x%X \n", tx_buff[0]);
 }
 
-static void wr_eeprom(spi_t spi_eeprom, int8_t address, int8_t data) {
+static void wr_eeprom(spi_t spi_eeprom, uint8_t address, uint8_t data) {
 	wren_eeprom(spi_eeprom);
-	char tx_buff[3];
+	uint8_t tx_buff[3];
 	tx_buff[2] = data;
 	tx_buff[1] = address;
 	tx_buff[0] = 0x02;
 	char rx_buff[3] = { 0,0,0 };
-	spi_send(spi_eeprom, tx_buff, rx_buff);
-	printf("tx_buffer 0x%X%X%X \n", tx_buff[0], tx_buff[1], tx_buff[2]);
+	spi_send(spi_eeprom, (char*)tx_buff, rx_buff);
+	printf("wr_eeprom tx_buffer 0x%X%X%X \n", tx_buff[0], tx_buff[1], tx_buff[2]);
 }
 
 float hw_amps_read_temp() {
@@ -123,6 +122,7 @@ float hw_amps_read_temp() {
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
 	// For an LM50, remove 0.5V offset and divide by 0.01 V/degC to get degrees C
 	float temperature = (voltage - 0.5f) / 0.01f;
+	printf("hw_amps_read_temp temperature : %.3f\n", temperature);
 	return temperature;
 }
 
@@ -146,6 +146,7 @@ float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
 	float current_amps = -(voltage - board_calibration->current_reference + board_calibration->current_offset);
 	current_amps *= board_calibration->current_calibration;
+	printf("hw_amps_read_artificial_ground current_amps : %.3f\n", current_amps);
 	return current_amps;
 }
 
@@ -164,7 +165,7 @@ void hw_amps_read_eeprom(uint8_t addr) {
 	spi_close(&spi_eeprom);
 }
 
-void hw_amps_wr_eeprom(int8_t data) {
+void hw_amps_wr_eeprom(uint8_t addr, int8_t data) {
 	spi_t spi_eeprom = (spi_t) {
 		    .dev_path = "/dev/spidev32766.8",
 			.fd = -1,
