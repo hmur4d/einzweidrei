@@ -207,7 +207,7 @@ int load_profile_used_in_shim_file() {
 	for (int i = 0; i < SHIM_PROFILES_COUNT;i++) {
 		if (shim_values[i].filename != NULL) {
 			free(shim_profiles[i].filename);
-			shim_profiles[i].filename = malloc(strlen(shim_values[i].filename));
+			shim_profiles[i].filename = malloc(strlen(shim_values[i].filename + 1));
 			strcpy(shim_profiles[i].filename, shim_values[i].filename);
 			err = load_profiles(&shim_profiles[i]);
 			if (err == 0) {
