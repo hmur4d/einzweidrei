@@ -576,6 +576,7 @@ int shim_config_main(int argc, char** argv) {
 		log_error("Unable to open shared memory (%s), exiting", memory_file);
 		return 1;
 	}
+
 	init_shim();
 	int32_t dac_words[SHIM_TRACE_COUNT];
 	for (int i = 0; i < SHIM_TRACE_COUNT; i++) {

@@ -47,101 +47,94 @@
  *                 and reading the data.
  * @return The ADC reading (unconverted)
  */
-static uint16_t rd_ads1118(spi_t spi_ads1118, uint16_t config, int32_t delay_us) {
+static uint16_t rd_ads1118(int spi_fd, uint16_t config, int32_t delay_us) {
 	uint8_t tx_buff[2];
-	uint8_t rx_buff[2];
+	uint8_t rx_buff[4] = { 0,0,0,0 };
 	int16_t result;
 	tx_buff[1] = config;
 	tx_buff[0] = config >> 8;
-	// Start the conversion
-	spi_send(spi_ads1118, (char*)tx_buff, (char*)rx_buff);
 
-	// Wait for the conversion to complete.
+	//create spi_transfer_struct
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx_buff,
+		.rx_buf = (unsigned long)rx_buff,
+		.len = 4,
+		.delay_usecs = delay_us,
+		.speed_hz = 4000000,
+		.bits_per_word = 8,
+	};
+
+	//send cmd
+	ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+	//wait  conversion
 	usleep(delay_us);
+	//read result
+	result = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+	if (result < 1) {
+		log_error("can't write to ADS1118");
+		return 0;
+	}
 
-	// Send 0x0000 to read the data
-	tx_buff[0] = 0;
-	tx_buff[1] = 0;
-	spi_send(spi_ads1118, (char*)tx_buff, (char*)rx_buff);
 
-	// Todo: Verify endianness of result
 	result = (rx_buff[0] << 8) | rx_buff[1];
-	printf("rd_ads1118 rx_bufer 0x%02X%02X result : %d\n", (int)rx_buff[0], (int)rx_buff[1], result);
-	float temp_f = (float)result * 0.03125f;
-	printf("rx_bufer 0x%02X%02X  temp : %f \n", (int)rx_buff[0], (int)rx_buff[1], temp_f);
+	//printf("rd_ads1118 rx_bufer 0x%02X%02X result : %d\n", (int)rx_buff[0], (int)rx_buff[1], result);
+	//float temp_f = (float)result * 0.03125f;
+	//printf("rx_bufer 0x%02X%02X  temp : %f \n", (int)rx_buff[0], (int)rx_buff[1], temp_f);
 	return result;
 }
 
-
-static void rd_eeprom(spi_t spi_eeprom, int8_t address) {
-	char tx_buff[3];
-	tx_buff[2] = 0x0;
-	tx_buff[1] = address;
-	tx_buff[0] = 0x3;
-	char rx_buff[3] = { 0,0,0};
-	spi_send(spi_eeprom, (char*)tx_buff, rx_buff);
-	printf("rd_eeprom tx_buffer 0x%X%X ; rx_bufer 0x%X%X%X\n", tx_buff[0], tx_buff[1], rx_buff[0],rx_buff[1],rx_buff[2]);
+int spi_hps_open(uint8_t cs, uint8_t mode) {
+	char dev[64];
+	sprintf(dev, "/dev/spidev32765.%d", cs);
+	//log_info("open spi %s in mode %d",dev, mode);
+	int spi_fd = open(dev, O_RDWR);
+	if (spi_fd == 0) {
+		log_error("can't open spi dev");
+		return 0;
+	}
+	int ret = ioctl(spi_fd, SPI_IOC_WR_MODE, &mode);
+	if (ret == -1) {
+		log_error("can't set spi mode");
+		return 0;
+	}
+	return spi_fd;
 }
 
-static void wren_eeprom(spi_t spi_eeprom) {
-	char tx_buff[1];
-	tx_buff[0] = 0x06;
-	char rx_buff[3] = { 0,0,0 };
-	spi_t spi_eeprom_int = spi_eeprom;
-	spi_eeprom_int.len = 1;
-	spi_send(spi_eeprom_int, tx_buff, rx_buff);
-	printf("wren_eeprom tx_buffer 0x%X \n", tx_buff[0]);
-}
-
-static void wr_eeprom(spi_t spi_eeprom, uint8_t address, uint8_t data) {
-	wren_eeprom(spi_eeprom);
-	uint8_t tx_buff[3];
-	tx_buff[2] = data;
-	tx_buff[1] = address;
-	tx_buff[0] = 0x02;
-	char rx_buff[3] = { 0,0,0 };
-	spi_send(spi_eeprom, (char*)tx_buff, rx_buff);
-	printf("wr_eeprom tx_buffer 0x%X%X%X \n", tx_buff[0], tx_buff[1], tx_buff[2]);
-}
 
 float hw_amps_read_temp() {
-	spi_t spi_ads1118 = (spi_t) {
-		.dev_path = "/dev/spidev32766.7",
-		.fd = -1,
-		.speed = 50000,
-		.bits = 8,
-		.len = 2,
-		.mode = 0,
-		.delay = 0
-	};
-	spi_open(&spi_ads1118);
+
+	int spi_fd = spi_hps_open(0,1);
 	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
-	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN0_250sps_pm4V, delay_us);
-	spi_close(&spi_ads1118);
+
+	int16_t reading = rd_ads1118(spi_fd, ADS1118_IN0_250sps_pm4V, delay_us);
+	close(spi_fd);
 	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
 	const float MAX_VAL = 32768.0f;
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
 	// For an LM50, remove 0.5V offset and divide by 0.01 V/degC to get degrees C
 	float temperature = (voltage - 0.5f) / 0.01f;
-	printf("hw_amps_read_temp temperature : %.3f - voltage : %.3f\n", temperature, voltage);
+	printf("hw_amps_read_temp temperature : %.3f deg - voltage : %.3f\n", temperature, voltage);
+	return temperature;
+}
+
+float hw_amps_read_internal_temp() {
+
+	int spi_fd = spi_hps_open(0, 1);
+	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
+	int16_t reading = rd_ads1118(spi_fd, 0xC592, delay_us);
+	close(spi_fd);
+	float temperature = (float)(( reading >> 2)*0.03125);
+
+	printf("hw_amps_read_internal_temp temperature : %.3f deg\n", temperature);
 	return temperature;
 }
 
 float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
-	spi_t spi_ads1118 = (spi_t) {
-			.dev_path = "/dev/spidev32766.7",
-			.fd = -1,
-			.speed = 50000,
-			.bits = 8,
-			.len = 2,
-			.mode = 0,
-			.delay = 0
-	};
-	spi_open(&spi_ads1118);
+	int spi_fd = spi_hps_open(0, 1);
 
 	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
-	int16_t reading = rd_ads1118(spi_ads1118, ADS1118_IN1_250sps_pm4V, delay_us);
-	spi_close(&spi_ads1118);
+	int16_t reading = rd_ads1118(spi_fd, ADS1118_IN1_250sps_pm4V, delay_us);
+	close(spi_fd);
 	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
 	const float MAX_VAL = 32768.0f;
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
@@ -151,32 +144,90 @@ float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
 	return current_amps;
 }
 
-void hw_amps_read_eeprom(uint8_t addr) {
-	spi_t spi_eeprom = (spi_t) {
-		.dev_path = "/dev/spidev32766.8",
-		.fd = -1,
-		.speed = 50000,
-		.bits = 8,
+static void rd_eeprom(int spi_fd, int8_t address) {
+	char tx_buff[3];
+	tx_buff[2] = 0x0;
+	tx_buff[1] = address;
+	tx_buff[0] = 0x3;
+	char rx_buff[3] = { 0,0,0 };
+	//create spi_transfer_struct
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx_buff,
+		.rx_buf = (unsigned long)rx_buff,
 		.len = 3,
-		.mode = 0,
-		.delay = 0
+		.delay_usecs = 0,
+		.speed_hz = 128000,
+		.bits_per_word = 8,
 	};
-	spi_open(&spi_eeprom);
-	rd_eeprom(spi_eeprom, addr);
-	spi_close(&spi_eeprom);
+	ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+	printf("rd_eeprom tx_buffer 0x%X%X ; rx_bufer 0x%X%X%X\n", tx_buff[0], tx_buff[1], rx_buff[0], rx_buff[1], rx_buff[2]);
+}
+
+static void wren_eeprom(int spi_fd) {
+	char tx_buff[1];
+	tx_buff[0] = 0x06;
+	char rx_buff[3] = { 0,0,0 };
+	//create spi_transfer_struct
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx_buff,
+		.rx_buf = (unsigned long)rx_buff,
+		.len = 3,
+		.delay_usecs = 0,
+		.speed_hz = 128000,
+		.bits_per_word = 8,
+	};
+	ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+	printf("wren_eeprom tx_buffer 0x%X \n", tx_buff[0]);
+}
+
+static void wr_eeprom(int spi_fd, uint8_t address, uint8_t data) {
+	wren_eeprom(spi_fd);
+	uint8_t tx_buff[3];
+	tx_buff[2] = data;
+	tx_buff[1] = address;
+	tx_buff[0] = 0x02;
+	char rx_buff[3] = { 0,0,0 };
+	//create spi_transfer_struct
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx_buff,
+		.rx_buf = (unsigned long)rx_buff,
+		.len = 3,
+		.delay_usecs = 0,
+		.speed_hz = 128000,
+		.bits_per_word = 8,
+	};
+	ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+	printf("wr_eeprom tx_buffer 0x%X%X%X \n", tx_buff[0], tx_buff[1], tx_buff[2]);
 }
 
 void hw_amps_wr_eeprom(uint8_t addr, int8_t data) {
-	spi_t spi_eeprom = (spi_t) {
-		    .dev_path = "/dev/spidev32766.8",
-			.fd = -1,
-			.speed = 50000,
-			.bits = 8,
-			.len = 3,
-			.mode = 0,
-			.delay = 0
-	};
-	spi_open(&spi_eeprom);
-	wr_eeprom(spi_eeprom, 0x0, data);
-	spi_close(&spi_eeprom);
+
+	int spi_fd=spi_hps_open(1,0);
+	wr_eeprom(spi_fd, addr, data);
+	close(spi_fd);
+}
+
+void hw_amps_read_eeprom(uint8_t addr) {
+	int spi_fd = spi_hps_open(1, 0);
+	rd_eeprom(spi_fd, addr);
+	close(spi_fd);
+
+}
+
+int amps_main(int argc, char** argv) {
+	char* memory_file = config_memory_file();
+	if (!shared_memory_init(memory_file)) {
+		log_error("Unable to open shared memory (%s), exiting", memory_file);
+		return 1;
+	}
+	int i = 0;
+	for ( i = 0; i < 10; i++) {
+		hw_amps_wr_eeprom(i,i);
+	}
+	for (i = 0; i < 10; i++) {
+		hw_amps_read_eeprom(i);
+	}
+
+	//
+	return 0;
 }
