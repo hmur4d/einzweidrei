@@ -7,6 +7,7 @@
 #include "memory_map.h"
 #include "config.h"
 #include "ram.h"
+#include "hw_amps.h"
 
 
 shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
@@ -534,8 +535,24 @@ int read_trace_currents(int32_t* current_uAmps) {
 
 int read_amps_board_id() {
 
-	log_info("Read board ID : not implemented, used default constant board_id");
-	return 2105;
+	
+	int8_t nb_bytes= hw_amps_read_eeprom(0);
+	char* data = malloc(nb_bytes);
+	int i = 0;
+	for ( i = 0; i < nb_bytes; i++) {
+		data[i] = hw_amps_read_eeprom(i + 1);
+	}
+	
+
+	char board_id_str[5];
+	for (i = 0; i < 4; i++) {
+		board_id_str[i] = data[nb_bytes - 4 + i];
+	}
+	board_id_str[4] = '\0';
+	int board_id = atoi(board_id_str);
+
+	log_info("read_amps_board_id : eeprom content %s, board_id=%d", data, board_id);
+	return board_id;
 }
 
 int init_shim() {

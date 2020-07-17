@@ -39,6 +39,11 @@
  */
 #define ADS1118_SAMPLE_WAIT_128SPS_US (10000)
 
+
+static uint8_t bits = 8;
+static uint32_t speed = 10000000;
+
+
 /**
  * Read from an ADS1118 ADC at the given SPI address.
  * @param spi_ads1118 The SPI configuration to use
@@ -60,8 +65,8 @@ static uint16_t rd_ads1118(int spi_fd, uint16_t config, int32_t delay_us) {
 		.rx_buf = (unsigned long)rx_buff,
 		.len = 4,
 		.delay_usecs = delay_us,
-		.speed_hz = 4000000,
-		.bits_per_word = 8,
+		.speed_hz = speed,
+		.bits_per_word = bits,
 	};
 
 	//send cmd
@@ -87,7 +92,7 @@ int spi_hps_open(uint8_t cs, uint8_t mode) {
 	char dev[64];
 	sprintf(dev, "/dev/spidev32765.%d", cs);
 	//log_info("open spi %s in mode %d",dev, mode);
-	int spi_fd = open(dev, O_RDWR);
+	int spi_fd = open(dev, O_RDWR );
 	if (spi_fd == 0) {
 		log_error("can't open spi dev");
 		return 0;
@@ -104,9 +109,12 @@ int spi_hps_open(uint8_t cs, uint8_t mode) {
 float hw_amps_read_temp() {
 
 	int spi_fd = spi_hps_open(0,1);
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->amps_adc_cs, 1);
 	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
-
 	int16_t reading = rd_ads1118(spi_fd, ADS1118_IN0_250sps_pm4V, delay_us);
+	write_property(mem->amps_adc_cs, 0);
+	shared_memory_release(mem);
 	close(spi_fd);
 	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
 	const float MAX_VAL = 32768.0f;
@@ -120,8 +128,12 @@ float hw_amps_read_temp() {
 float hw_amps_read_internal_temp() {
 
 	int spi_fd = spi_hps_open(0, 1);
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->amps_adc_cs, 1);
 	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
 	int16_t reading = rd_ads1118(spi_fd, 0xC592, delay_us);
+	write_property(mem->amps_adc_cs, 0);
+	shared_memory_release(mem);
 	close(spi_fd);
 	float temperature = (float)(( reading >> 2)*0.03125);
 
@@ -131,36 +143,39 @@ float hw_amps_read_internal_temp() {
 
 float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
 	int spi_fd = spi_hps_open(0, 1);
-
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->amps_adc_cs, 1);
 	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
 	int16_t reading = rd_ads1118(spi_fd, ADS1118_IN1_250sps_pm4V, delay_us);
+	write_property(mem->amps_adc_cs, 0);
+	shared_memory_release(mem);
 	close(spi_fd);
 	const float ADC_REFERENCE_VOLTAGE_VOLTS = 4.096f;
 	const float MAX_VAL = 32768.0f;
 	float voltage = (ADC_REFERENCE_VOLTAGE_VOLTS * (float)reading) / MAX_VAL;
 	float current_amps = -(voltage - board_calibration->current_reference + board_calibration->current_offset);
 	current_amps *= board_calibration->current_calibration;
+	current_amps /= 2;// Don't now why but according to meas on board, the value must be /2, the voltage is correct
 	printf("hw_amps_read_artificial_ground current_amps : %.3f - voltage : %.3f\n", current_amps, voltage);
 	return current_amps;
 }
 
-static void rd_eeprom(int spi_fd, int8_t address) {
+static int8_t rd_eeprom(int spi_fd, int8_t address) {
 	char tx_buff[3];
 	tx_buff[2] = 0x0;
 	tx_buff[1] = address;
 	tx_buff[0] = 0x3;
 	char rx_buff[3] = { 0,0,0 };
-	//create spi_transfer_struct
 	struct spi_ioc_transfer tr = {
 		.tx_buf = (unsigned long)tx_buff,
 		.rx_buf = (unsigned long)rx_buff,
 		.len = 3,
 		.delay_usecs = 0,
-		.speed_hz = 128000,
-		.bits_per_word = 8,
+		.speed_hz = speed,
+		.bits_per_word = bits,
 	};
 	ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
-	printf("rd_eeprom tx_buffer 0x%X%X ; rx_bufer 0x%X%X%X\n", tx_buff[0], tx_buff[1], rx_buff[0], rx_buff[1], rx_buff[2]);
+	return (int8_t)rx_buff[2];
 }
 
 static void wren_eeprom(int spi_fd) {
@@ -171,13 +186,53 @@ static void wren_eeprom(int spi_fd) {
 	struct spi_ioc_transfer tr = {
 		.tx_buf = (unsigned long)tx_buff,
 		.rx_buf = (unsigned long)rx_buff,
-		.len = 3,
+		.len = 1,
 		.delay_usecs = 0,
-		.speed_hz = 128000,
-		.bits_per_word = 8,
+		.speed_hz = speed,
+		.bits_per_word = bits,
 	};
-	ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		log_error("can't write to eeprom");
+
 	printf("wren_eeprom tx_buffer 0x%X \n", tx_buff[0]);
+}
+
+/**
+* Page write operations are limited to writing bytes within a single physical page,
+* regardless of the number of bytes actually being written.
+* Physical page boundaries start at addresses that are integer multiples of the page buffer size (or ‘page size’) and,
+* end at addresses that are integer multiples of page size – 1. If a Page Write command attempts to write across a physical page boundary,
+* the result is that the data wraps around to the beginning of the current page (overwriting data previously stored there),
+* instead of being written to the next page as might be expected. It is, therefore,
+* necessary for the application software to prevent page write operations that would attempt to cross a page boundary
+*/
+static void page_wr_eeprom(int fd, int8_t address, int8_t* data) {
+	char tx_buff[18];
+	tx_buff[1] = address;
+	tx_buff[0] = 0x02;
+
+	for (int i = 0; i <= 15; i++) {
+		tx_buff[i + 2] = data[i];
+	}
+
+	char rx_buff[3] = { 0,0,0 };
+
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx_buff,
+		.rx_buf = (unsigned long)rx_buff,
+		.len = 18,
+		.delay_usecs = 0,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
+
+	int ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		log_error("can't write to eeprom");
+
+
+	printf(" page wr eprom tx_buffer 0x%X%X%X \n", tx_buff[0], tx_buff[1], tx_buff[2]);
 }
 
 static void wr_eeprom(int spi_fd, uint8_t address, uint8_t data) {
@@ -193,26 +248,55 @@ static void wr_eeprom(int spi_fd, uint8_t address, uint8_t data) {
 		.rx_buf = (unsigned long)rx_buff,
 		.len = 3,
 		.delay_usecs = 0,
-		.speed_hz = 128000,
-		.bits_per_word = 8,
+		.speed_hz = speed,
+		.bits_per_word = bits,
 	};
 	ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
 	printf("wr_eeprom tx_buffer 0x%X%X%X \n", tx_buff[0], tx_buff[1], tx_buff[2]);
 }
 
-void hw_amps_wr_eeprom(uint8_t addr, int8_t data) {
+
+void hw_amps_page_wr_eeprom(uint8_t address, int8_t* data) {
 
 	int spi_fd=spi_hps_open(1,0);
-	wr_eeprom(spi_fd, addr, data);
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->amps_eeprom_cs, 1);
+	wren_eeprom(spi_fd);
+	write_property(mem->amps_eeprom_cs, 0);
+	usleep(1);
+	write_property(mem->amps_eeprom_cs, 1);
+	page_wr_eeprom(spi_fd, address, data);
+	write_property(mem->amps_eeprom_cs, 0);
+	shared_memory_release(mem);
 	close(spi_fd);
 }
 
-void hw_amps_read_eeprom(uint8_t addr) {
+void hw_amps_wr_eeprom(uint8_t address, int8_t data) {
+
 	int spi_fd = spi_hps_open(1, 0);
-	rd_eeprom(spi_fd, addr);
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->amps_eeprom_cs, 1);
+	wren_eeprom(spi_fd);
+	write_property(mem->amps_eeprom_cs, 0);
+	usleep(1);
+	write_property(mem->amps_eeprom_cs, 1);
+	wr_eeprom(spi_fd, address, data);
+	write_property(mem->amps_eeprom_cs, 0);
+	shared_memory_release(mem);
 	close(spi_fd);
-
 }
+
+int8_t hw_amps_read_eeprom(uint8_t addr) {
+	int spi_fd = spi_hps_open(1, 0);
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->amps_eeprom_cs, 1);
+	int8_t value=rd_eeprom(spi_fd, addr);
+	write_property(mem->amps_eeprom_cs, 0);
+	shared_memory_release(mem);
+	close(spi_fd);
+	return value;
+}
+
 
 int amps_main(int argc, char** argv) {
 	char* memory_file = config_memory_file();
@@ -221,12 +305,19 @@ int amps_main(int argc, char** argv) {
 		return 1;
 	}
 	int i = 0;
-	for ( i = 0; i < 10; i++) {
-		hw_amps_wr_eeprom(i,i);
+	//int8_t data[] = {'\n','3','.','5','.','0','-','2','1','0','5'};
+	int8_t data[] = "\n3.5.0-1862";
+
+
+	hw_amps_page_wr_eeprom(0, data);
+	usleep(5000);
+
+	for (i = 0; i < 16; i++) {
+		int8_t value=hw_amps_read_eeprom(i);
+		printf("read [%d] = %x\n", i, value);
 	}
-	for (i = 0; i < 10; i++) {
-		hw_amps_read_eeprom(i);
-	}
+
+	
 
 	//
 	return 0;

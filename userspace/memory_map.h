@@ -41,14 +41,14 @@ Memory map, copied as-is from CameleonNIOS
 
 /************************RAM_INTERFACE************************/
 //#define RAM_INTERFACE_NUMBER_OF_RAMS                87
-#define RAM_OFFSET_STEP                             0x00008000
+#define RAM_OFFSET_STEP                             0x00080000
 
 #define RAM_FILTER0_SELECTED                        66
 #define RAM_FILTER0_OFFSET                          (RAM_OFFSET_STEP * RAM_FILTER0_SELECTED)
 
-#define RAM_SHIM_MATRIX_C0							93
-#define RAM_CURRENT_ZERO_OFFSETS					157
-#define RAM_SHIM_DAC_WORDS							158
+#define RAM_SHIM_MATRIX_C0							115
+#define RAM_CURRENT_ZERO_OFFSETS					179
+#define RAM_SHIM_DAC_WORDS							180
 
 
 /************************RAM_REGISTERS*************************/

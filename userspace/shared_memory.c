@@ -216,18 +216,32 @@ bool shared_memory_init(const char* memory_file) {
 		.name = "shim_trace_sat_1",
 	};
 	sharedmem.i2s_output_disable = (property_t){
-	.read_ptr = sharedmem.lwbridge + 16370,
-	.write_ptr = sharedmem.lwbridge + 16370,
-	.bit_size = 1,
-	.bit_offset = 12,
-	.name = "i2s_output_disable",
+		.read_ptr = sharedmem.lwbridge + 16370,
+		.write_ptr = sharedmem.lwbridge + 16370,
+		.bit_size = 1,
+		.bit_offset = 12,
+		.name = "i2s_output_disable",
 	};
 	sharedmem.shim_amps_refresh = (property_t){
-	.read_ptr = NULL,
-	.write_ptr = sharedmem.lwbridge + 16365,
-	.bit_size = 1,
-	.bit_offset = 0,
-	.name = "shim_amps_refresh",
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16365,
+		.bit_size = 1,
+		.bit_offset = 0,
+		.name = "shim_amps_refresh",
+	};
+	sharedmem.amps_adc_cs = (property_t){
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16364,
+		.bit_size = 1,
+		.bit_offset = 0,
+		.name = "amps_adc_cs",
+	};
+	sharedmem.amps_eeprom_cs = (property_t){
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16364,
+		.bit_size = 1,
+		.bit_offset = 1,
+		.name = "amps_eeprom_cs",
 	};
 
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);

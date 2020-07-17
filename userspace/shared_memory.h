@@ -62,6 +62,9 @@ typedef struct {
 	property_t i2s_output_disable;
 	property_t shim_amps_refresh;
 
+	property_t amps_eeprom_cs;
+	property_t amps_adc_cs;
+
 
 	int32_t* lwbridge;
 	int32_t* rams;
