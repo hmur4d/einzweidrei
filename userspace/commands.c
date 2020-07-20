@@ -33,6 +33,8 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 	int nbytes = header->body_size;
 	
 
+	//printf("ram offset step %x \n", RAM_OFFSET_STEP);
+
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C
 		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// à voir le cas ou monitoring temperature du cameleon et ecriture des threshold
@@ -50,10 +52,29 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		return;
 	}
 
-	log_debug("writing rams: id=%d 0x%x - %d bytes - value=%d", ram.id, ram.offset_bytes, ram.span_bytes,*((uint32_t*)body));
+	log_info("writing rams: id=%d 0x%x - %d bytes - value=0x%x", ram.id, ram.offset_bytes, ram.span_bytes,*((uint32_t*)body));
 	shared_memory_t* mem = shared_memory_acquire();
 	memcpy(mem->rams + ram.offset_int32, body, ram.span_bytes);
 	shared_memory_release(mem);
+
+	//ram amp X
+	if (ram.id == 60) {
+		int base_adr_amp_x = 0;
+		log_info("writing grad ampx : %d, %x, %d \n", ram.offset_int32, *((uint32_t*)body), ram.span_bytes);
+		shared_memory_t* mem = shared_memory_acquire();
+		memcpy(mem->grad_ram + base_adr_amp_x, body, ram.span_bytes);
+		shared_memory_release(mem);
+	}
+
+	//ram shape x
+	if (ram.id == 61) {
+		int base_adr_shape_x = 1;
+		log_info("writing grad ampx : %d, %x, %d \n", ram.offset_int32, *((uint32_t*)body), ram.span_bytes);
+		shared_memory_t* mem = shared_memory_acquire();
+		//mem copy's start address is word address because the grad_ram _is uint32_t*
+		memcpy(mem->grad_ram + base_adr_shape_x, body, ram.span_bytes);
+		shared_memory_release(mem);
+	}
 
 	if (readback) {
 		log_debug("reading rams: 0x%x - %d bytes", ram.offset_bytes, ram.span_bytes);
