@@ -20,86 +20,48 @@
  */
 
 /*
- * Macros for device 'mem_interface', class 'avl_mm_interface'
+ * Macros for device 'mem_interface', class 'mem_interface'
  * The macros are prefixed with 'MEM_INTERFACE_'.
  * The prefix is the slave descriptor.
  */
-#define MEM_INTERFACE_COMPONENT_TYPE avl_mm_interface
+#define MEM_INTERFACE_COMPONENT_TYPE mem_interface
 #define MEM_INTERFACE_COMPONENT_NAME mem_interface
 #define MEM_INTERFACE_BASE 0xc0000000
 #define MEM_INTERFACE_SPAN 134217728
 #define MEM_INTERFACE_END 0xc7ffffff
 
 /*
- * Macros for device 'epcql512_controller_avl_mem', class 'intel_generic_serial_flash_interface_top'
- * The macros are prefixed with 'EPCQL512_CONTROLLER_AVL_MEM_'.
+ * Macros for device 'rx_interface', class 'rx_interface'
+ * The macros are prefixed with 'RX_INTERFACE_'.
  * The prefix is the slave descriptor.
  */
-#define EPCQL512_CONTROLLER_AVL_MEM_COMPONENT_TYPE intel_generic_serial_flash_interface_top
-#define EPCQL512_CONTROLLER_AVL_MEM_COMPONENT_NAME epcql512_controller
-#define EPCQL512_CONTROLLER_AVL_MEM_BASE 0xc8000000
-#define EPCQL512_CONTROLLER_AVL_MEM_SPAN 67108864
-#define EPCQL512_CONTROLLER_AVL_MEM_END 0xcbffffff
+#define RX_INTERFACE_COMPONENT_TYPE rx_interface
+#define RX_INTERFACE_COMPONENT_NAME rx_interface
+#define RX_INTERFACE_BASE 0xc8000000
+#define RX_INTERFACE_SPAN 4194304
+#define RX_INTERFACE_END 0xc83fffff
 
 /*
- * Macros for device 'address_span_extender_windowed_slave', class 'altera_address_span_extender'
- * The macros are prefixed with 'ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_'.
+ * Macros for device 'lock_rx_interface', class 'lock_rx_interface'
+ * The macros are prefixed with 'LOCK_RX_INTERFACE_'.
  * The prefix is the slave descriptor.
  */
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_COMPONENT_TYPE altera_address_span_extender
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_COMPONENT_NAME address_span_extender
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_BASE 0xd0000000
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_SPAN 268435456
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_END 0xdfffffff
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_BURSTCOUNT_WIDTH 1
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_BYTEENABLE_WIDTH 4
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_CNTL_ADDRESS_WIDTH 1
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_DATA_WIDTH 32
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_MASTER_ADDRESS_WIDTH 31
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_MAX_BURST_BYTES 4
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_MAX_BURST_WORDS 1
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_SLAVE_ADDRESS_SHIFT 2
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_SLAVE_ADDRESS_WIDTH 26
-#define ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_SUB_WINDOW_COUNT 1
+#define LOCK_RX_INTERFACE_COMPONENT_TYPE lock_rx_interface
+#define LOCK_RX_INTERFACE_COMPONENT_NAME lock_rx_interface
+#define LOCK_RX_INTERFACE_BASE 0xc8400000
+#define LOCK_RX_INTERFACE_SPAN 8192
+#define LOCK_RX_INTERFACE_END 0xc8401fff
 
 /*
- * Macros for device 'control_interface', class 'avl_mm_interface'
+ * Macros for device 'control_interface', class 'control_interface'
  * The macros are prefixed with 'CONTROL_INTERFACE_'.
  * The prefix is the slave descriptor.
  */
-#define CONTROL_INTERFACE_COMPONENT_TYPE avl_mm_interface
+#define CONTROL_INTERFACE_COMPONENT_TYPE control_interface
 #define CONTROL_INTERFACE_COMPONENT_NAME control_interface
 #define CONTROL_INTERFACE_BASE 0xff200000
 #define CONTROL_INTERFACE_SPAN 131072
 #define CONTROL_INTERFACE_END 0xff21ffff
-
-/*
- * Macros for device 'spi_fpga', class 'altera_avalon_spi'
- * The macros are prefixed with 'SPI_FPGA_'.
- * The prefix is the slave descriptor.
- */
-#define SPI_FPGA_COMPONENT_TYPE altera_avalon_spi
-#define SPI_FPGA_COMPONENT_NAME spi_fpga
-#define SPI_FPGA_BASE 0xff220000
-#define SPI_FPGA_SPAN 32
-#define SPI_FPGA_END 0xff22001f
-#define SPI_FPGA_CLOCKMULT 1
-#define SPI_FPGA_CLOCKPHASE 0
-#define SPI_FPGA_CLOCKPOLARITY 0
-#define SPI_FPGA_CLOCKUNITS "Hz"
-#define SPI_FPGA_DATABITS 8
-#define SPI_FPGA_DATAWIDTH 16
-#define SPI_FPGA_DELAYMULT "1.0E-9"
-#define SPI_FPGA_DELAYUNITS "ns"
-#define SPI_FPGA_EXTRADELAY 0
-#define SPI_FPGA_INSERT_SYNC 1
-#define SPI_FPGA_ISMASTER 1
-#define SPI_FPGA_LSBFIRST 0
-#define SPI_FPGA_NUMSLAVES 32
-#define SPI_FPGA_PREFIX "spi_"
-#define SPI_FPGA_SYNC_REG_DEPTH 2
-#define SPI_FPGA_TARGETCLOCK 128000
-#define SPI_FPGA_TARGETSSDELAY "0.0"
 
 /*
  * Macros for device 'output_pio', class 'altera_avalon_pio'
@@ -108,9 +70,9 @@
  */
 #define OUTPUT_PIO_COMPONENT_TYPE altera_avalon_pio
 #define OUTPUT_PIO_COMPONENT_NAME output_pio
-#define OUTPUT_PIO_BASE 0xff220020
+#define OUTPUT_PIO_BASE 0xff220000
 #define OUTPUT_PIO_SPAN 32
-#define OUTPUT_PIO_END 0xff22003f
+#define OUTPUT_PIO_END 0xff22001f
 #define OUTPUT_PIO_BIT_CLEARING_EDGE_REGISTER 0
 #define OUTPUT_PIO_BIT_MODIFYING_OUTPUT_REGISTER 1
 #define OUTPUT_PIO_CAPTURE 0
@@ -118,7 +80,7 @@
 #define OUTPUT_PIO_DO_TEST_BENCH_WIRING 0
 #define OUTPUT_PIO_DRIVEN_SIM_VALUE 0
 #define OUTPUT_PIO_EDGE_TYPE NONE
-#define OUTPUT_PIO_FREQ 78125000
+#define OUTPUT_PIO_FREQ 150000000
 #define OUTPUT_PIO_HAS_IN 0
 #define OUTPUT_PIO_HAS_OUT 1
 #define OUTPUT_PIO_HAS_TRI 0
@@ -132,9 +94,9 @@
  */
 #define INPUT_PIO_COMPONENT_TYPE altera_avalon_pio
 #define INPUT_PIO_COMPONENT_NAME input_pio
-#define INPUT_PIO_BASE 0xff220040
+#define INPUT_PIO_BASE 0xff220020
 #define INPUT_PIO_SPAN 16
-#define INPUT_PIO_END 0xff22004f
+#define INPUT_PIO_END 0xff22002f
 #define INPUT_PIO_BIT_CLEARING_EDGE_REGISTER 1
 #define INPUT_PIO_BIT_MODIFYING_OUTPUT_REGISTER 0
 #define INPUT_PIO_CAPTURE 1
@@ -142,55 +104,12 @@
 #define INPUT_PIO_DO_TEST_BENCH_WIRING 0
 #define INPUT_PIO_DRIVEN_SIM_VALUE 0
 #define INPUT_PIO_EDGE_TYPE RISING
-#define INPUT_PIO_FREQ 78125000
+#define INPUT_PIO_FREQ 150000000
 #define INPUT_PIO_HAS_IN 1
 #define INPUT_PIO_HAS_OUT 0
 #define INPUT_PIO_HAS_TRI 0
 #define INPUT_PIO_IRQ_TYPE EDGE
 #define INPUT_PIO_RESET_VALUE 0
-
-/*
- * Macros for device 'address_span_extender_cntl', class 'altera_address_span_extender'
- * The macros are prefixed with 'ADDRESS_SPAN_EXTENDER_CNTL_'.
- * The prefix is the slave descriptor.
- */
-#define ADDRESS_SPAN_EXTENDER_CNTL_COMPONENT_TYPE altera_address_span_extender
-#define ADDRESS_SPAN_EXTENDER_CNTL_COMPONENT_NAME address_span_extender
-#define ADDRESS_SPAN_EXTENDER_CNTL_BASE 0xff220050
-#define ADDRESS_SPAN_EXTENDER_CNTL_SPAN 8
-#define ADDRESS_SPAN_EXTENDER_CNTL_END 0xff220057
-#define ADDRESS_SPAN_EXTENDER_CNTL_BURSTCOUNT_WIDTH 1
-#define ADDRESS_SPAN_EXTENDER_CNTL_BYTEENABLE_WIDTH 4
-#define ADDRESS_SPAN_EXTENDER_CNTL_CNTL_ADDRESS_WIDTH 1
-#define ADDRESS_SPAN_EXTENDER_CNTL_DATA_WIDTH 32
-#define ADDRESS_SPAN_EXTENDER_CNTL_MASTER_ADDRESS_WIDTH 31
-#define ADDRESS_SPAN_EXTENDER_CNTL_MAX_BURST_BYTES 4
-#define ADDRESS_SPAN_EXTENDER_CNTL_MAX_BURST_WORDS 1
-#define ADDRESS_SPAN_EXTENDER_CNTL_SLAVE_ADDRESS_SHIFT 2
-#define ADDRESS_SPAN_EXTENDER_CNTL_SLAVE_ADDRESS_WIDTH 26
-#define ADDRESS_SPAN_EXTENDER_CNTL_SUB_WINDOW_COUNT 1
-
-/*
- * Macros for device 'remote_update', class 'altera_remote_update'
- * The macros are prefixed with 'REMOTE_UPDATE_'.
- * The prefix is the slave descriptor.
- */
-#define REMOTE_UPDATE_COMPONENT_TYPE altera_remote_update
-#define REMOTE_UPDATE_COMPONENT_NAME remote_update
-#define REMOTE_UPDATE_BASE 0xff220060
-#define REMOTE_UPDATE_SPAN 32
-#define REMOTE_UPDATE_END 0xff22007f
-
-/*
- * Macros for device 'epcql512_controller_avl_csr', class 'intel_generic_serial_flash_interface_top'
- * The macros are prefixed with 'EPCQL512_CONTROLLER_AVL_CSR_'.
- * The prefix is the slave descriptor.
- */
-#define EPCQL512_CONTROLLER_AVL_CSR_COMPONENT_TYPE intel_generic_serial_flash_interface_top
-#define EPCQL512_CONTROLLER_AVL_CSR_COMPONENT_NAME epcql512_controller
-#define EPCQL512_CONTROLLER_AVL_CSR_BASE 0xff220100
-#define EPCQL512_CONTROLLER_AVL_CSR_SPAN 256
-#define EPCQL512_CONTROLLER_AVL_CSR_END 0xff2201ff
 
 /*
  * Macros for device 'hps_i_emac_emac0', class 'stmmac'

@@ -68,7 +68,6 @@ typedef struct {
 
 	int32_t* lwbridge;
 	int32_t* rams;
-	int32_t* grad_ram;
 } shared_memory_t;
 
 //Opens and mmap shared memory

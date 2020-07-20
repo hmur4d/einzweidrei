@@ -41,7 +41,7 @@ Memory map, copied as-is from CameleonNIOS
 
 /************************RAM_INTERFACE************************/
 //#define RAM_INTERFACE_NUMBER_OF_RAMS                87
-#define RAM_OFFSET_STEP                             0x80000 //CS change from 13bit to 17bit 
+#define RAM_OFFSET_STEP                             0x00080000
 
 #define RAM_FILTER0_SELECTED                        66
 #define RAM_FILTER0_OFFSET                          (RAM_OFFSET_STEP * RAM_FILTER0_SELECTED)
