@@ -49,7 +49,7 @@ Memory map, copied as-is from CameleonNIOS
 #define RAM_SHIM_MATRIX_C0							115
 #define RAM_CURRENT_ZERO_OFFSETS					179
 #define RAM_SHIM_DAC_WORDS							180
-
+#define RAM_DDR_GRAD								10000
 
 /************************RAM_REGISTERS*************************/
 #define RAM_REGISTERS_OFFSET_STEP                       0x00000004

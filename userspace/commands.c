@@ -38,6 +38,14 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// à voir le cas ou monitoring temperature du cameleon et ecriture des threshold
 		return;
 	}
+	if (ram_id == RAM_DDR_GRAD) {
+		
+		shared_memory_t* mem = shared_memory_acquire();
+		log_info("Write GRAD_RAM in DDR, address %x, span %d", mem->grad_ram, nbytes);
+		memcpy(mem->grad_ram, body, nbytes);
+		shared_memory_release(mem);
+		return;
+	}
 
 	ram_descriptor_t ram;
 	if (!ram_find(ram_id, nbytes, &ram)) {
