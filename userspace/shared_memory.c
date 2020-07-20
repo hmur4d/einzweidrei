@@ -252,7 +252,7 @@ bool shared_memory_init(const char* memory_file) {
 	}
 
 	sharedmem.grad_ram = (int32_t*)mmap(NULL, ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE_BASE);
-	if (sharedmem.rams == MAP_FAILED) {
+	if (sharedmem.grad_ram == MAP_FAILED) {
 		log_error_errno("Unable to mmap ADDRESS_SPAN_EXTENDER_WINDOWED_SLAVE (hps2fpga bridge");
 		shared_memory_munmap_and_close();
 		return false;
