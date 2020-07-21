@@ -214,7 +214,7 @@ int load_profile_used_in_shim_file() {
 	for (int i = 0; i < SHIM_PROFILES_COUNT;i++) {
 		if (shim_values[i].filename != NULL) {
 			free(shim_profiles[i].filename);
-			shim_profiles[i].filename = malloc(strlen(shim_values[i].filename + 1));
+			shim_profiles[i].filename = malloc(strlen(shim_values[i].filename )+ 1);
 			strcpy(shim_profiles[i].filename, shim_values[i].filename);
 			err = load_profiles(&shim_profiles[i]);
 			if (err == 0) {
@@ -537,13 +537,15 @@ int read_amps_board_id() {
 
 	
 	int8_t nb_bytes= hw_amps_read_eeprom(0);
+	if (nb_bytes < 1) {
+		log_error("error reading eeprom data nb byte= %d",nb_bytes);
+		return -1;
+	}
 	char* data = malloc(nb_bytes);
 	int i = 0;
 	for ( i = 0; i < nb_bytes; i++) {
 		data[i] = hw_amps_read_eeprom(i + 1);
 	}
-	
-
 	char board_id_str[5];
 	for (i = 0; i < 4; i++) {
 		board_id_str[i] = data[nb_bytes - 4 + i];
@@ -561,7 +563,7 @@ int init_shim() {
 	init_trace_calibrations_struct();
 	init_board_calibration_struct();
 	amps_board_id = read_amps_board_id();
-	int err=load_calibrations(amps_board_id);
+	int err =  load_calibrations(amps_board_id);
 	write_trace_offset(trace_calibrations.zeros);
 
 	err+=reload_profiles();
