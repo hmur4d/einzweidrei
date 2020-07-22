@@ -4,6 +4,7 @@
 #include "log.h"
 #include "config.h"
 #include "hardware.h"
+#include "ram.h"
 
 // ADS 1118 Config register
 //                      Field Name                        Description
@@ -305,6 +306,10 @@ int amps_main(int argc, char** argv) {
 		return 1;
 	}
 	int i = 0;
+
+
+	//Read write eeprom 
+	/*
 	//int8_t data[] = {'\n','3','.','5','.','0','-','2','1','0','5'};
 	int8_t data[] = "\n3.5.0-1862";
 
@@ -316,8 +321,54 @@ int amps_main(int argc, char** argv) {
 		int8_t value=hw_amps_read_eeprom(i);
 		printf("read [%d] = %x\n", i, value);
 	}
+	*/
+	int nb_word = 10;
+	ram_descriptor_t shape_phase;
+	ram_find(83, nb_word * 4, &shape_phase);
 
-	
+	int8_t bytes_to_write[nb_word * 4];
+	int8_t bytes_read[nb_word * 4];
+	for (i = 0; i < nb_word; i++) {
+		((int32_t*)bytes_to_write)[i] = (32768 * i) % 65536+i;
+		((int32_t*)bytes_read)[i] = 0;
+	}
+
+	shared_memory_t *mem=shared_memory_acquire();
+	if (false) {
+		memcpy(mem->rams + shape_phase.offset_int32, bytes_to_write, nb_word * 4);
+
+		memcpy(bytes_read, mem->rams + shape_phase.offset_int32, nb_word * 4);
+	}
+	else {
+		for (i = 0; i < nb_word; i++) {
+			((int32_t*)(mem->rams + shape_phase.offset_int32))[i] = ((int32_t*)bytes_to_write)[i];
+		}
+		for (i = 0; i < nb_word; i++) {
+			((int32_t*)bytes_read)[i] = ((int32_t*)(mem->rams + shape_phase.offset_int32))[i];
+		}
+	}
+	shared_memory_release(mem);
+
+	printf("Test rd/wr at RAM = 0xC%X\n", shape_phase.offset_bytes);
+	bool pass = true;
+	for (i = 0; i < nb_word; i++) {
+		int32_t wr = ((int32_t*)bytes_to_write)[i];
+		int32_t rd = ((int32_t*)bytes_read)[i];
+		if (rd != wr) {
+			printf("[%d]: %d != %d => FAILED\n", i, wr, rd);
+			pass = false;
+		}
+		else {
+			printf("[%d]: %d == %d => OK\n", i, wr, rd);
+		}
+		
+	}
+	if (pass) {
+		printf("PASSED\n");
+	}
+	else {
+		printf("FAILED\n");
+	}
 
 	//
 	return 0;
