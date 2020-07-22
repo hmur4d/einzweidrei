@@ -53,6 +53,7 @@ int init_shim();
 int reload_profiles();
 void write_profiles();
 void shim_value_tostring(shim_value_t sv, char * str);
+bool is_amps_board_responding();
 
 #endif
 
