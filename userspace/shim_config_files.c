@@ -546,6 +546,7 @@ int read_amps_board_id() {
 	for ( i = 0; i < nb_bytes; i++) {
 		data[i] = hw_amps_read_eeprom(i + 1);
 	}
+
 	char board_id_str[5];
 	for (i = 0; i < 4; i++) {
 		board_id_str[i] = data[nb_bytes - 4 + i];
@@ -557,11 +558,19 @@ int read_amps_board_id() {
 	return board_id;
 }
 
+bool is_amps_board_responding() {
+	return read_amps_board_id() >= 0;
+}
+
 int init_shim() {
 	log_info("init_shim started");
 
 	init_trace_calibrations_struct();
 	init_board_calibration_struct();
+	if (!is_amps_board_responding()) {
+		log_error("init_shim amps board not responding");
+		return -1;
+	}
 	amps_board_id = read_amps_board_id();
 	int err =  load_calibrations(amps_board_id);
 	write_trace_offset(trace_calibrations.zeros);
