@@ -41,7 +41,7 @@ void spi_send(spi_t spi, char * tx_buff, char * rx_buff);
 void start_sequence(bool repeat_scan);
 void stop_sequence();
 void stop_lock();
-void hardware_init();
+int hardware_init();
 
 float read_fpga_temperature();
 

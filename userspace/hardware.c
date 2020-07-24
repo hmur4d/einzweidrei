@@ -144,9 +144,14 @@ void init_lock() {
 	shared_memory_release(mem);
 }
 
-void hardware_init() {
+int hardware_init() {
 	
-	read_fpga_revision();
+	fpga_revision_t fpga_rev=read_fpga_revision();
+	int fpga_id = (fpga_rev.fw_rev_major & 0xFFFFFFF);
+	if (fpga_id != 211) {
+		log_error("FPGA should be in rev >=211 for HPS >=9, rev=%d", fpga_id);
+		return - 1;
+	}
 	//hw_clock_use_s1();
 	hw_transmitter_init();
 	hw_receiver_init();
@@ -160,7 +165,7 @@ void hardware_init() {
 		log_info("Shim not activated");
 	}
 	
-
+	return 0;
 }
 fpga_revision_t read_fpga_revision() {
 	fpga_revision_t fpga;

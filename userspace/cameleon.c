@@ -83,7 +83,10 @@ int cameleon_main(int argc, char ** argv) {
 		return 1;
 	}
 
-	hardware_init();
+	if (hardware_init() < 0) {
+		log_error("Unable to init hardware, exiting");
+		return 1;
+	}
 
 	if (!sequencer_interrupts_init()) {
 		log_error("Unable to init sequencer interrupts, exiting");
