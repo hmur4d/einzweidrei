@@ -72,7 +72,7 @@ static void init_udp_broadcaster() {
 
 		connUDP.addr.sin_family = AF_INET;
 		connUDP.addr.sin_addr.s_addr = (unsigned long)0xFFFFFFFF;
-		connUDP.addr.sin_port = htons(UDP_PORT);
+		connUDP.addr.sin_port = htons(config_upd_port());
 
 
 		//s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -82,7 +82,7 @@ static void init_udp_broadcaster() {
 }
 
 static int send_udp_info() {
-	log_debug("send_udp_info fd=%d, addr=%s, port=%d, feature=%d", connUDP.fd, inet_ntoa(connUDP.addr.sin_addr), connUDP.addr.sin_port,udpInfo.cameleon.feature);
+	log_info("send_udp_info fd=%d, addr=%s, port=%d, feature=%d", connUDP.fd, inet_ntoa(connUDP.addr.sin_addr), connUDP.addr.sin_port,udpInfo.cameleon.feature);
 
 	return sendto(connUDP.fd, &udpInfo, sizeof(udp_info_t), 0, (struct sockaddr*)&(connUDP.addr), sizeof(connUDP.addr));
 }

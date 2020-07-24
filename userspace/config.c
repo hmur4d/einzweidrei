@@ -23,6 +23,7 @@
 #define ENV_HW_DDS_DELAY_2 "DDS_DELAY_2"
 #define ENV_HW_DDS_DELAY_3 "DDS_DELAY_3"
 
+#define ENV_HW_UPD_PORT "UDP_PORT"
 
 
 //--
@@ -94,4 +95,9 @@ int config_DDS_delay(int index) {
 		delay = getenv(ENV_HW_DDS_DELAY_3);
 	}
 	return delay == NULL ? -1 : atoi(delay);
+}
+
+int config_upd_port() {
+	char* udp_port = getenv(ENV_HW_UPD_PORT);
+	return udp_port == NULL ? 70 : atoi(udp_port);
 }
