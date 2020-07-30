@@ -3,6 +3,7 @@
 #include "hw_transmitter.h"
 #include "log.h"
 #include "config.h"
+#include "ufm.h"
 
 
 spi_t spi_dds;
@@ -183,7 +184,7 @@ void init_DDS() {
 		   .mode = 0,
 		   .delay = 0,
 	};
-	bool enable_AB = config_hardware_AB_activated(); //set the AB activated from cameleon.conf
+	bool enable_AB = is_maxV_in_Pmode(); //set the AB activated from cameleon.conf
 	for (int i = 0; i < 4; i++) {
 		USR0[i] |= config_DDS_delay(i) & 0x7; //set the DDS delay from cameleon.conf
 		if (enable_AB) {
