@@ -1,4 +1,5 @@
 #include "ufm.h"
+#include "log.h"
 
 uint16_t rd_spi_ufm(uint32_t ufm_spi_fd, uint16_t rd_addr) {
 	uint32_t ret;
@@ -22,7 +23,7 @@ uint16_t rd_spi_ufm(uint32_t ufm_spi_fd, uint16_t rd_addr) {
 
 	ret = ioctl(ufm_spi_fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret < 1)
-		pabort("can't spi read UFM");
+		log_error("can't spi read UFM");
 
 	//printf("%x  \n",rd_data_tab[3]); 
 	read_data = rd_data_tab[3] << 8 | rd_data_tab[4];
@@ -32,7 +33,7 @@ uint16_t rd_spi_ufm(uint32_t ufm_spi_fd, uint16_t rd_addr) {
 bool is_maxV_in_Pmode() {
 	uint32_t ufm_spi_fd = open("/dev/spidev32766.5", O_RDWR);
 	if (ufm_spi_fd < 0)
-		log_err("can't open spidev");
+		log_error("can't open spidev");
 
 	int addr = 258;
 	uint16_t value=rd_spi_ufm(ufm_spi_fd, addr);
@@ -40,9 +41,11 @@ bool is_maxV_in_Pmode() {
 	close(ufm_spi_fd);
 
 	if (value == 1) {
+		log_info(" maxV is in Pmode, value at 258 =%d", value);
 		return true;
 	}
 	else {
+		log_info(" maxV is NOT in Pmode, value at 258 =%d", value);
 		return false;
 	}
 }
