@@ -29,6 +29,7 @@
     <ClCompile Include="hw_clock.c" />
     <ClCompile Include="shim_config_files.c" />
     <ClCompile Include="hw_amps.c" />
+    <ClCompile Include="ufm.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />
@@ -69,6 +70,7 @@
     <ClInclude Include="hw_clock.h" />
     <ClInclude Include="shim_config_files.h" />
     <ClInclude Include="hw_amps.h" />
+    <ClInclude Include="ufm.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

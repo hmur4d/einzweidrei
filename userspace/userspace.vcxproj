@@ -150,6 +150,7 @@
     <ClInclude Include="shim_config_files.h" />
     <ClInclude Include="std_includes.h" />
     <ClInclude Include="udp_broadcaster.h" />
+    <ClInclude Include="ufm.h" />
     <ClInclude Include="workqueue.h" />
   </ItemGroup>
   <ItemGroup>
@@ -180,6 +181,7 @@
     <ClCompile Include="shim_config_files.c" />
     <ClCompile Include="test.c" />
     <ClCompile Include="udp_broadcaster.c" />
+    <ClCompile Include="ufm.c" />
     <ClCompile Include="workqueue.c" />
   </ItemGroup>
   <ItemGroup>
