@@ -79,6 +79,15 @@ void start_sequence(bool repeat_scan) {
 	
 	float delta = last_sync_temperature - read_fpga_temperature();
 	log_info("last sync temp : %.2f", delta);
+	if (config_hardware_sync_on_temp_change() && abs(delta)>1) {
+		log_info("sync because temp change : %.2f", delta);
+		sync_DDS(true);
+		if (config_hardware_SYNC_ONCE_activated()) {
+			log_info("sync once activated so now stop sync ");
+			sync_DDS(false);
+		}
+		log_info("sync on temp change done");
+	}
 
 	sequence_params_t* seq_params = sequence_params_acquire();
 	seq_params->repeat_scan_enabled = repeat_scan;

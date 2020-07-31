@@ -46,6 +46,7 @@ bool config_hardware_SYNC_ONCE_activated();
 bool config_hardware_I2S_OUTPUT_activated();
 bool config_hardware_QTH_CLK_activated();
 bool config_hardware_SFP_CLK_activated();
+bool config_hardware_sync_on_temp_change();
 int config_DDS_delay(int index);
 int config_upd_port();
 

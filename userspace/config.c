@@ -17,6 +17,7 @@
 #define ENV_HW_SFP_CLK_ACTIVATED "HARDWARE_SFP_CLK_ACTIVATED"
 #define ENV_HW_QTH_CLK_ACTIVATED "HARDWARE_QTH_CLK_ACTIVATED"
 #define ENV_HW_I2S_OUTPUT_ACTIVATED "HARDWARE_I2S_OUTPUT_ACTIVATED"
+#define ENV_HW_SYNC_ON_TEMP_CHANGE "HARDWARE_SYNC_ON_TEMP_CHANGE"
 
 #define ENV_HW_DDS_DELAY_0 "DDS_DELAY_0"
 #define ENV_HW_DDS_DELAY_1 "DDS_DELAY_1"
@@ -82,7 +83,11 @@ bool config_hardware_SFP_CLK_activated() {
 	char* activated = getenv(ENV_HW_SFP_CLK_ACTIVATED);
 	return activated == NULL ? true : atoi(activated) != 0;
 }
+bool config_hardware_sync_on_temp_change() {
 
+	char* activated = getenv(ENV_HW_SYNC_ON_TEMP_CHANGE);
+	return activated == NULL ? true : atoi(activated) != 0;
+}
 int config_DDS_delay(int index) {
 	char* delay = NULL;
 	if(index == 0) {
