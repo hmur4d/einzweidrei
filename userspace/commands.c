@@ -110,7 +110,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 	if (ram.id == RAM_REGISTERS_LOCK_SELECTED + RAM_REGISTER_LOCK_GAIN_RX_SELECTED) {
 
 		uint32_t value = *((uint32_t*)body);
-		log_info("Ram.id==RAM_REGISTER_LOCK_RX_GAIN");
+		log_info("Ram.id==RAM_REGISTER_LOCK_RX_GAIN =%d",value);
 		
 		hw_receiver_write_lock_rx_gain(value);
 
@@ -321,7 +321,10 @@ static void cmd_sequence_clear(clientsocket_t* client, header_t* header, const v
 static void cmd_lock_sequence_on_off(clientsocket_t* client, header_t* header, const void* body) {
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->lock_sequence_on_off, header->param1);
+	int rd = read_property(mem->lock_sequence_on_off);
+	log_info("Lock sequence enable rd = %d, wr = %d",rd, header->param1);
 	shared_memory_release(mem);
+	
 }
 
 static void cmd_lock_on_off(clientsocket_t* client, header_t* header, const void* body) {
