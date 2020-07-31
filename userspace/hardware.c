@@ -112,6 +112,12 @@ void stop_lock() {
 	shared_memory_release(mem);
 }
 
+void start_lock() {
+	shared_memory_t* mem = shared_memory_acquire();
+	write_property(mem->lock_sequence_on_off, 1);
+	shared_memory_release(mem);
+}
+
 float read_fpga_temperature() {
 	int fd = open(TEMPERATURE_FILE, O_RDONLY);
 	if (fd < 0) {
@@ -166,7 +172,15 @@ int hardware_init() {
 	hw_receiver_init();
 	hw_gradient_init();
 
-	init_lock();
+	
+	if (config_hardware_lock_activated()) {
+		init_lock();
+		start_lock();
+	}
+	else {
+		log_info("Lock not activated");
+	}
+
 	if (config_hardware_shim_activated()) {
 		init_shim();
 	}
