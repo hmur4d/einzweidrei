@@ -60,89 +60,6 @@ static uint32_t dds_write_n_verify(uint32_t dds, property_t ioupdate, uint8_t ad
 	return dds_write_n_verify_mask(dds, ioupdate, address, data, 0xFFFFFFFF);
 
 }
-/*
-void hw_all_dds_dac_cal(property_t ioupdate, property_t dds_sel) {
-	for (int i = 1; i <= 4; i++) {
-		write_property(dds_sel, i);
-		usleep(2);
-		//set DAC_CAL 1 reg 0x03
-		dds_write_n_update(ioupdate, 0x03, 0x01052120);
-		//DAC_CAL  finishes after 16 cycles of SYNC, so 12.8ns * 16 = 205ns 
-		usleep(2);
-		//set DAC_CAL 0
-		dds_write_n_update(ioupdate, 0x03, 0x00052120);
-	}
-}
-
-void hw_all_dds_cal_w_sync(property_t ioupdate, property_t dds_sel, uint8_t delay_for_dds[]) {
-	for (int i = 0; i <= 3; i++) {
-		write_property(dds_sel, i + 1);
-		usleep(2);
-		//set 3wire, OSK enable, sine output enable
-		dds_write_n_verify(i + 1, ioupdate, 0x00, 0x0001010A);
-		//set CAL_W_SYNC=1 and SYNC IN DELAY
-		uint32_t value = 0x00000840 | (delay_for_dds[i] & 0x7);
-		log_info("DDS [%d] delay=0x%X", i, value);
-		dds_write_n_verify_mask(i + 1, ioupdate, 0x1B, value, 0xFFFF);
-	}
-}
-
-void hw_all_dds_parallel_config(property_t ioupdate, property_t dds_sel) {
-	int ret;
-	for (int i = 1; i <= 3; i++) {
-		write_property(dds_sel, i);
-		usleep(2);
-		//set 3wire, OSK enable, sine output enable
-		ret = dds_write_n_verify(i, ioupdate, 0x00, 0x0001010A);
-		//set SYNC_CLK and SYNC_OUT disable, Matched latency ENABLE, parallel_data_port_enable
-		ret += dds_write_n_verify(i, ioupdate, 0x01, 0x00408000);
-		if (ret == 0) {
-			log_info("OK : DDS %d configured", i);
-		}
-		else {
-			log_info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ERROR : DDS %d NOT CONFIGURED XXXXXXXXXXXXXXXXXXXXXXXXXXXX ", i);
-		}
-		ret = 0;
-	}
-
-	write_property(dds_sel, 4);
-	usleep(2);
-	//set 3wire, OSK enable, sine output enable
-	ret = dds_write_n_verify(4, ioupdate, 0x00, 0x0001010A);
-	//set SYNC_CLK and SYNC_OUT disable, Matched latency, parallel_data_port_enable
-	ret += dds_write_n_verify(4, ioupdate, 0x01, 0x00808000);
-
-//	ret += dds_write_n_verify(4, ioupdate, 0x13, 0x8ce703af);
-//	ret += dds_write_n_verify(4, ioupdate, 0x14, 0xffff0000);
-
-	if (ret == 0)log_info("OK : DDS %d configured", 4);
-	else log_info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ERROR : DDS %d NOT CONFIGURED XXXXXXXXXXXXXXXXXXXXXXXXXXXX ", 4);
-}
-
-
-static void dds_sync(shared_memory_t* mem, uint8_t delay_for_dds[]) {
-
-	log_info("DDS syncing started -> delays(%d,%d,%d,%d)", delay_for_dds[0], delay_for_dds[1], delay_for_dds[2], delay_for_dds[3]);
-	//reset dds
-	write_property(mem->dds_reset, 1);
-	usleep(2);
-	write_property(mem->dds_reset, 0);
-
-	//DAC CAL
-	hw_all_dds_dac_cal(mem->dds_ioupdate, mem->dds_sel);
-	//CAL_W_SYNC
-	hw_all_dds_cal_w_sync(mem->dds_ioupdate, mem->dds_sel, delay_for_dds);
-	//DAC CAL
-	hw_all_dds_dac_cal(mem->dds_ioupdate, mem->dds_sel);
-	//normal config
-	hw_all_dds_parallel_config(mem->dds_ioupdate, mem->dds_sel);
-	//end HPS control on DDS
-	write_property(mem->dds_sel, 0);
-
-	log_info("DDS syncing done");
-
-}
-*/
 
 static void lmk_write(spi_t spi_lmk, int16_t addr, int8_t data) {
 	char tx_buff[3];
@@ -167,7 +84,7 @@ void change_DDS_delays(uint8_t *delays) {
 		uint32_t value = USR0[i];
 		value &= 0xFFFFFFF8; // force bit 0-1-2 to 0
 		value |= delays[i]; // set the new delay
-		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1B, value);
+		ret += dds_write_n_verify_mask(i + 1, mem->dds_ioupdate, 0x1B, value,0x3);
 	}
 
 	spi_close(&spi_dds);
@@ -184,7 +101,9 @@ void init_DDS() {
 		   .mode = 0,
 		   .delay = 0,
 	};
-	bool enable_AB = config_hardware_AB_activated(); //set the AB activated from cameleon.conf
+
+	bool enable_AB = is_maxV_in_Pmode();
+
 	for (int i = 0; i < 4; i++) {
 		USR0[i] |= config_DDS_delay(i) & 0x7; //set the DDS delay from cameleon.conf
 		if (enable_AB) {
@@ -214,7 +133,7 @@ void init_DDS() {
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1, CF2[i]);
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x3, CF4[i]);
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x5, DIG_RAMP[i]);
-		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1B, USR0[i]);
+		ret += dds_write_n_verify_mask(i + 1, mem->dds_ioupdate, 0x1B, USR0[i],0xFFFFFF);
 	}
 	write_property(mem->dds_sel, 0);
 	usleep(2);
