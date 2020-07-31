@@ -174,6 +174,7 @@ static int init_rx_adc(shared_memory_t * mem) {
 void write_rx_gain(int rx_channel, int binary) {
 	int dac_value = (binary&0x7FFF) * 2;
 	int rf_gain_enabled = (binary >> 15) & 0x1;
+	log_info("wrtie rx gain bin=%d, dac=%d, rf_en=%d", binary, dac_value, rf_gain_enabled);
 
 	char dac_addr_list[] = { ADDR_CMD_DAC_A ,ADDR_CMD_DAC_B,ADDR_CMD_DAC_C,ADDR_CMD_DAC_D };
 
@@ -217,11 +218,14 @@ void hw_receiver_write_rx_gain(int rx_channel,int binary_gain) {
 
 void hw_receiver_write_lock_rx_gain(int binary_gain) {
 	shared_memory_t* mem = shared_memory_acquire();
-	bool is_lock_seq_on = read_property(mem->lock_sequence_on_off);
+	int is_lock_seq_on = read_property(mem->lock_sequence_on_off);
 	shared_memory_release(mem);
 
-	if (config_hardware_lock_activated() && is_lock_seq_on) {
+	if (config_hardware_lock_activated() && is_lock_seq_on==1) {
 		write_rx_gain(3, binary_gain);
+	}
+	else {
+		log_info("Lock is not enable, gain is not written, is_lock_seq_on=%d", is_lock_seq_on);
 	}
 }
 char read_mcp_i2c(int i2c_fd, __u8 mcp_addr, __u8 reg) {
