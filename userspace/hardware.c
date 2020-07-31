@@ -79,7 +79,7 @@ void start_sequence(bool repeat_scan) {
 	
 	float delta = read_fpga_temperature()-last_sync_temperature;
 	log_info("last sync temp : %.2f", delta);
-	if (config_hardware_sync_on_temp_change() && abs(delta)>1) {
+	if (config_hardware_sync_on_temp_change() && abs(delta)>=1) {
 		log_info("sync because temp change : %.2f", delta);
 		sync_DDS(true);
 		if (config_hardware_SYNC_ONCE_activated()) {
