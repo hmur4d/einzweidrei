@@ -223,6 +223,7 @@ void init_DDS() {
 }
 
 void sync_DDS(bool alwaysSync) {
+	last_sync_temperature = read_fpga_temperature();
 
 	spi_lmk = (spi_t){
 		.dev_path = "/dev/spidev32766.6",
@@ -279,6 +280,7 @@ void sync_DDS(bool alwaysSync) {
 	}
 
 	shared_memory_release(mem);
+	
 }
 
 

@@ -77,7 +77,7 @@ void spi_send(spi_t spi, char * tx_buff, char * rx_buff) {
 void start_sequence(bool repeat_scan) {
 
 	
-	float delta = last_sync_temperature - read_fpga_temperature();
+	float delta = read_fpga_temperature()-last_sync_temperature;
 	log_info("last sync temp : %.2f", delta);
 	if (config_hardware_sync_on_temp_change() && abs(delta)>1) {
 		log_info("sync because temp change : %.2f", delta);
