@@ -538,7 +538,7 @@ int write_trace_currents(int32_t* current_uAmps, int size) {
 	
 	
 	for (int i = 0; i < size; i++) {
-		float value = current_uAmps[i]*0.001 / SHIM_TRACE_MILLIS_AMP_MAX;
+		float value = current_uAmps[i]*0.001 / SHIM_TRACE_MILLIS_AMP_MAX* trace_calibrations.gains[i];
 		int32_t binary = float_to_binary(value, SHIM_DAC_NB_BIT);
 		offset[i] =  trace_calibrations.zeros[i] - binary;
 		log_info("Write_trace_current uA=%d, offset=%d, zeros=%d", current_uAmps[i], offset[i], trace_calibrations.zeros[i]);
