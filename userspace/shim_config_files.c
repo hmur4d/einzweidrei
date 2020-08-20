@@ -533,6 +533,23 @@ int read_trace_currents(int32_t* current_uAmps) {
 	return 0;
 }
 
+int write_trace_currents(int32_t* current_uAmps, int size) {
+	int32_t offset[SHIM_TRACE_COUNT];
+	
+	
+	for (int i = 0; i < size; i++) {
+		float value = current_uAmps[i]*0.001 / SHIM_TRACE_MILLIS_AMP_MAX;
+		int32_t binary = float_to_binary(value, SHIM_DAC_NB_BIT);
+		offset[i] =  trace_calibrations.zeros[i] - binary;
+		log_info("Write_trace_current uA=%d, offset=%d, zeros=%d", current_uAmps[i], offset[i], trace_calibrations.zeros[i]);
+	}
+	for (int i = size; i < SHIM_TRACE_COUNT; i++) {
+		offset[i] = trace_calibrations.zeros[i];
+		//log_info("Write_trace_current uA=0, offset=%d, zeros=%d", offset[i], trace_calibrations.zeros[i]);
+	}
+	return write_trace_offset(offset);
+}
+
 int read_amps_board_id() {
 
 	

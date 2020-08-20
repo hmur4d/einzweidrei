@@ -521,6 +521,38 @@ void read_traces(clientsocket_t* client, header_t* header, const void* body) {
 		log_error("Unable to send response!");
 	}
 }
+
+void write_traces(clientsocket_t* client, header_t* header, const void* body) {
+
+	if (header->param1 == 0) {
+		//DAC_WORDS
+		log_info("write_trace in DAC value");
+		int32_t offsets[SHIM_TRACE_COUNT];
+
+		for (int i = 0; i < header->body_size/4; i++) {
+			offsets[i] = trace_calibrations.zeros[i] + ((int32_t*)body)[i];
+		}
+		for (int i = header->body_size / 4; i < SHIM_TRACE_COUNT; i++) {
+			offsets[i] = trace_calibrations.zeros[i];
+		}
+		write_trace_offset(offsets);
+	}
+	else if (header->param1 == 1) {
+		//write trace current in micro amps
+		log_info("write_trace in micro amps");
+		write_trace_currents((int32_t*)body,header->body_size/4);
+
+	}
+
+	reset_header(header);
+
+	header->body_size = 0;
+	int8_t  data[0];
+
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
 //--
 
 bool register_all_commands() {
@@ -553,6 +585,10 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_READ_SHIM, read_shim);
 	success &= register_command_handler(CMD_ARTIFICIAL_GROUND_CURRENT, get_artificial_ground_current);
 	success &= register_command_handler(CMD_AMPS_BOARD_TEMPERATURE, get_amps_board_temperature);
+	success &= register_command_handler(CMD_WRITE_TRACE, write_traces);
+	success &= register_command_handler(CMD_READ_TRACE, read_traces);
+
+
 
 	return success;
 }

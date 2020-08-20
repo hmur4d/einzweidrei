@@ -48,6 +48,7 @@ int write_trace_offset(int32_t* zeros);
 int read_DAC_words(int32_t* dac_words);
 
 int read_trace_currents(int32_t* current_uAmps);
+int write_trace_currents(int32_t* current_uAmps, int size);
 
 int init_shim();
 int reload_profiles();
