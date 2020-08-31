@@ -18,7 +18,8 @@
 //                                     |||||||            010 = FSR is +/- 2.048V
 //                                     |||||||            011 = FSR is +/- 1.024V [... more options omitted ...]
 //                      MODE           |||||||/---------- 1 = Power-down and single-shot mode (*)
-//                      DR[2:0]        ||||||||///------- 100 = 128 SPS
+//                      DR[2:0]        ||||||||///------- 011 = 64 SPS
+//                                     |||||||||||        100 = 128 SPS
 //                                     |||||||||||        101 = 250 SPS (*) [... more options omitted ...]
 //                      TS_MODE        |||||||||||/------ 0 = ADC Mode (*)
 //                      PULL_UP_EN     ||||||||||||/----- 1 = Pull up resistor enabled on DOUT/DRDY' pin (default) (*)
@@ -28,6 +29,7 @@
 //                      Field Name                        Description
 //                      MUX[2:0]        ///-------------- 101 = AINP is AIN1, and AINN is GND (*)
 #define ADS1118_IN1_250sps_pm4V     (0b1101001110101011)
+#define ADS1118_IN1_64sps_pm4V      (0b1101001101101011)
 
 /**
  * The datasheet is not clear on how long after the conversion takes place
@@ -42,14 +44,20 @@
  */
 #define ADS1118_SAMPLE_WAIT_250SPS_US (12000)
 /**
- * The time to wait between writing the configuration register and reading data, in microseconds (128SPS mode.)
- * Delay = (1/128sps)*1.1 = 8594 + margin
- */
+* The time to wait between writing the configuration register and reading data, in microseconds (128SPS mode.)
+* Delay = (1/128sps)*1.1 = 8594 + margin
+*/
 #define ADS1118_SAMPLE_WAIT_128SPS_US (10000)
+/**
+ * The time to wait between writing the configuration register and reading data, in microseconds (64SPS mode.)
+ * Delay = (1/64sps)*1.1 = 17188 + margin
+ */
+#define ADS1118_SAMPLE_WAIT_64SPS_US  (20000)
 
 
 static uint8_t bits = 8;
-static uint32_t speed = 10000000;
+static uint32_t speed = 4000000;
+
 
 /**
  * Read from an ADS1118 ADC at the given SPI address.
@@ -83,23 +91,7 @@ static uint16_t rd_ads1118(int spi_fd, uint16_t config, int32_t delay_us) {
 	transfers[1].speed_hz = speed;
 	transfers[1].bits_per_word = bits;
 
-	// This line should be able to replace the separate ioctl()/usleep()/ioctl() calls.
-	// Neither method seems more reliable, however.
-	// result = ioctl(spi_fd, SPI_IOC_MESSAGE(1), transfers);
-
-	// 0. Start the ADC conversion
-	result = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfers[0]);
-	if (result < 1) {
-		log_error("can't write to ADS1118");
-		return 0;
-	}
-
-	// Wait for the conversion to (hopefully...) finish?
-	// This should not be needed, especially if using the SPI_IOC_MESSAGE(2) method.
-	usleep(delay_us);
-
-	// 1. Get result
-	result = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfers[1]);
+	result = ioctl(spi_fd, SPI_IOC_MESSAGE(2), transfers);
 	if (result < 1) {
 		log_error("can't write to ADS1118");
 		return 0;
@@ -169,8 +161,8 @@ float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
 	int spi_fd = spi_hps_open(0, 1);
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->amps_adc_cs, 1);
-	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
-	int16_t reading = rd_ads1118(spi_fd, ADS1118_IN1_250sps_pm4V, delay_us);
+	int32_t delay_us = ADS1118_SAMPLE_WAIT_64SPS_US;
+	int16_t reading = rd_ads1118(spi_fd, ADS1118_IN1_64sps_pm4V, delay_us);
 	write_property(mem->amps_adc_cs, 0);
 	shared_memory_release(mem);
 	close(spi_fd);
