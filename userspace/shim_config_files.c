@@ -217,6 +217,9 @@ int load_profile_used_in_shim_file() {
 			shim_profiles[i].filename = malloc(strlen(shim_values[i].filename )+ 1);
 			strcpy(shim_profiles[i].filename, shim_values[i].filename);
 			err = load_profiles(&shim_profiles[i]);
+			printf("profile %d loaded %s ", i, shim_profiles[i].filename);
+			printf("coeff[0,1]=%.3f, %.3f\n", shim_profiles[i].coeffs[0], shim_profiles[i].coeffs[1]);
+			printf("binary[0,1]=%d, %d\n", shim_profiles[i].binary[0], shim_profiles[i].binary[1]);
 			if (err == 0) {
 				cpt++;
 			}
@@ -444,6 +447,9 @@ int compile_ram(float_t max_current, int8_t nb_bit) {
 				coeff = shim_profiles[i].coeffs[j];
 				ram_value = invert(float_to_binary(coeff * g / max_current, nb_bit));
 				shim_profiles[i].binary[j] = ram_value;
+				if (ram_value != 0) {
+					printf("Compile profile %d, trace %d =, g=%.3f, coeff %.3f, ram_value=%d\n", i, j, g, coeff, ram_value);
+				}
 			}
 		}
 	}
@@ -476,15 +482,31 @@ int write_shim_matrix() {
 
 	shared_memory_t* mem = shared_memory_acquire();
 	
-	printf("Writting RAM ");
+	printf("Writting RAM :\n");
 	for (trace_index = 0; trace_index < SHIM_TRACE_COUNT; trace_index++) {
 		int ram_index = RAM_SHIM_MATRIX_C0 + trace_index;
-		printf(".");
+		
 		for (profile_index = 0; profile_index < SHIM_PROFILES_COUNT; profile_index++) {
 			int32_t ram_offset_byte = get_offset_byte(ram_index, profile_index);
-			*(mem->rams + ram_offset_byte / 4) = shim_profiles[profile_index].binary[trace_index];
+			int32_t value = shim_profiles[profile_index].binary[trace_index];
+			*(mem->rams + ram_offset_byte / 4) = value;
+			if (value != 0) {
+				printf("RAM ID=%d, PROFILE INDEX=%d, RAM offset =0x%x trace index=%d, value=0x%x\n", ram_index, profile_index, ram_offset_byte, trace_index, shim_profiles[profile_index].binary[trace_index]);
+			}
 		}
 	}
+	for (profile_index = 0; profile_index < 16; profile_index++) {
+		printf("[");
+		for (trace_index = 0; trace_index < 16; trace_index++) {
+			int ram_index = RAM_SHIM_MATRIX_C0 + trace_index;
+			int32_t ram_offset_byte = get_offset_byte(ram_index, profile_index);
+			int32_t value=*(mem->rams + ram_offset_byte / 4);
+			
+			printf("%5x ", value);
+		}
+		printf("]\n");
+	}
+
 	write_property(mem->shim_amps_refresh, 1);
 	write_property(mem->shim_amps_refresh, 0);
 	shared_memory_release(mem);
@@ -508,16 +530,20 @@ int write_trace_offset(int32_t * zeros) {
 }
 
 int read_DAC_words(int32_t *dac_words) {
-	log_info("Read DAC words from FPGA memory");
+	//log_info("Read DAC words from FPGA memory");
 
 	shared_memory_t* mem = shared_memory_acquire();
 	int ram_index = RAM_SHIM_DAC_WORDS;
 	ram_descriptor_t ram;
 	ram_find(ram_index, SHIM_TRACE_COUNT * 4, &ram);
-	printf("reading RAM_SHIM_DAC_WORDS ...");
+	printf("DACs:\n");
 	memcpy(dac_words, mem->rams + ram.offset_int32, SHIM_TRACE_COUNT * 4);
 	shared_memory_release(mem);
-	printf("done!\n");
+	printf("[");
+	for (int i = 0; i < 16; i++) {
+		printf("%5x ", dac_words[i]-524288);
+	}
+	printf("]\n");
 	return 0;
 }
 
