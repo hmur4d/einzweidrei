@@ -144,7 +144,7 @@ float read_fpga_temperature() {
 void init_lock() {
 	uint32_t lock_shapes[512];
 	for (int i = 0; i < 512; i++) {
-		lock_shapes[i] = 0x0FFF0000; //amp=100%, phase=0° comme shape par defaut
+		lock_shapes[i] = 0x0FFF0000; //amp=100%, phase=0Â° comme shape par defaut
 	}
 	shared_memory_t* mem = shared_memory_acquire();
 	uint32_t* desti = (uint32_t*)(mem->rams + (RAM_LOCK_SHAPE_OFFSET / sizeof(uint32_t)));
@@ -205,11 +205,11 @@ fpga_revision_t read_fpga_revision() {
 	shared_memory_release(mem);
 
 	log_info("FPGA FW rev = %d.%d TYPE=Cam%d, board rev = %d.%d\n",
-		fpga.fw_rev_major,
-		fpga.fw_rev_minor,
-		fpga.type,
-		fpga.board_rev_major,
-		fpga.board_rev_minor);
+		(int)fpga.fw_rev_major,
+		(int)fpga.fw_rev_minor,
+		(int)fpga.type,
+		(int)fpga.board_rev_major,
+		(int)fpga.board_rev_minor);
 	
 	return fpga;
 
