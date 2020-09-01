@@ -598,6 +598,7 @@ int read_amps_board_id() {
 	int board_id = atoi(board_id_str);
 
 	log_info("read_amps_board_id : eeprom content %s, board_id=%d", data, board_id);
+	free(data);
 	return board_id;
 }
 
