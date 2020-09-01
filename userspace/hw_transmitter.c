@@ -23,11 +23,23 @@ static void dds_write(uint8_t addr, uint32_t data) {
 	spi_send(spi_dds, tx_buff, rx_buff);
 }
 
+/**
+ * Unpack an array of bytes into a uint32_t
+ */
+static uint32_t uchar_array_to_uint32(unsigned char *array)
+{
+	// Force an up-cast of each array element to uint32_t before shifting
+	return ((uint32_t)array[0]) << 24u |
+			((uint32_t)array[1] << 16u) |
+			((uint32_t)array[2]) << 8u |
+			((uint32_t)array[3]);
+}
+
 static uint32_t dds_read(uint8_t addr) {
 	char tx_buff[5] = { 0x80 + addr,0,0,0,0 };
-	char rx_buff[5] = { 0,0,0,0,0 };
-	spi_send(spi_dds, tx_buff, rx_buff);
-	uint32_t read = rx_buff[1] << 24 | rx_buff[2] << 16 | rx_buff[3] << 8 | rx_buff[4];
+	unsigned char rx_buff[5] = { 0,0,0,0,0 };
+	spi_send(spi_dds, tx_buff, (char*)rx_buff);
+	uint32_t read = uchar_array_to_uint32(&rx_buff[1]);
 	return read;
 }
 
