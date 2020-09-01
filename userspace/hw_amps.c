@@ -18,7 +18,8 @@
 //                                     |||||||            010 = FSR is +/- 2.048V
 //                                     |||||||            011 = FSR is +/- 1.024V [... more options omitted ...]
 //                      MODE           |||||||/---------- 1 = Power-down and single-shot mode (*)
-//                      DR[2:0]        ||||||||///------- 100 = 128 SPS
+//                      DR[2:0]        ||||||||///------- 011 = 64 SPS
+//                                     |||||||||||        100 = 128 SPS
 //                                     |||||||||||        101 = 250 SPS (*) [... more options omitted ...]
 //                      TS_MODE        |||||||||||/------ 0 = ADC Mode (*)
 //                      PULL_UP_EN     ||||||||||||/----- 1 = Pull up resistor enabled on DOUT/DRDY' pin (default) (*)
@@ -28,21 +29,34 @@
 //                      Field Name                        Description
 //                      MUX[2:0]        ///-------------- 101 = AINP is AIN1, and AINN is GND (*)
 #define ADS1118_IN1_250sps_pm4V     (0b1101001110101011)
+#define ADS1118_IN1_64sps_pm4V      (0b1101001101101011)
+
+/**
+ * The datasheet is not clear on how long after the conversion takes place
+ * before the data is valid.
+ * Also, a much longer delay is needed here compared to the backplane
+ * microcontroller for some reason?
+ */
 
 /**
  * The time to wait between writing the configuration register and reading data, in microseconds (250SPS mode.)
- * Delay = (1/250sps)*1.1 = 4400 + margin
+ * Delay = (1/250sps) * 3 = 12000
  */
-#define ADS1118_SAMPLE_WAIT_250SPS_US (5000)
+#define ADS1118_SAMPLE_WAIT_250SPS_US (12000)
 /**
- * The time to wait between writing the configuration register and reading data, in microseconds (128SPS mode.)
- * Delay = (1/128sps)*1.1 = 8594 + margin
- */
+* The time to wait between writing the configuration register and reading data, in microseconds (128SPS mode.)
+* Delay = (1/128sps)*1.1 = 8594 + margin
+*/
 #define ADS1118_SAMPLE_WAIT_128SPS_US (10000)
+/**
+ * The time to wait between writing the configuration register and reading data, in microseconds (64SPS mode.)
+ * Delay = (1/64sps)*1.1 = 17188 + margin
+ */
+#define ADS1118_SAMPLE_WAIT_64SPS_US  (20000)
 
 
 static uint8_t bits = 8;
-static uint32_t speed = 10000000;
+static uint32_t speed = 4000000;
 
 
 /**
@@ -54,35 +68,36 @@ static uint32_t speed = 10000000;
  * @return The ADC reading (unconverted)
  */
 static uint16_t rd_ads1118(int spi_fd, uint16_t config, int32_t delay_us) {
-	uint8_t tx_buff[2];
-	uint8_t rx_buff[4] = { 0,0,0,0 };
+	uint8_t tx_buff1[2] = {config >> 8u, config & 0xFFu};
+	uint8_t tx_buff2[2] = {0, 0};
+	uint8_t rx_buff1[2] = {0, 0};
+	uint8_t rx_buff2[2] = {0, 0};
 	int16_t result;
-	tx_buff[1] = config;
-	tx_buff[0] = config >> 8;
 
-	//create spi_transfer_struct
-	struct spi_ioc_transfer tr = {
-		.tx_buf = (unsigned long)tx_buff,
-		.rx_buf = (unsigned long)rx_buff,
-		.len = 4,
-		.delay_usecs = delay_us,
-		.speed_hz = speed,
-		.bits_per_word = bits,
-	};
+	// Create two spi_transfer_structs. spidev.h recommends initializing them with zeros.
+	// 0. Start ADC conversion
+	// 1. Get result
+	struct spi_ioc_transfer transfers[2] = {{0},{0}};
+	transfers[0].tx_buf = (unsigned long)tx_buff1;
+	transfers[0].rx_buf = (unsigned long)rx_buff1;
+	transfers[0].len = 2;
+	transfers[0].speed_hz = speed;
+	transfers[0].bits_per_word = bits;
+	transfers[0].delay_usecs = delay_us;
+	transfers[0].cs_change = true;
+	transfers[1].tx_buf = (unsigned long)tx_buff2;
+	transfers[1].rx_buf = (unsigned long)rx_buff2;
+	transfers[1].len = 2;
+	transfers[1].speed_hz = speed;
+	transfers[1].bits_per_word = bits;
 
-	//send cmd
-	ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
-	//wait  conversion
-	usleep(delay_us);
-	//read result
-	result = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+	result = ioctl(spi_fd, SPI_IOC_MESSAGE(2), transfers);
 	if (result < 1) {
 		log_error("can't write to ADS1118");
 		return 0;
 	}
 
-
-	result = (rx_buff[0] << 8) | rx_buff[1];
+	result = (rx_buff2[0] << 8) | rx_buff2[1];
 	//printf("rd_ads1118 rx_bufer 0x%02X%02X result : %d\n", (int)rx_buff[0], (int)rx_buff[1], result);
 	//float temp_f = (float)result * 0.03125f;
 	//printf("rx_bufer 0x%02X%02X  temp : %f \n", (int)rx_buff[0], (int)rx_buff[1], temp_f);
@@ -146,8 +161,8 @@ float hw_amps_read_artificial_ground(board_calibration_t *board_calibration) {
 	int spi_fd = spi_hps_open(0, 1);
 	shared_memory_t* mem = shared_memory_acquire();
 	write_property(mem->amps_adc_cs, 1);
-	int32_t delay_us = ADS1118_SAMPLE_WAIT_250SPS_US;
-	int16_t reading = rd_ads1118(spi_fd, ADS1118_IN1_250sps_pm4V, delay_us);
+	int32_t delay_us = ADS1118_SAMPLE_WAIT_64SPS_US;
+	int16_t reading = rd_ads1118(spi_fd, ADS1118_IN1_64sps_pm4V, delay_us);
 	write_property(mem->amps_adc_cs, 0);
 	shared_memory_release(mem);
 	close(spi_fd);
@@ -202,8 +217,8 @@ static void wren_eeprom(int spi_fd) {
 /**
 * Page write operations are limited to writing bytes within a single physical page,
 * regardless of the number of bytes actually being written.
-* Physical page boundaries start at addresses that are integer multiples of the page buffer size (or ‘page size’) and,
-* end at addresses that are integer multiples of page size – 1. If a Page Write command attempts to write across a physical page boundary,
+* Physical page boundaries start at addresses that are integer multiples of the page buffer size (or ï¿½page sizeï¿½) and,
+* end at addresses that are integer multiples of page size ï¿½ 1. If a Page Write command attempts to write across a physical page boundary,
 * the result is that the data wraps around to the beginning of the current page (overwriting data previously stored there),
 * instead of being written to the next page as might be expected. It is, therefore,
 * necessary for the application software to prevent page write operations that would attempt to cross a page boundary
