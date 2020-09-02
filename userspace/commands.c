@@ -370,6 +370,8 @@ static void get_shim_info(clientsocket_t* client, header_t* header, const void* 
 	if (!send_message(client, header, str_temp)) {
 		log_error("Unable to send response!");
 	}
+	
+	free(str_temp);
 
 }
 
