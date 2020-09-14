@@ -621,8 +621,14 @@ int init_shim() {
 
 	err+=reload_profiles();
 
+	// Clear any existing shim offs (individual trace currents)
+	clear_shim_offsets();
+
+	// Use the new shim profiles (From gradient .cfg files)
 	write_profiles();
-	
+	// Use the new shim profile factors (from Shim_d2o.cfg)
+	use_profile_factors();
+
 	return err;
 }
 
@@ -635,12 +641,25 @@ int reload_profiles() {
 	return err;
 }
 
+void clear_shim_offsets() {
+	int32_t zeros[SHIM_TRACE_COUNT] = {0};
+	write_trace_currents(zeros, SHIM_TRACE_COUNT);
+}
+
 void write_profiles() {
 	compile_ram(SHIM_TRACE_MILLIS_AMP_MAX, SHIM_DAC_NB_BIT);
 	write_shim_matrix();
 }
 
-
+void use_profile_factors() {
+	// Use the new shim values from the Shim_d2o.cfg file
+	shared_memory_t* mem = shared_memory_acquire();
+	for(int i=0;i< 64;i++) {
+		int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0 + i);
+		*(mem->rams + ram_offset_byte / 4) = shim_values[i].binary;
+	}
+	shared_memory_release(mem);
+}
 
 int shim_config_main(int argc, char** argv) {
 	char* memory_file = config_memory_file();
