@@ -621,9 +621,6 @@ int init_shim() {
 
 	err+=reload_profiles();
 
-	// Clear any existing shim offs (individual trace currents)
-	clear_shim_offsets();
-
 	// Use the new shim profiles (From gradient .cfg files)
 	write_profiles();
 	// Use the new shim profile factors (from Shim_d2o.cfg)
@@ -639,11 +636,6 @@ int reload_profiles() {
 	err+=load_shim_file();
 	err+=load_profile_used_in_shim_file();
 	return err;
-}
-
-void clear_shim_offsets() {
-	int32_t zeros[SHIM_TRACE_COUNT] = {0};
-	write_trace_currents(zeros, SHIM_TRACE_COUNT);
 }
 
 void write_profiles() {
