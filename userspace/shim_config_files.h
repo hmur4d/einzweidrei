@@ -52,7 +52,15 @@ int write_trace_currents(int32_t* current_uAmps, int size);
 
 int init_shim();
 int reload_profiles();
+/**
+ * Clear all of the shim offsets (used for individual trace currents)
+ */
+void clear_shim_offsets();
 void write_profiles();
+/**
+ * Use the new shim values from the Shim_d2o.cfg file
+ */
+void use_profile_factors();
 void shim_value_tostring(shim_value_t sv, char * str);
 bool is_amps_board_responding();
 
