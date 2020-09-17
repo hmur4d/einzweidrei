@@ -398,6 +398,8 @@ static void write_shim(clientsocket_t* client, header_t* header, const void* bod
 		printf("shim reg 0x%x = 0x%x\n", ram_offset_byte, values[i]);
 		*(mem->rams + ram_offset_byte / 4) = values[i];
 	}
+	// Delay before refreshing
+	usleep(1000);
 	write_property(mem->shim_amps_refresh, 1);
 	write_property(mem->shim_amps_refresh, 0);
 	//check trace saturation if any
