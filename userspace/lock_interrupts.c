@@ -53,6 +53,7 @@ static bool send_lock_data(off_t offset, size_t nbytes, int isFull) {
 
 	if (lseek(data_fd, offset, SEEK_SET) < 0) {
 		log_error_errno("unable to lseek to %d", offset);
+		free(buffer);
 		return false;
 	}
 
