@@ -507,6 +507,8 @@ int write_shim_matrix() {
 		printf("]\n");
 	}
 
+	// Delay before refreshing
+	usleep(1000);
 	write_property(mem->shim_amps_refresh, 1);
 	write_property(mem->shim_amps_refresh, 0);
 	shared_memory_release(mem);
@@ -522,6 +524,8 @@ int write_trace_offset(int32_t * zeros) {
 	ram_find(ram_index, SHIM_TRACE_COUNT * 4, &ram);
 	printf("Writting RAM_CURRENT_ZERO_OFFSETS ...");
 	memcpy(mem->rams + ram.offset_int32, zeros, SHIM_TRACE_COUNT * 4);
+	// Delay before refreshing
+	usleep(1000);
 	write_property(mem->shim_amps_refresh, 1);
 	write_property(mem->shim_amps_refresh, 0);
 	shared_memory_release(mem);
@@ -650,6 +654,10 @@ void use_profile_factors() {
 		int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0 + i);
 		*(mem->rams + ram_offset_byte / 4) = shim_values[i].binary;
 	}
+	// Delay before refreshing
+	usleep(1000);
+	write_property(mem->shim_amps_refresh, 1);
+	write_property(mem->shim_amps_refresh, 0);
 	shared_memory_release(mem);
 }
 
