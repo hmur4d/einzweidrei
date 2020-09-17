@@ -356,6 +356,9 @@ static void get_shim_info(clientsocket_t* client, header_t* header, const void* 
 
 	
 	char *str_temp=malloc(SHIM_PROFILES_COUNT*256);// = malloc(64 * 33);
+	// Make sure the first character is nul, since malloc() will probably re-use memory
+	// and the loop just appends to the end of the string.
+	str_temp[0] = 0;
 	char str[256];
 
 	for (i = 0; i < SHIM_PROFILES_COUNT; i++) {
