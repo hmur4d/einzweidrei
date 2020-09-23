@@ -394,6 +394,10 @@ static void write_shim(clientsocket_t* client, header_t* header, const void* bod
 		index = header->param1;
 	}
 
+	// Reset the trace currents before setting shim values
+	int32_t zeros[64] = {0};
+	write_trace_currents(zeros, 64);
+
 	shared_memory_t* mem = shared_memory_acquire();
 	for(int i=0;i< nb_values;i++) {
 		int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0 + index+i);
@@ -549,7 +553,16 @@ void write_traces(clientsocket_t* client, header_t* header, const void* body) {
 		write_trace_offset(offsets);
 	}
 	else if (header->param1 == 1) {
-		//write trace current in micro amps
+		// Clear shim factors before writing trace currents
+		const int nb_values = 64;
+		int32_t values[nb_values]={0};
+		shared_memory_t* mem = shared_memory_acquire();
+		for(int i=0;i< nb_values;i++) {
+			int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0 + i);
+			*(mem->rams + ram_offset_byte / 4) = values[i];
+		}
+		shared_memory_release(mem);
+		// Write trace current in micro amps
 		log_info("write_trace in micro amps");
 		write_trace_currents((int32_t*)body,header->body_size/4);
 
