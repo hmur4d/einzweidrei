@@ -46,6 +46,38 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		shared_memory_release(mem);
 		return;
 	}
+	if (ram_id == RAM_LUT_0) {
+
+		shared_memory_t* mem = shared_memory_acquire();
+		log_info("Write LUT0, address %x, span %d", mem->lut0, nbytes);
+		memcpy(mem->lut0, body, nbytes);
+		shared_memory_release(mem);
+		return;
+	}
+	if (ram_id == RAM_LUT_1) {
+
+		shared_memory_t* mem = shared_memory_acquire();
+		log_info("Write LUT1, address %x, span %d", mem->lut1, nbytes);
+		memcpy(mem->lut1, body, nbytes);
+		shared_memory_release(mem);
+		return;
+	}
+	if (ram_id == RAM_LUT_2) {
+
+		shared_memory_t* mem = shared_memory_acquire();
+		log_info("Write LUT2, address %x, span %d", mem->lut2, nbytes);
+		memcpy(mem->lut2, body, nbytes);
+		shared_memory_release(mem);
+		return;
+	}
+	if (ram_id == RAM_LUT_3) {
+
+		shared_memory_t* mem = shared_memory_acquire();
+		log_info("Write LUT3, address %x, span %d", mem->lut3, nbytes);
+		memcpy(mem->lut3, body, nbytes);
+		shared_memory_release(mem);
+		return;
+	}
 
 	ram_descriptor_t ram;
 	if (!ram_find(ram_id, nbytes, &ram)) {

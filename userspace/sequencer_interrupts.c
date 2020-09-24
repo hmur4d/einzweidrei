@@ -84,6 +84,7 @@ static bool scan_done(uint8_t code) {
 
 static bool sequence_done(uint8_t code) {
 	log_info("Received sequence_done interrupt, code=0x%x", code);
+	stop_sequence();
 
 	sequence_params_t* sp = sequence_params_acquire();
 	bool repeat_scan = sp->repeat_scan_enabled;
@@ -91,7 +92,7 @@ static bool sequence_done(uint8_t code) {
 
 	if (repeat_scan) {
 		log_info("Repeat scan enabled, restart sequence");
-		stop_sequence();
+		//stop_sequence();
 		start_sequence(true);
 		return true;
 	}

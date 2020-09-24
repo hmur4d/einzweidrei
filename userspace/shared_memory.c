@@ -258,6 +258,31 @@ bool shared_memory_init(const char* memory_file) {
 		return false;
 	}
 
+	sharedmem.lut0 = (int32_t*)mmap(NULL, 0x8000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0xff240000);
+	if (sharedmem.lut0 == MAP_FAILED) {
+		log_error_errno("Unable to mmap lut0 (hps2fpga bridge");
+		shared_memory_munmap_and_close();
+		return false;
+	}
+	sharedmem.lut1 = (int32_t*)mmap(NULL, 0x8000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0xff238000);
+	if (sharedmem.lut1 == MAP_FAILED) {
+		log_error_errno("Unable to mmap lut1 (hps2fpga bridge");
+		shared_memory_munmap_and_close();
+		return false;
+	}
+	sharedmem.lut2 = (int32_t*)mmap(NULL, 0x8000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0xff230000);
+	if (sharedmem.lut2 == MAP_FAILED) {
+		log_error_errno("Unable to mmap lut2 (hps2fpga bridge");
+		shared_memory_munmap_and_close();
+		return false;
+	}
+	sharedmem.lut3 = (int32_t*)mmap(NULL, 0x8000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0xff228000);
+	if (sharedmem.lut3 == MAP_FAILED) {
+		log_error_errno("Unable to mmap lut3 (hps2fpga bridge");
+		shared_memory_munmap_and_close();
+		return false;
+	}
+
 	initialized = true;
 	return true;
 }

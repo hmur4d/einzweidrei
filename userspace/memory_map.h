@@ -50,6 +50,10 @@ Memory map, copied as-is from CameleonNIOS
 #define RAM_CURRENT_ZERO_OFFSETS					179
 #define RAM_SHIM_DAC_WORDS							180
 #define RAM_DDR_GRAD								10000
+#define RAM_LUT_0								    20000
+#define RAM_LUT_1								    20001
+#define RAM_LUT_2								    20002
+#define RAM_LUT_3								    20003
 
 /************************RAM_REGISTERS*************************/
 #define RAM_REGISTERS_OFFSET_STEP                       0x00000004
