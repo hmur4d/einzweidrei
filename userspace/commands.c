@@ -388,6 +388,9 @@ static void get_shim_info(clientsocket_t* client, header_t* header, const void* 
 
 	
 	char *str_temp=malloc(SHIM_PROFILES_COUNT*256);// = malloc(64 * 33);
+	// Make sure the first character is nul, since malloc() will probably re-use memory
+	// and the loop just appends to the end of the string.
+	str_temp[0] = 0;
 	char str[256];
 
 	for (i = 0; i < SHIM_PROFILES_COUNT; i++) {
@@ -430,6 +433,8 @@ static void write_shim(clientsocket_t* client, header_t* header, const void* bod
 		printf("shim reg 0x%x = 0x%x\n", ram_offset_byte, values[i]);
 		*(mem->rams + ram_offset_byte / 4) = values[i];
 	}
+	// Delay before refreshing
+	usleep(1000);
 	write_property(mem->shim_amps_refresh, 1);
 	write_property(mem->shim_amps_refresh, 0);
 	//check trace saturation if any
