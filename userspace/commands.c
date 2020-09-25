@@ -587,11 +587,11 @@ void write_traces(clientsocket_t* client, header_t* header, const void* body) {
 	else if (header->param1 == 1) {
 		// Clear shim factors before writing trace currents
 		const int nb_values = 64;
-		int32_t values[nb_values]={0};
+		//int32_t values[nb_values]={0};
 		shared_memory_t* mem = shared_memory_acquire();
 		for(int i=0;i< nb_values;i++) {
 			int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_SHIM_0 + i);
-			*(mem->rams + ram_offset_byte / 4) = values[i];
+			*(mem->rams + ram_offset_byte / 4) = 0;// values[i];
 		}
 		shared_memory_release(mem);
 		// Write trace current in micro amps
