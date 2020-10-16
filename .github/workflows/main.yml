@@ -39,4 +39,4 @@ jobs:
 
       # Static analysis
       - name: Static analysis
-        run: bash .bithub/workflows/clang-tidy-lint.sh
+        run: bash .github/workflows/clang-tidy-lint.sh
