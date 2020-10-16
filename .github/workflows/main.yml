@@ -51,10 +51,11 @@ jobs:
           body="${body//$'\n'/'%0A'}"
           body="${body//$'\r'/'%0D'}"
           echo ::set-output name=body::$body
+          echo "body????" $body
 
       # Add a comment based on the static analysis output
       - name: Static analysis comment
         uses: peter-evans/create-or-update-comment@v1
         with:
           issue-number: 1
-          body: ${{ steps.get-comment-body.outputs.body }}
+          body: Test? ${{ steps.get-comment-body.outputs.body }}
