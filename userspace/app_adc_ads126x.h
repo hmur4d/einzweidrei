@@ -1,0 +1,144 @@
+/*
+ * app_adc_ads126x.h
+ *
+ *  Created on: Sep 4, 2019
+ *      Author: Joel Minski
+ *
+ *  Note:  This is a driver for the external 32-bit TI ADS1262 (with partial support for the ADS1263).
+ *
+ */
+
+#ifndef APP_ADC_ADS126X_H
+#define APP_ADC_ADS126X_H
+
+#define ADS126X_NUM_CHIPS				(6)		// Number of ADS1262 chips in the system
+#define ADS126X_NUM_CONVERTERS			(2)		// Number of ADCx converters inside each chip (only ADS1263 has 2)
+
+typedef enum
+{
+	ADS126X_INPUT_MUX_RTD1			= 0x00,	// 0
+	ADS126X_INPUT_MUX_RTD2,					// 1
+	ADS126X_INPUT_MUX_RTD3,					// 2
+	ADS126X_INPUT_MUX_THERMOM,				// 3
+	ADS126X_INPUT_MUX_ADD_MON,				// 4
+	ADS126X_INPUT_MUX_VDD_MON,				// 5
+	ADS126X_INPUT_MUX_EXT_REF,				// 6, Put this last as calculation is dependent on result from ADS126X_INPUT_MUX_ADD_MON
+
+	ADS126X_INPUTS_NUM_TOTAL,
+} ADS126X_INPUTS_ENUM;
+
+#define ADS126X_INPUT_MUX_RTDX_TEST  (100)
+
+typedef enum
+{
+	ADS126X_SPS_2_5 = 0,	// 0
+	ADS126X_SPS_5,			// 1
+	ADS126X_SPS_10,			// 2
+	ADS126X_SPS_16_6,		// 3
+	ADS126X_SPS_20,			// 4
+	ADS126X_SPS_50,			// 5
+	ADS126X_SPS_60,			// 6
+	ADS126X_SPS_100,		// 7
+	ADS126X_SPS_400,		// 8
+	ADS126X_SPS_1200,		// 9
+	ADS126X_SPS_2400,		// 10
+	ADS126X_SPS_4800,		// 11
+	ADS126X_SPS_7200,		// 12
+	ADS126X_SPS_14400,		// 13
+	ADS126X_SPS_19200,		// 14
+	ADS126X_SPS_38400,		// 15
+
+	ADS126X_SPS_NUM_TOTAL
+} ADS126X_SampleRate_Enum;
+
+typedef enum
+{
+	ADS126X_PGA_GAIN_1 = 0x00,	// 0 => 1 V/V
+	ADS126X_PGA_GAIN_2,			// 1 => 2 V/V
+	ADS126X_PGA_GAIN_4,			// 2 => 4 V/V
+	ADS126X_PGA_GAIN_8,			// 3 => 8 V/V
+	ADS126X_PGA_GAIN_16,		// 4 => 16 V/V
+	ADS126X_PGA_GAIN_32,		// 5 => 32 V/V
+
+	ADS126X_PGA_GAIN_NUM_TOTAL
+} ADS126X_PgaGain_Enum;
+
+
+// Allow easier manipulation of the ADC output data
+typedef struct
+{
+	union
+	{
+		uint8_t bArray[6];
+		struct __attribute__ ((packed))
+		{
+			uint8_t 	bStatus;
+			int32_t 	idwData;
+			uint8_t		bChecksumGiven;
+		};
+	} tRawData;
+
+	BOOL 		fValid;
+	BOOL 		fNewData;
+	BOOL		fChecksumMatch;
+	uint8_t 	bChecksumCalc;
+	double 		dbReading;
+
+} ADS126X_ReadData_Type;
+
+typedef struct
+{
+	double 		dbResultArray[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint8_t		bStatusByteArray[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+} ADS126X_RESULT_TYPE;
+
+typedef struct
+{
+	uint32_t	dwReadingCounter;
+
+	uint32_t	dwChecksumErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwNoNewDataErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+
+	uint32_t	dwAdcClockSourceErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwLowReferenceAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwChipResetErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+
+	uint32_t	dwPgaOutputHighLowAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwPgaDifferentialOutputAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+
+} ADC126X_DIAGNOSTICS_STRUCT;
+
+// Status Byte bit masks (From Table 22 in Datasheet)
+#define ADS126X_STATUS_BYTE_MASK_RESET			(1<<0)
+#define ADS126X_STATUS_BYTE_MASK_PGAD_ALM		(1<<1)
+#define ADS126X_STATUS_BYTE_MASK_PGAH_ALM		(1<<2)
+#define ADS126X_STATUS_BYTE_MASK_PGAL_ALM		(1<<3)
+#define ADS126X_STATUS_BYTE_MASK_REF_ALM		(1<<4)
+#define ADS126X_STATUS_BYTE_MASK_EXTCLK			(1<<5)
+#define ADS126X_STATUS_BYTE_MASK_ADC1_NEW		(1<<6)
+#define ADS126X_STATUS_BYTE_MASK_ADC2_NEW		(1<<7)
+
+#define ADS126X_SPS_MINIMUM						(ADS126X_SPS_2_5)
+#define ADS126X_SPS_MAXIMUM						(ADS126X_SPS_38400)
+
+#define ADS126X_PGA_GAIN_MINIMUM				(ADS126X_PGA_GAIN_1)	// 0 => Gain of 1V/V
+#define ADS126X_PGA_GAIN_MAXIMUM				(ADS126X_PGA_GAIN_32)	// 5 => Gain of 32V/V
+
+
+// Low-level functions
+//uint16_t 	ADS126X_GetMinMsBetweenReadings		(const ADS126X_SampleRate_Enum eSampleRate);
+double 		ADS126X_CalculateRtdTemperature		(const double dbRawValue, const BOOL fGetResistance);
+
+
+// High-level API
+void 		ADS126X_Initialize					(void);
+uint32_t 	ADS126X_Test						(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
+void		ADS126X_GatherAll					(ADS126X_RESULT_TYPE *ptAdcExtResultStruct);
+void 		ADS126X_SetPgaGain					(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, const ADS126X_PgaGain_Enum ePgaGain);
+uint32_t 	ADS126X_ShowStatus					(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
+uint32_t 	ADS126X_ShowData					(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct, char *pcWriteBuffer, uint32_t dwWriteBufferLen);
+void		ADS126X_GetDiagInfo					(ADC126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct);
+uint32_t 	ADS126X_ShowDiag					(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
+
+
+#endif // APP_ADC_ADS126X_H
