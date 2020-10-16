@@ -22,7 +22,7 @@ jobs:
       # Check out master, for comparison later
       - uses: actions/checkout@v2
         with:
-          - ref: master
+          ref: master
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
