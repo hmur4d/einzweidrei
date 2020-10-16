@@ -1,0 +1,38 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the these branches.
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Debug build
+      - name: Cameleon Debug build
+        run: make TOOLCHAIN_DIR=~/BR/HOST/usr/bin/ KERNEL_DIR=~/BR/KERNEL VS_CONFIG=Debug CFLAGS="-fsanitize=undefined -std=gnu11 -g3 -O0 -static -Wall -Werror" LDFLAGS="-pthread -lm -lubsan -Wall"
+        working-directory: ./userspace
+
+      # Clean debug build artifacts
+      - name: Clean debug build artifacts
+        run: rm *.o cameleon
+        working-directory: ./userspace
+
+      # Release build
+      - name: Cameleon Release build
+        run: make TOOLCHAIN_DIR=~/BR/HOST/usr/bin/ KERNEL_DIR=~/BR/KERNEL
+        working-directory: ./userspace
