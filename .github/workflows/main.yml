@@ -36,3 +36,7 @@ jobs:
       - name: Cameleon Release build
         run: make TOOLCHAIN_DIR=~/BR/HOST/usr/bin/ KERNEL_DIR=~/BR/KERNEL
         working-directory: ./userspace
+
+      # Static analysis
+      - name: Static analysis
+        run: bash .bithub/workflows/clang-tidy-lint.sh
