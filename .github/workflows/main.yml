@@ -54,6 +54,7 @@ jobs:
 
       # Add a comment based on the static analysis output
       - name: Static analysis comment
-        uses: peter-evans/commit-comment@v1
+        uses: peter-evans/create-or-update-comment@v1
         with:
+          issue-number: 1
           body: ${{ steps.get-comment-body.outputs.body }}
