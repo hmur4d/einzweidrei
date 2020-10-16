@@ -59,3 +59,5 @@ jobs:
             ```
             ${{ steps.get-comment-body.outputs.body }}
             ```
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
