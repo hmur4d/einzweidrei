@@ -279,7 +279,7 @@ void hw_amps_page_wr_eeprom(uint8_t address, int8_t* data) {
 	write_property(mem->amps_eeprom_cs, 1);
 	wren_eeprom(spi_fd);
 	write_property(mem->amps_eeprom_cs, 0);
-	usleep(1);
+	usleep(1); //
 	write_property(mem->amps_eeprom_cs, 1);
 	page_wr_eeprom(spi_fd, address, data);
 	write_property(mem->amps_eeprom_cs, 0);
