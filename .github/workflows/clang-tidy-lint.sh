@@ -5,7 +5,6 @@ THIS_DIR=$(dirname $(realpath "${BASH_SOURCE[0]}"))
 
 # The branch to diff against (default: master)
 BASE_BRANCH=${1:-master}
-echo "Comparing ${BASE_BRANCH} -> $(git rev-parse --abbrev-ref HEAD)"
 
 # Directories that support clang-tidy
 DIRS=userspace
