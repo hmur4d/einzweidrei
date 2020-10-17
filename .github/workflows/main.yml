@@ -55,7 +55,7 @@ jobs:
           body="${body//$'\n'/'%0A'}"
           body="${body//$'\r'/'%0D'}"
           echo ::set-output name=body::$body
-          shouldcomment=$(grep --quiet "No relevant changes found" static-analysis.txt || [[ `tr -d "\r\n" <  static-analysis.txt | wc -c` == 0 ]] && echo true)
+          shouldcomment=$(grep --quiet "No relevant changes found" static-analysis.txt || [[ `tr -d "\r\n" <  static-analysis.txt | wc -c` == 0 ]] || echo true)
           echo ::set-output name=shouldcomment::$shouldcomment
 
       - name: Add static analysis comment
