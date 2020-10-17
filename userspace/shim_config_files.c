@@ -305,6 +305,7 @@ int load_shim_file() {
 			char* str_value = substring(line, "=", ";");
 			shim_values[shim_cpt].factor = (float_t)atof(str_value);
 			shim_values[shim_cpt].binary = float_to_binary(shim_values[shim_cpt].factor,SHIM_DAC_NB_BIT);
+			free(str_value);
 			if ((field & 4) == 4) {
 				log_error("error in shim file");
 				return -1;
@@ -312,11 +313,11 @@ int load_shim_file() {
 			else {
 				field += 4;
 			}
-			free(str_value);
 		}
 		else if (strstr(line, "groupID") != NULL) {
 			char* str_value = substring(line, "=", ";");
 			shim_values[shim_cpt].group_ID = atoi(str_value);
+			free(str_value);
 			if ((field & 8) == 8) {
 				log_error("error in shim file");
 				return -1;
@@ -324,11 +325,11 @@ int load_shim_file() {
 			else {
 				field += 8;
 			}
-			free(str_value);
 		}
 		else if (strstr(line, "order") != NULL) {
 			char* str_value = substring(line, "=", ";");
 			shim_values[shim_cpt].order = atoi(str_value);
+			free(str_value);
 			if ((field & 16) == 16) {
 				log_error("error in shim file");
 				return -1;
@@ -336,7 +337,6 @@ int load_shim_file() {
 			else {
 				field += 16;
 			}
-			free(str_value);
 		}
 		if (field == 31) {
 			field = 0;
