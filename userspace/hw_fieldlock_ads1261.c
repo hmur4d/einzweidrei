@@ -1,5 +1,5 @@
 /*
- * app_adc_ads1261.c
+ * hw_fieldlock_ads1261.c
  *
  *  Created on: Sep 4, 2019
  *      Author: Joel Minski
@@ -16,11 +16,17 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /* Standard C Header Files */
-#include "std_includes.h"
+#if 0
+#include <./std_includes.h>
+#else
+#include <unistd.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
+#endif
 
 /* Application Header Files */
 #include "hw_fieldlock_ads1261.h"
-
 
 /* Private typedef -----------------------------------------------------------*/
 typedef enum
@@ -35,8 +41,8 @@ typedef enum
 	ADS126X_CMD_SFOCAL					= 0x19,
 	ADS126X_CMD_RREG					= 0x20,	// Read registers, special command value, must be OR'd with register value
 	ADS126X_CMD_WREG					= 0x40,	// Write registers, special command value, must be OR'd with register value
-	ADS126X_CMD_LOCK					= 0xF2,	// Register lock, special command value, can be used to control lock-out of write access to registers
-	ADS126X_CMD_UNLOCK					= 0xF5,	// Register unlock, special command value, can be used to control lock-out of write access to registers
+	ADS126X_CMD_LOCK					= 0xF2,	// Register lock, can be used to control lock-out of write access to registers
+	ADS126X_CMD_UNLOCK					= 0xF5,	// Register unlock, can be used to control lock-out of write access to registers
 
 	ADS126X_CMD_NUM_TOTAL,
 } ADS126X_COMMANDS_ENUM;
@@ -112,16 +118,13 @@ typedef struct
 
 #define ADS126X_REG_MASK				(0x1F)
 #define ADS126X_DUMMY_BYTE				(0x00)
-#define ADS126X_DEVICE_ID_EXPECTED		(0x03)
+#define ADS126X_DEVICE_ID_EXPECTED		(0x80)	// Will only verify upper four bits match
 
 #define ADS126X_DIVISOR_32BIT			(2147483648.0)
 #define ADS126X_DIVISOR_24BIT			(8388608.0)
 
 #define ADC126X_ADC_REF_INT				(2.5)
-#define ADC126X_ADC_REF_EXT				(3.3)
-
-#define ADS126X_R_FIXED					(7680)
-#define ADS126X_R_AT_25DEGC				(10000)
+#define ADC126X_ADC_REF_EXT				(2.048)
 
 #define ADS126X_BASE_TEMPERATURE_DEGC	(32.181356932647873)	// Calculated temperature for an input of 0.0
 
@@ -145,47 +148,51 @@ static const ADC126X_CHIP_DESCRIPTION_STRUCT 	ADS126X_CHIP_ARRAY[ADS126X_NUM_CHI
 {
 	// ADC Model, Enabled
 	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC,	.wChipSelectPin = GPIO_PIN_6	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_7	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_8	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_9	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOA, 	.wChipSelectPin = GPIO_PIN_8	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOA, 	.wChipSelectPin = GPIO_PIN_10	},
 };
 
 static const ADC126X_INPUT_MUX_STRUCT		ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUTS_NUM_TOTAL] =
 {
 				//  Positive	| Negative
-	{ .bInputMux = ((0x00 << 4) | (0x01)), 	.eSampleRate = ADS126X_SPS_60,		.eGain = ADS126X_PGA_GAIN_8,	.pcInputName = "RTD1"		},	// RTD Temperature Sensor 1
-	{ .bInputMux = ((0x02 << 4) | (0x03)),	.eSampleRate = ADS126X_SPS_60,		.eGain = ADS126X_PGA_GAIN_8,	.pcInputName = "RTD2"		},	// RTD Temperature Sensor 2
-	{ .bInputMux = ((0x06 << 4) | (0x07)),	.eSampleRate = ADS126X_SPS_60,		.eGain = ADS126X_PGA_GAIN_8,	.pcInputName = "RTD3"		},	// RTD Temperature Sensor 3
-	{ .bInputMux = ((0x0B << 4) | (0x0B)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "THERMOM"	},	// Internal Temperature Sensor (Thermometer)
-	{ .bInputMux = ((0x0C << 4) | (0x0C)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "ADD_MON"	},	// Analog Power Supply Monitor
-	{ .bInputMux = ((0x0D << 4) | (0x0D)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "VDD_MON"	},	// Digital Power Supply Monitor
-	{ .bInputMux = ((0x04 << 4) | (0x05)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "EXT_REF"	},	// RTD External Voltage Reference
+	{ .bInputMux = ((0x02 << 4) | (0x01)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "AG_SENSE_B0"	},	// ADS126X_INPUT_MUX_AG_SENSE_B0
+	{ .bInputMux = ((0x05 << 4) | (0x01)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "AG_SENSE_GX"	},	// ADS126X_INPUT_MUX_AG_SENSE_GX
+	{ .bInputMux = ((0x06 << 4) | (0x00)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "AG_B0"			},	// ADS126X_INPUT_MUX_AG_B0
+	{ .bInputMux = ((0x07 << 4) | (0x00)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "AG_GX"			},	// ADS126X_INPUT_MUX_AG_GX
+	{ .bInputMux = ((0x08 << 4) | (0x00)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "BOARD_TEMP"		},	// ADS126X_INPUT_MUX_BRD_TEMP
+	{ .bInputMux = ((0x09 << 4) | (0x00)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "RAIL_4V1"		},	// ADS126X_INPUT_MUX_RAIL_4V1
+	{ .bInputMux = ((0x0A << 4) | (0x01)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "RAIL_6V1"		},	// ADS126X_INPUT_MUX_RAIL_6V1
+	{ .bInputMux = ((0x0B << 4) | (0x0B)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "THERMOM"		},	// ADS126X_INPUT_MUX_THERMOM, Internal Temperature Sensor (Thermometer)
+	{ .bInputMux = ((0x0C << 4) | (0x0C)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "AVDD_MON"		},	// ADS126X_INPUT_MUX_AVDD_MON, Analog Power Supply Monitor
+	{ .bInputMux = ((0x0D << 4) | (0x0D)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "DVDD_MON"		},	// ADS126X_INPUT_MUX_DVDD_MON, Digital Power Supply Monitor
+	{ .bInputMux = ((0x01 << 4) | (0x00)), 	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "EXT_VREF"		},	// ADS126X_INPUT_MUX_EXT_VREF, External reference voltage
 };
 
 static const ADC126X_GATHER_STRUCT		ADS126X_GATHER_ARRAY[ADS126X_INPUTS_NUM_TOTAL] =
 {
 	/*
-	 * See ADS1262 Datasheet, "Table 17. ADC1 Conversion Latency, td(STDR)" for actual Conversion Latencies
-	 * Note that values in Table 17 should be increased to allow for ADC clock accuracy (max of +/- 2%)
-	 * Note that values in Table 17 should be increased to allow for MCU clock accuracy (assume max of +/-200ppm (+/-0.02%))
+	 * See ADS1261 Datasheet, "Table 8. Conversion Latency" for actual Conversion Latencies
+	 * Note that values in Table 8 should be increased to allow for ADC clock accuracy (max of +/- 2%)
+	 * Note that values in Table 8 should be increased to allow for MCU clock accuracy (assume max of +/-200ppm (+/-0.02%))
+	 * Note that additional delay comes from Conversion Start Delay in Table 33, "MODE1 Register Field Descriptions"
 	 *
-	 * Example:  16.6SPS SINC1 	(from Table 17) => ((60.35ms + 0.0ms) * (1.02) * (1 + 200/1e6)) = 61.5693114ms  => rounded up to 62000us
-	 * Example:  20SPS 	 FIR 	(from Table 17) => ((52.22ms + 8.89ms) * (1.02) * (1 + 200/1e6)) = 62.34466644ms => rounded up to 62500us
-	 * Example:  60SPS   SINC3 	(from Table 17) => ((50.42ms + 0.555ms) * (1.02) * (1 + 200/1e6)) = 52.0048989ms => rounded up to 52500us
-	 * Example:  100SPS  SINC3 	(from Table 17) => ((30.42ms + 0.555ms) * (1.02) * (1 + 200/1e6)) = 31.6008189ms => rounded up to 32000us
-	 * Example:  100SPS  SINC4 	(from Table 17) => ((40.42ms + 0.555ms) * (1.02) * (1 + 200/1e6)) = 41.8028589ms => rounded up to 42300us
-	 * Example:  400SPS  SINC4 	(from Table 17) => ((10.42ms + 0.555ms) * (1.02) * (1 + 200/1e6)) = 11.1967389ms => rounded up to 11500us
-	 * Example:  7200SPS SINC1 	(from Table 17) => ((0.494ms + 0.0ms) * (1.02) * (1 + 200/1e6)) = 0.503980776ms => rounded up to 510us
+	 * Example:  16.6SPS SINC1 	(from Table 8) => ((60.43ms + 0.0ms) * (1.02) * (1 + 200/1e6)) = 61.65092772ms  => rounded up to 62000us
+	 * Example:  20SPS 	 FIR 	(from Table 8) => ((52.23ms + 8.93ms) * (1.02) * (1 + 200/1e6)) = 62.39567664ms => rounded up to 62500us
+	 * Example:  60SPS   SINC3 	(from Table 8) => ((50.43ms + 0.605ms) * (1.02) * (1 + 200/1e6)) = 52.06611114ms => rounded up to 52500us
+	 * Example:  100SPS  SINC3 	(from Table 8) => ((30.43ms + 0.605ms) * (1.02) * (1 + 200/1e6)) = 31.66203114ms => rounded up to 32000us
+	 * Example:  100SPS  SINC4 	(from Table 8) => ((40.43ms + 0.605ms) * (1.02) * (1 + 200/1e6)) = 41.86407114ms => rounded up to 42300us
+	 * Example:  400SPS  SINC4 	(from Table 8) => ((10.43ms + 0.605ms) * (1.02) * (1 + 200/1e6)) = 11.25795114ms => rounded up to 11500us
+	 * Example:  7200SPS SINC1 	(from Table 8) => ((0.564ms + 0.0ms) * (1.02) * (1 + 200/1e6)) = 0.5753950566ms => rounded up to 600us
 	 */
-	{ .fEnabled = TRUE,		.dwSettleUs = 10000,	.dwDwellUs = 52500,	},	// RTD Temperature Sensor 1
-	{ .fEnabled = TRUE,		.dwSettleUs = 10000,	.dwDwellUs = 52500,	},	// RTD Temperature Sensor 2
-	{ .fEnabled = TRUE,		.dwSettleUs = 10000,	.dwDwellUs = 52500,	},	// RTD Temperature Sensor 3
-	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 510,	},	// Internal Temperature Sensor (Thermometer)
-	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 510,	},	// Analog Power Supply Monitor
-	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 510,	},	// Digital Power Supply Monitor
-	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 510,	},	// RTD External Voltage Reference
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AG_SENSE_B0
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AG_SENSE_GX
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AG_B0
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AG_GX
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_BOARD_TEMP
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_RAIL_4V1
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_RAIL_6V1
+	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_THERMOM, Internal Temperature Sensor (Thermometer)
+	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AVDD_MON, Analog Power Supply Monitor
+	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_DVDD_MON, Digital Power Supply Monitor
+	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_EXT_VREF, External Voltage Reference
 };
 
 #if 0
@@ -193,14 +200,14 @@ static const ADC126X_SAMPLE_RATE_STRUCT ADS126X_ADC1_SAMPLE_RATE_ARRAY[ADS126X_S
 {
 	/* NOTE:	These numbers are for estimation purposes and may not be accurate.
 	 * 			These numbers are for *subsequent* conversions only.
-	 * 			The first conversion takes longer.  See Section "9.4.2 Conversion Latency".
+	 * 			The first conversion takes longer.  See Section "9.4.1.3 Conversion Latency".
 	 *
-	 * 			See ADS1262 Datasheet, "Table 17. ADC1 Conversion Latency, td(STDR)" for initial Conversion Latencies
+	 * 			See ADS1261 Datasheet, "Table 8. Conversion Latency" for initial Conversion Latencies
 	 * 			Note that values in Table 17 should be increased to allow for ADC clock accuracy (max of +/-2%)
 	 * 			Note that values in Table 17 should be increased to allow for MCU clock accuracy (assume max of +/-200ppm (+/-0.02%))
 	 *
-	 * Warning:	Several of the values in this table are shorter than the values given in Table 17!!!!
-	 * 			Use the values in Table 17 for initial conversions.
+	 * Warning:	Several of the values in this table are shorter than the values given in Table 8!!!!
+	 * 			Use the values in Table 8 for initial conversions.
 	 *
 	 * NOTE:    The ADS1262 has a worst case frequency of +/-2%
 	 * 			Assume the oscillator supplying the MCU has a worst case tolerance of ~200ppm (+/-50ppm + aging)
@@ -209,7 +216,7 @@ static const ADC126X_SAMPLE_RATE_STRUCT ADS126X_ADC1_SAMPLE_RATE_ARRAY[ADS126X_S
 	 *			Maximum = ceiling(((1+(2/100))*(1/N)*1e6) * (1+(200/1e6)))
 	 *
 	 * NOTE:	A data rate of 7200 SPS with the SINC1 filter is the quickest setting to obtain fully settled data.
-	 * 			See ADS1262 Datasheet, Section "9.4.2 Conversion Latency" for more information.
+	 * 			See ADS1261 Datasheet, Section "9.4.1.3 Conversion Latency" for more information.
 	 */
 
 	// Register Value, Minimum Number of Microseconds, Maximum Number of Microseconds (between Readings)
@@ -260,11 +267,11 @@ static BOOL 		ADS126X_ReadRegisterArray	(const ADS126X_REGISTERS_ENUM eRegisterS
 //static BOOL 		ADS126X_WriteRegisterArray	(const ADS126X_REGISTERS_ENUM eRegisterStart, const uint8_t * const pbBuffer, const uint8_t bBufferSize);
 static void 		ADS126X_StopAll				(void);
 static void 		ADS126X_StartAll			(void);
-static BOOL 		ADS126X_ReadRawResult		(const uint8_t bChip, const uint8_t bConverter, ADS126X_ReadData_Type * const ptData);
+static BOOL 		ADS126X_ReadRawResult		(const uint8_t bChip, ADS126X_ReadData_Type * const ptData);
 static uint8_t 		ADS126X_CalculateChecksumCrc(int32_t i32DataBytes);		//Does Checksum Operations
-static void 		ADS126X_ConfigureInput		(const uint8_t bChip, const uint8_t bConverter, const ADS126X_INPUTS_ENUM eInput);
-static BOOL 		ADS126X_ConvertReading		(const uint8_t bChip, const uint8_t bConverter, const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_Type *ptAdcData);
-static BOOL 		ADS126X_GetReading			(const uint8_t bChip, const uint8_t bConverter, ADS126X_ReadData_Type *ptAdcData);
+static void 		ADS126X_ConfigureInput		(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput);
+static BOOL 		ADS126X_ConvertReading		(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_Type *ptAdcData);
+static BOOL 		ADS126X_GetReading			(const uint8_t bChip, ADS126X_ReadData_Type *ptAdcData);
 static double 		ADS126X_GetReadingFromChip	(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, uint8_t *pbStatusByte);
 
 
@@ -303,7 +310,8 @@ void ADS126X_Initialize(void)
 	ADS126X_SpiSendRecv(ADS126X_DUMMY_BYTE);
 
 	// Wait at least 9ms after POR before beginning communications
-	// See Datasheet, Section 9.4.10.1
+	// See Datasheet, Figure 5, "Power-Up Characterisitics"
+	// tp(PRCM) = 2^16 clocks of (1/7.3728e6) => ((1<<16)*(1/7.3728e6)) = 8.9ms
 	ADS126X_DelayMs(20);
 
 	// Reset all ADC chips
@@ -325,7 +333,7 @@ void ADS126X_Initialize(void)
 			const uint8_t bValue = ADS126X_GetRegister(ADS126X_REG_DEVICE_ID);
 			ADS126X_SpiCloseAll();
 
-			if (ADS126X_DEVICE_ID_EXPECTED == bValue)
+			if ((bValue & 0xF0) == ADS126X_DEVICE_ID_EXPECTED)
 			{
 				ADS126X_ADC_STATUS_ARRAY[bChip].fFound = TRUE;
 			}
@@ -346,17 +354,18 @@ void ADS126X_Initialize(void)
 		if (ADS126X_IsChipUsable(bChip))
 		{
 			ADS126X_SpiOpen(bChip);
-			ADS126X_SetRegister(ADS126X_REG_POWER, 0x01);		// Clear the RESET bit, enable the internal reference
-			ADS126X_SetRegister(ADS126X_REG_INTERFACE, 0x06);	// Change checksum mode to CRC
+			ADS126X_SetRegister(ADS126X_REG_STATUS, 0x00);		// Clear the RESET bit, clear CRC Error bit
+			ADS126X_SetRegister(ADS126X_REG_MODE3, 0x60);		// Enable STATUS Byte, enable CRC Data Verification
+			ADS126X_SetRegister(ADS126X_REG_REF, 0x19);			// Enable internal reference, select external reference input pins
 			ADS126X_SpiCloseAll();
 		}
 	}
 
 	////////////////////////////////////////////////////////////////////////////
 	// Perform calibrations on all ADC chips
-	// Only perform "ADC1 Offset Self-Calibration (SFOCAL1)"
+	// Only perform "Offset Self-Calibration (SFOCAL)"
 	////////////////////////////////////////////////////////////////////////////
-	if (TRUE)
+	if (FALSE)
 	{
 		for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 		{
@@ -370,9 +379,9 @@ void ADS126X_Initialize(void)
 				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x60);
 				ADS126X_SetRegister(ADS126X_REG_MODE2, (ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_RTD1].eSampleRate & 0x0F));
 */
-				ADS126X_ConfigureInput(bChip, 0, ADS126X_INPUT_MUX_RTD1);
+				ADS126X_ConfigureInput(bChip, ADS126X_INPUT_MUX_AG_SENSE_B0);
 				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, 0xFF); // Set input multiplexer to using floating inputs
-				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x07); // Use 555us Conversion Delay, but set to continuous conversion mode for calibration
+				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x08); // Use 605us Conversion Delay, but set to continuous conversion mode for calibration
 
 				ADS126X_SendCommand(ADS126X_CMD_START);
 
@@ -381,7 +390,7 @@ void ADS126X_Initialize(void)
 		}
 
 		// Wait for the system to settle
-		SystemTaskDelayUs(ADS126X_GATHER_ARRAY[ADS126X_INPUT_MUX_RTD1].dwDwellUs * 3);
+		SystemTaskDelayUs(ADS126X_GATHER_ARRAY[ADS126X_INPUT_MUX_AG_SENSE_B0].dwDwellUs * 3);
 
 		for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 		{
@@ -394,9 +403,8 @@ void ADS126X_Initialize(void)
 		}
 
 		// Wait until calibration is complete
-		// According to Table 32, a sample rate of 400SPS should complete in ~58.41ms
-//		ADS126X_DelayMs(75); //a sample rate of 400SPS should complete in ~58.41ms
-		ADS126X_DelayMs(400); //a sample rate of 60SPS with Sinc3 Filter should complete in ~350.9ms
+		// According to Table 14, a sample rate of 7200SPS with Sinc3 Filter should complete in ~3.772ms
+		ADS126X_DelayMs(10);
 
 		for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 		{
@@ -701,15 +709,12 @@ void ADS126X_StartAll(void)
 /*******************************************************************************
  * Function:	ADS126X_ConfigureInput()
  * Parameters:	const uint8_t bChip,
- * 				const uint8_t bConverter,
  * 				const ADS126X_INPUTS_ENUM eInput,
  * Return:		void
  * Notes:		Configure the given converter on the given chip to use the given input
  ******************************************************************************/
-void ADS126X_ConfigureInput(const uint8_t bChip, const uint8_t bConverter, const ADS126X_INPUTS_ENUM eInput)
+void ADS126X_ConfigureInput(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput)
 {
-	UNUSED(bConverter);
-
 	if (ADS126X_IsChipUsable(bChip))
 	{
 		ADS126X_SpiOpen(bChip);
@@ -717,182 +722,81 @@ void ADS126X_ConfigureInput(const uint8_t bChip, const uint8_t bConverter, const
 		// Configure all ADC chips for the given input
 		switch(eInput)
 		{
-			case ADS126X_INPUT_MUX_RTD1:
-			case ADS126X_INPUT_MUX_RTD2:
-			case ADS126X_INPUT_MUX_RTD3:
+			case ADS126X_INPUT_MUX_AG_SENSE_B0:
+			case ADS126X_INPUT_MUX_AG_SENSE_GX:
+			case ADS126X_INPUT_MUX_AG_B0:
+			case ADS126X_INPUT_MUX_AG_GX:
 			{
-				// Set the reference mux to use the external AIN4/AIN5 3.3V LDO as reference
-				ADS126X_SetRegister(ADS126X_REG_REF_MUX, ((0x03 << 3) | (0x03)));
-				//ADS126X_SetRegister(ADS126X_REG_REF_MUX, 0x00);
+				/* *************************************************************
+				 * Set the reference mux to use the external AIN0/AINCOM 2.048V LDO as reference
+				 * Leave the internal reference enabled
+				 */				
+				ADS126X_SetRegister(ADS126X_REG_REF, 0x19);
 
 				// Set the input mux to use the correct input signals
 				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput].bInputMux);
 
 				/* *************************************************************
 				 * Set Mode0 Register settings:
-				 * 	- Use normal polarity
-				 * 	- Use pulse conversion (one-shot)
-				 * 	- Disable chop mode
-				 * 	- Add additional delay of 555us
+				 * 	- Set the ADC data rate
+				 * 	- Set the digital filter mode to sinc3
 				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x47);
-				//ADS126X_SetRegister(ADS126X_REG_MODE0, (0x0 << 6) | (0x1 << 4) | (0xB)); // continuous sampling, chop enable, 8.8ms conversion delay
+				ADS126X_SetRegister(ADS126X_REG_MODE0, ((ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F)<<3) | 0x02);
 
 				/* *************************************************************
 				 * Set Mode1 Register settings:
-				 * 	- Configure filter (ensure settled in a single conversion cycle)
-				 * 	- Configure Sensor Bias (default polarity, 10Mohm)
+				 * 	- Disable chop mode
+				 * 	- Use pulse conversion (one-shot)
+				 * 	- Use a conversion start delay of 605us
 				 */
-				//ADS126X_SetRegister(ADS126X_REG_MODE1, 0x00); // Sinc1 Filter, no Sensor Bias
-				//ADS126X_SetRegister(ADS126X_REG_MODE1, (0x01 << 5)); // Sinc2 Filter, no Sensor Bias
-				ADS126X_SetRegister(ADS126X_REG_MODE1, (0x02 << 5)); // Sinc3 Filter, no Sensor Bias
-				//ADS126X_SetRegister(ADS126X_REG_MODE1, (0x03 << 5)); // Sinc4 Filter, no Sensor Bias
-				//ADS126X_SetRegister(ADS126X_REG_MODE1, (0x03 << 5) | (0x00 | 0x06)); // Sinc4 Filter, Enable Sensor Bias
-				//ADS126X_SetRegister(ADS126X_REG_MODE1, (0x04 << 5)); // FIR Filter, no Sensor Bias
+				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x18);
 
 				/* *************************************************************
-				 * Set Mode2 Register settings:
-				 * 	- Enable PGA
+				 * Set PGA Register settings:
+				 * 	- Enable PGA (do not enable PGA bypass)
 				 * 	- Set PGA gain as set in ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray array
 				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE2, ((ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] & 0x7) << 4) | (ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F));
+				ADS126X_SetRegister(ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] & 0x7));
 
 				break;
 			}
-#if 0
-			case (ADS126X_INPUT_MUX_RTDX_TEST + 0):
-			case (ADS126X_INPUT_MUX_RTDX_TEST + 1):
-			case (ADS126X_INPUT_MUX_RTDX_TEST + 2):
-			{
-				// Set the reference mux to use the external AIN4/AIN5 3.3V LDO as reference
-				ADS126X_SetRegister(ADS126X_REG_REF_MUX, ((0x03 << 3) | (0x03)));
-				//ADS126X_SetRegister(ADS126X_REG_REF_MUX, 0x00);
-
-				// Set the input mux to use the correct input signals
-				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput - ADS126X_INPUT_MUX_RTDX_TEST].bInputMux);
-
-				/* *************************************************************
-				 * Set Mode0 Register settings:
-				 * 	- Use normal polarity
-				 * 	- Use pulse conversion (one-shot)
-				 * 	- Disable chop mode
-				 * 	- Disable additional delay
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x40);
-
-				/* *************************************************************
-				 * Set Mode1 Register settings:
-				 * 	- Enable sinc1 filter (ensure settled in a single conversion cycle)
-				 * 	- Enable Sensor Bias (default polarity, 10Mohm)
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x00); // Sinc1 Filter, no Sensor Bias
-
-				/* *************************************************************
-				 * Set Mode2 Register settings:
-				 * 	- Enable PGA
-				 * 	- Set PGA gain to 1
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE2, (0x00 << 4) | (0x08));	// PGA Gain of 1V/V, Data Rate of 400 SPS
-
-				break;
-			}
-#endif
+			case ADS126X_INPUT_MUX_BOARD_TEMP:
+			case ADS126X_INPUT_MUX_RAIL_4V1:
+			case ADS126X_INPUT_MUX_RAIL_6V1:
+			case ADS126X_INPUT_MUX_EXT_VREF:
 			case ADS126X_INPUT_MUX_THERMOM:
+			case ADS126X_INPUT_MUX_AVDD_MON:
+			case ADS126X_INPUT_MUX_DVDD_MON:
 			{
-				// Set the reference mux to use the internal 2.5V reference as reference
-				ADS126X_SetRegister(ADS126X_REG_REF_MUX, 0x00);
+				/* *************************************************************
+				 * Set the reference mux to use the internal 2.5V reference as reference (ensure stabilization time honored)
+				 */
+				ADS126X_SetRegister(ADS126X_REG_REF, 0x10);
 
 				// Set the input mux to use the Internal Temperature Sensor
 				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput].bInputMux);
 
 				/* *************************************************************
 				 * Set Mode0 Register settings:
-				 * 	- Use normal polarity
-				 * 	- Use pulse conversion (one-shot)
+				 * 	- Set the ADC data rate
+				 * 	- Set the digital filter mode to sinc3
+				 */
+				ADS126X_SetRegister(ADS126X_REG_MODE0,  ((ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F)<<3) | 0x02);
+
+				/* *************************************************************
+				 * SSet Mode1 Register settings:
 				 * 	- Disable chop mode
-				 * 	- Disable additional delay
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x40);
-
-				/* *************************************************************
-				 * Set Mode1 Register settings:
-				 * 	- Enable sinc1 filter (ensure settled in a single conversion cycle)
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x00);
-
-				/* *************************************************************
-				 * Set Mode2 Register settings:
-				 * 	- Enable PGA
-				 * 	- Set PGA gain to 1
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE2, (ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F));
-
-				break;
-			}
-			case ADS126X_INPUT_MUX_ADD_MON:
-			case ADS126X_INPUT_MUX_VDD_MON:
-			{
-				// Set the reference mux to use the internal 2.5V reference as reference
-				ADS126X_SetRegister(ADS126X_REG_REF_MUX, 0x00);
-
-				// Set the input mux to use the Internal Temperature Sensor
-				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput].bInputMux);
-
-				/* *************************************************************
-				 * Set Mode0 Register settings:
-				 * 	- Use normal polarity
 				 * 	- Use pulse conversion (one-shot)
-				 * 	- Disable chop mode
-				 * 	- Disable additional delay
+				 * 	- Use a conversion start delay of 605us
 				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x40);
+				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x18);
 
 				/* *************************************************************
-				 * Set Mode1 Register settings:
-				 * 	- Enable sinc1 filter (ensure settled in a single conversion cycle)
-				 * 	- Enable Sensor Bias
+				 * Set PGA Register settings:
+				 * 	- Enable PGA (do not enable PGA bypass)
+				 * 	- Set PGA gain as set in ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray array
 				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x06);
-
-				/* *************************************************************
-				 * Set Mode2 Register settings:
-				 * 	- Enable PGA
-				 * 	- Set PGA gain to 1
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE2, (ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F));
-
-				break;
-			}
-			case ADS126X_INPUT_MUX_EXT_REF:
-			{
-				// Set the reference mux to use the internal analog supply (V_AVDD) as reference
-				ADS126X_SetRegister(ADS126X_REG_REF_MUX, ((0x04 << 3) | (0x04)));
-
-				// Set the input mux to use the External Reference inputs
-				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput].bInputMux);
-
-				/* *************************************************************
-				 * Set Mode0 Register settings:
-				 * 	- Use normal polarity
-				 * 	- Use pulse conversion (one-shot)
-				 * 	- Disable chop mode
-				 * 	- Disable additional delay
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x40);
-
-				/* *************************************************************
-				 * Set Mode1 Register settings:
-				 * 	- Enable sinc1 filter (ensure settled in a single conversion cycle)
-				 * 	- Enable Sensor Bias
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x06);
-
-				/* *************************************************************
-				 * Set Mode2 Register settings:
-				 * 	- Enable PGA
-				 * 	- Set PGA gain to 1
-				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE2, (ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F));
+				ADS126X_SetRegister(ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] & 0x7));
 
 				break;
 			}
@@ -910,24 +814,20 @@ void ADS126X_ConfigureInput(const uint8_t bChip, const uint8_t bConverter, const
 /*******************************************************************************
  * Function:	ADS126X_ReadRawResult()
  * Parameters:	const uint8_t bChip,
- * 				const uint8_t bConverter,
  * 				ADS126X_ReadData_Type * const ptAdcData,
  * Return:		BOOL, TRUE if successful, FALSE otherwise
  * Notes:		Worker function to read the raw result packet from the given converter on the given chip
  ******************************************************************************/
-BOOL ADS126X_ReadRawResult(const uint8_t bChip, const uint8_t bConverter, ADS126X_ReadData_Type * const ptAdcData)
+BOOL ADS126X_ReadRawResult(const uint8_t bChip, ADS126X_ReadData_Type * const ptAdcData)
 {
 	BOOL fReturn = TRUE;
 
-	if ((bChip < ADS126X_NUM_CHIPS) && (bConverter < ADS126X_NUM_CONVERTERS) && (NULL != ptAdcData))
+	if ((bChip < ADS126X_NUM_CHIPS) && (NULL != ptAdcData))
 	{
 		ADS126X_SpiOpen(bChip);
 
-		if (0 == bConverter)
-		{
-			ADS126X_SpiSendRecv(ADS126X_CMD_RDATA); // RDATA1 command (for ADC1 input channel)
-		}
-
+		ADS126X_SpiSendRecv(ADS126X_CMD_RDATA);
+		
 		// Get all six bytes from the ADC (status, data[4], checksum)
 		for (uint8_t i=0; i<sizeof(ptAdcData->tRawData.bArray); i++)
 		{
@@ -978,17 +878,16 @@ uint8_t ADS126X_CalculateChecksumCrc(int32_t i32DataBytes)
 /*******************************************************************************
  * Function:	ADS126X_GetReading()
  * Parameters:	const uint8_t bChip,
- * 				const uint8_t bConverter,
  * 				ADS126X_ReadData_Type *ptAdcData,
  * Return:		BOOL, TRUE if successful, FALSE otherwise
  * Notes:		Get the reading from the given converter on the given chip
  ******************************************************************************/
-BOOL ADS126X_GetReading(const uint8_t bChip, const uint8_t bConverter, ADS126X_ReadData_Type *ptAdcData)
+BOOL ADS126X_GetReading(const uint8_t bChip, ADS126X_ReadData_Type *ptAdcData)
 {
 	BOOL 	fIsDataOK 	= FALSE;
 	uint8_t bCount		= 0;
 
-	if ((bChip < ADS126X_NUM_CHIPS) && (bConverter < ADS126X_NUM_CONVERTERS) && (NULL != ptAdcData))
+	if ((bChip < ADS126X_NUM_CHIPS) && (NULL != ptAdcData))
 	{
 		ptAdcData->fValid = FALSE;
 		ptAdcData->dbReading = NAN;
@@ -996,7 +895,7 @@ BOOL ADS126X_GetReading(const uint8_t bChip, const uint8_t bConverter, ADS126X_R
 		while((!fIsDataOK) && (bCount < ADS126X_MAX_MEASURE_NUMBER))
 		{
 			memset(ptAdcData, 0, sizeof(*ptAdcData));
-			const BOOL fReadValid = ADS126X_ReadRawResult(bChip, bConverter, ptAdcData);	//Raw data transmitted
+			const BOOL fReadValid = ADS126X_ReadRawResult(bChip, ptAdcData);	//Raw data transmitted
 
 			if (fReadValid)
 			{
@@ -1006,10 +905,7 @@ BOOL ADS126X_GetReading(const uint8_t bChip, const uint8_t bConverter, ADS126X_R
 				ptAdcData->tRawData.idwData = (int32_t) dwSwap;
 
 				// Data from ADC2 is 24-bits and must be right-shifted by 8-bits for the CRC calculation to work properly
-				if (0 != bConverter)
-				{
-					ptAdcData->tRawData.idwData >>= 8;
-				}
+				ptAdcData->tRawData.idwData >>= 8;
 
 				// Verify the checksum matches the given value
 				ptAdcData->bChecksumCalc	= ADS126X_CalculateChecksumCrc(ptAdcData->tRawData.idwData);	// Calculate the checksum
@@ -1037,13 +933,12 @@ BOOL ADS126X_GetReading(const uint8_t bChip, const uint8_t bConverter, ADS126X_R
 /*******************************************************************************
  * Function:	ADS126X_ConvertReading()
  * Parameters:	const uint8_t bChip,
- * 				const uint8_t bConverter,
  * 				const ADS126X_INPUTS_ENUM eInput,
  * 				ADS126X_ReadData_Type *ptAdcData,
  * Return:		BOOL, TRUE if successful, FALSE otherwise
  * Notes:		Convert the reading from the given converter on the given chip
  ******************************************************************************/
-BOOL ADS126X_ConvertReading(const uint8_t bChip, const uint8_t bConverter, const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_Type *ptAdcData)
+BOOL ADS126X_ConvertReading(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_Type *ptAdcData)
 {
 	BOOL fResult = TRUE;
 
@@ -1055,33 +950,36 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const uint8_t bConverter, const
 
 			switch (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput])
 			{
-				case ADS126X_PGA_GAIN_1: 	{ dbGainDivisor = 1.0;	break; };
-				case ADS126X_PGA_GAIN_2: 	{ dbGainDivisor = 2.0;	break; };
-				case ADS126X_PGA_GAIN_4: 	{ dbGainDivisor = 4.0;	break; };
-				case ADS126X_PGA_GAIN_8: 	{ dbGainDivisor = 8.0;	break; };
-				case ADS126X_PGA_GAIN_16: 	{ dbGainDivisor = 16.0;	break; };
-				case ADS126X_PGA_GAIN_32: 	{ dbGainDivisor = 32.0;	break; };
-				default: 					{ 						break; };
+				case ADS126X_PGA_GAIN_1: 	{ dbGainDivisor = 1.0;		break; };
+				case ADS126X_PGA_GAIN_2: 	{ dbGainDivisor = 2.0;		break; };
+				case ADS126X_PGA_GAIN_4: 	{ dbGainDivisor = 4.0;		break; };
+				case ADS126X_PGA_GAIN_8: 	{ dbGainDivisor = 8.0;		break; };
+				case ADS126X_PGA_GAIN_16: 	{ dbGainDivisor = 16.0;		break; };
+				case ADS126X_PGA_GAIN_32: 	{ dbGainDivisor = 32.0;		break; };
+				case ADS126X_PGA_GAIN_64: 	{ dbGainDivisor = 64.0;		break; };
+				case ADS126X_PGA_GAIN_128: 	{ dbGainDivisor = 128.0;	break; };
+				default: 					{ 							break; };
 			}
 
 			// Convert the ADC reading to voltage (interim value for future calculations)
 			// Return the raw value here (only update for type of converter used)
 			ptAdcData->dbReading = ptAdcData->tRawData.idwData;
-			ptAdcData->dbReading /= (0 == bConverter) ? ADS126X_DIVISOR_32BIT : ADS126X_DIVISOR_24BIT;
+			ptAdcData->dbReading /= ADS126X_DIVISOR_24BIT;
 			ptAdcData->dbReading /= dbGainDivisor;
 
 			switch(eInput)
 			{
-				case ADS126X_INPUT_MUX_RTD1:
-				case ADS126X_INPUT_MUX_RTD2:
-				case ADS126X_INPUT_MUX_RTD3:
+				case ADS126X_INPUT_MUX_AG_SENSE_B0:
+				case ADS126X_INPUT_MUX_AG_SENSE_GX:
+				case ADS126X_INPUT_MUX_AG_B0:
+				case ADS126X_INPUT_MUX_AG_GX:
 				{
 					break;
 				}
 				case ADS126X_INPUT_MUX_THERMOM:
 				{
 					// Convert the ADC reading to degrees Celsius
-					// Equation 9 from ADS1262 Datasheet:
+					// Equation 2 from ADS1261 Datasheet:
 					// 		Temperature (°C) = [(Temperature Reading (µV) – 122,400) / 420 µV/°C] + 25°C
 					// Webpage that further describes how to convert the raw reading to a temperature value
 					// http://e2e.ti.com/support/data-converters/f/73/t/637819?ADS1262-Temperature-sensor-acquisition
@@ -1093,14 +991,14 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const uint8_t bConverter, const
 
 					break;
 				}
-				case ADS126X_INPUT_MUX_ADD_MON:
-				case ADS126X_INPUT_MUX_VDD_MON:
+				case ADS126X_INPUT_MUX_AVDD_MON:
+				case ADS126X_INPUT_MUX_DVDD_MON:
 				{
 					// Convert the ADC reading to voltage
 					ptAdcData->dbReading *= ADC126X_ADC_REF_INT;
 					ptAdcData->dbReading *= 4.0;
 
-					if (ADS126X_INPUT_MUX_ADD_MON == eInput)
+					if (ADS126X_INPUT_MUX_AVDD_MON == eInput)
 					{
 						// Cache the measured Avdd reading for future calculations that depend on it
 						ADS126X_ADC_STATUS_ARRAY[bChip].dbMeasuredAvdd = ptAdcData->dbReading;
@@ -1108,7 +1006,7 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const uint8_t bConverter, const
 
 					break;
 				}
-				case ADS126X_INPUT_MUX_EXT_REF:
+				case ADS126X_INPUT_MUX_EXT_VREF:
 				{
 					// Convert the ADC reading to voltage
 					// Use the previously measured latest result for A_VDD to scale this reading
@@ -1140,44 +1038,37 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const uint8_t bConverter, const
 
 
 /*******************************************************************************
- * Function:	ADS126X_CalculateRtdTemperature()
+ * Function:	ADS126X_CalculateBoardTemperature()
  * Parameters:	const double dbRawValue, previously obtained reading (voltage)
- * 				const BOOL fGetResistance, FALSE to return temperature (degC), TRUE to return resistance (ohms)
- * Return:		double, calculated result
- * Notes:		Worker function to calculate RTD temperature and resistance
+ * Return:		double, calculated result (degC)
+ * Notes:		Worker function to calculate board temperature sensor temperature
  ******************************************************************************/
-double ADS126X_CalculateRtdTemperature(const double dbRawValue, const BOOL fGetResistance)
+double ADS126X_CalculateBoardTemperature(const double dbRawValue)
 {
-	double SensFrac		= NAN;
-	double Rval			= NAN;
-	double LogVal		= NAN;
-	double Tval			= NAN;
+	double dbResultDegC = NAN;
 
-	SensFrac = dbRawValue;
-
-	//Rval = ADS126X_R_FIXED * (1-SensFrac)/(1+SensFrac);
-	Rval = ADS126X_R_FIXED * (1-2*SensFrac)/(1+2*SensFrac);
-
-	if (fGetResistance)
+	if (dbRawValue < 0.1)
 	{
-		Tval = Rval;
+		dbResultDegC = -40.0;
+	}
+	else if (dbRawValue > 1.750)
+	{
+		dbResultDegC = +125.0;
 	}
 	else
 	{
-		LogVal = log(Rval/ADS126X_R_AT_25DEGC);
-		//Tval = 1/((0.003354016)+(0.000256985*LogVal)+(0.00000262013*LogVal*LogVal)+(0.0000000638309*LogVal*LogVal*LogVal))-273.15;
-		Tval = 1/((0.00335399369566509)+(0.000300087411295597*LogVal)+(0.00000507080259309172*LogVal*LogVal)+(0.000000212628159445369*LogVal*LogVal*LogVal))-273.15;
+		dbResultDegC = dbRawValue;
+		dbResultDegC -= 0.5;
+		dbResultDegC /= 0.01;
 	}
 
-//	SystemPrintf(SYSTEM_PRINTF_MODULE_ADC, "{%llu} Temperature: %.8f, %.8f, %.8f, %.8f\r\n",
+//	SystemPrintf(SYSTEM_PRINTF_MODULE_ADC, "{%llu} Temperature: %.8f V, %.8f degC\r\n",
 //			SystemGetBigTick(),
-//			SensFrac,
-//			Rval,
-//			LogVal,
-//			Tval
+//			dbRawValue,
+//			dbResultDegC
 //			);
 
-	return Tval;
+	return dbResultDegC;
 }
 
 
@@ -1202,31 +1093,33 @@ double ADS126X_ReadTemperatureSensor(const uint8_t bChip)
 
 	ADS126X_SpiSendRecv(ADS126X_CMD_STOP);		// Send STOP1 to stop conversions on ADC1
 
-	// Set the reference mux to use the internal 2.5V reference
-	ADS126X_SetRegister(ADS126X_REG_REF_MUX, 0x00);
+	// Set the reference mux to use the internal 2.5V reference (ensure stabilization time honored)
+	ADS126X_SetRegister(ADS126X_REG_REF, 0x10);
 
 	// Set the input mux to use the Internal Temperature Sensor
 	ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_THERMOM].bInputMux);
 
-	/* Set Mode0 Register settings:
-	 * 	- Use normal polarity
-	 * 	- Use continuous conversion
+	/* *************************************************************
+	 * Set Mode0 Register settings:
+	 * 	- Set the ADC data rate
+	 * 	- Set the digital filter mode to sinc3
+	 */
+	ADS126X_SetRegister(ADS126X_REG_MODE0,  ((ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_THERMOM].eSampleRate & 0x0F)<<3) | 0x02);
+
+	/* *************************************************************
+	 * SSet Mode1 Register settings:
 	 * 	- Disable chop mode
-	 * 	- Disable additional delay
+	 * 	- Use continuous conversion mode (one-shot)
+	 * 	- Use a conversion start delay of 605us
 	 */
-	ADS126X_SetRegister(ADS126X_REG_MODE0, 0x00);
+	ADS126X_SetRegister(ADS126X_REG_MODE1, 0x08);
 
-	/* Set Mode1 Register settings:
-	 * 	- Enable sinc1 filter
+	/* *************************************************************
+	 * Set PGA Register settings:
+	 * 	- Enable PGA (do not enable PGA bypass)
+	 * 	- Set PGA gain as set in ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray array
 	 */
-	ADS126X_SetRegister(ADS126X_REG_MODE1, 0x00);
-
-	/* Set Mode2 Register settings:
-	 * 	- Enable PGA
-	 * 	- Set PGA gain to 1
-	 * 	- Set data rate to 7200SPS
-	 */
-	ADS126X_SetRegister(ADS126X_REG_MODE2, 0x0C);
+	ADS126X_SetRegister(ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][ADS126X_INPUT_MUX_THERMOM] & 0x7));
 
 	ADS126X_SendCommand(ADS126X_CMD_START);
 
@@ -1239,7 +1132,7 @@ double ADS126X_ReadTemperatureSensor(const uint8_t bChip)
 
 	if (ADS126X_GetReading(bChip, 0, &tAdcData))
 	{
-		if (ADS126X_ConvertReading(bChip, 0, ADS126X_INPUT_MUX_THERMOM, &tAdcData))
+		if (ADS126X_ConvertReading(bChip, ADC126X_CONVERTER_DEFAULT, ADS126X_INPUT_MUX_THERMOM, &tAdcData))
 		{
 			dbResult = tAdcData.dbReading;
 		}
@@ -1340,7 +1233,7 @@ double ADS126X_GetReadingFromChip(const uint8_t bChip, const ADS126X_INPUTS_ENUM
 
 			if (fSuccess)
 			{
-				if (ADS126X_ConvertReading(bChip, 0, eInput, &tAdcData))
+				if (ADS126X_ConvertReading(bChip, eInput, &tAdcData))
 				{
 					dbResult = tAdcData.dbReading;
 				}
@@ -1387,7 +1280,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 					// Configure all chips to get the requested type of reading
 					for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 					{
-						ADS126X_ConfigureInput(bChip, 0, eInput + ADS126X_INPUT_MUX_RTDX_TEST);
+						ADS126X_ConfigureInput(bChip, eInput + ADS126X_INPUT_MUX_RTDX_TEST);
 					}
 
 					ADS126X_StartAll();
@@ -1404,7 +1297,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 				for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 				{
 					ptAdcExtResultStruct->dbResultArray[bChip][eInput] = 0.0;
-					ADS126X_ConfigureInput(bChip, 0, eInput);
+					ADS126X_ConfigureInput(bChip, eInput);
 				}
 
 				// Wait for analog circuits to settle before starting RTD conversions
@@ -1449,7 +1342,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 		// Always set all chips back to the very first input channel after the data from all inputs has been gathered.
 		for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 		{
-			ADS126X_ConfigureInput(bChip, 0, ADS126X_INPUT_MUX_RTD1);
+			ADS126X_ConfigureInput(bChip, ADS126X_INPUT_MUX_AG_SENSE_B0);
 		}
 	}
 }
@@ -1686,7 +1579,7 @@ uint32_t ADS126X_Test(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 		tAdcData.fNewData = TRUE;
 		tAdcData.tRawData.idwData = ADS126X_ADC_STATUS_ARRAY[bChip].idwOffsetCalValue;
 
-		ADS126X_ConvertReading(bChip, 0, ADS126X_INPUT_MUX_RTD1, &tAdcData);
+		ADS126X_ConvertReading(bChip, ADS126X_INPUT_MUX_RTD1, &tAdcData);
 
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
 							"Chip: %u, Found: %u, IsUsable: %u, Offset: %9.4f, MeasuredAvdd: %9.4f, OffsetCalValue: %+9ld (%+e V, %+9.6f degC)\r\n",

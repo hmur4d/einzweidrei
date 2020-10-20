@@ -13,25 +13,27 @@
 #ifndef HW_FIELDLOCK_ADS1261_H
 #define HW_FIELDLOCK_ADS1261_H
 
-#define ADS126X_NUM_CHIPS				(1)		// Number of ADS1262 chips in the system
-#define ADS126X_NUM_CONVERTERS			(1)		// Number of ADCx converters inside each chip (only ADS1263 has 2)
+#define BOOL		bool
+#define TRUE		true
+#define FALSE		false
+
+#define ADS126X_NUM_CHIPS				(1)		// Number of ADS126X chips in the system
 
 typedef enum
 {
-	ADS126X_INPUT_MUX_VREF			= 0x00,	// 0
-	ADS126X_INPUT_MUX_AG_SENSE_B0,  		// 1
-	ADS126X_INPUT_MUX_AG_SENSE_GX,			// 2
-	ADS126X_INPUT_MUX_AG_B0,    			// 3
-	ADS126X_INPUT_MUX_AG_GX,			    // 4
-	ADS126X_INPUT_MUX_PCB_TEMP,		    	// 5
-	ADS126X_INPUT_MUX_RAIL_4V1,		    	// 6
-	ADS126X_INPUT_MUX_RAIL_6V1,		    	// 7
-	ADS126X_INPUT_MUX_THERMOM,				// 8
-	ADS126X_INPUT_MUX_ADD_MON,				// 9
-	ADS126X_INPUT_MUX_VDD_MON,				// 10
-	ADS126X_INPUT_MUX_EXT_REF,				// 11, Put this last as calculation is dependent on result from ADS126X_INPUT_MUX_ADD_MON
+	ADS126X_INPUT_MUX_AG_SENSE_B0 = 0x00,	// 0
+	ADS126X_INPUT_MUX_AG_SENSE_GX,			// 1
+	ADS126X_INPUT_MUX_AG_B0,    			// 2
+	ADS126X_INPUT_MUX_AG_GX,			    // 3
+	ADS126X_INPUT_MUX_BOARD_TEMP,			// 4
+	ADS126X_INPUT_MUX_RAIL_4V1,		    	// 5
+	ADS126X_INPUT_MUX_RAIL_6V1,		    	// 6
+	ADS126X_INPUT_MUX_THERMOM,				// 7
+	ADS126X_INPUT_MUX_AVDD_MON,				// 8
+	ADS126X_INPUT_MUX_DVDD_MON,				// 9
+	ADS126X_INPUT_MUX_EXT_VREF,				// 10, Put this last as calculation is dependent on result from ADS126X_INPUT_MUX_AVDD_MON
 
-	ADS126X_INPUTS_NUM_TOTAL,
+	ADS126X_INPUTS_NUM_TOTAL,				// 11
 } ADS126X_INPUTS_ENUM;
 
 #define ADS126X_INPUT_MUX_RTDX_TEST  (100)
@@ -118,7 +120,7 @@ typedef struct
 
 } ADC126X_DIAGNOSTICS_STRUCT;
 
-// Status Byte bit masks (From Table 22 in Datasheet)
+// Status Byte bit masks (From Table 31 in Datasheet)
 #define ADS126X_STATUS_BYTE_MASK_RESET			(1<<0)
 #define ADS126X_STATUS_BYTE_MASK_CLOCK			(1<<1)
 #define ADS126X_STATUS_BYTE_MASK_DATA_READY		(1<<2)
@@ -137,7 +139,7 @@ typedef struct
 
 // Low-level functions
 //uint16_t 	ADS126X_GetMinMsBetweenReadings		(const ADS126X_SampleRate_Enum eSampleRate);
-double 		ADS126X_CalculateRtdTemperature		(const double dbRawValue, const BOOL fGetResistance);
+double 		ADS126X_CalculateBoardTemperature	(const double dbRawValue);
 
 
 // High-level API
