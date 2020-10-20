@@ -1,28 +1,35 @@
 /*
- * app_adc_ads126x.h
+ * hw_fieldlock_ads1261.h
  *
  *  Created on: Sep 4, 2019
  *      Author: Joel Minski
+ * 
+ *  Ported: Oct. 16, 2020, to support ADS1261 ADC on Field Lock Board from HPS.
  *
- *  Note:  This is a driver for the external 32-bit TI ADS1262 (with partial support for the ADS1263).
+ *  Note:  This is a driver for the external 24-bit TI ADS1261 10-input ADC.
  *
  */
 
-#ifndef APP_ADC_ADS126X_H
-#define APP_ADC_ADS126X_H
+#ifndef HW_FIELDLOCK_ADS1261_H
+#define HW_FIELDLOCK_ADS1261_H
 
-#define ADS126X_NUM_CHIPS				(6)		// Number of ADS1262 chips in the system
-#define ADS126X_NUM_CONVERTERS			(2)		// Number of ADCx converters inside each chip (only ADS1263 has 2)
+#define ADS126X_NUM_CHIPS				(1)		// Number of ADS1262 chips in the system
+#define ADS126X_NUM_CONVERTERS			(1)		// Number of ADCx converters inside each chip (only ADS1263 has 2)
 
 typedef enum
 {
-	ADS126X_INPUT_MUX_RTD1			= 0x00,	// 0
-	ADS126X_INPUT_MUX_RTD2,					// 1
-	ADS126X_INPUT_MUX_RTD3,					// 2
-	ADS126X_INPUT_MUX_THERMOM,				// 3
-	ADS126X_INPUT_MUX_ADD_MON,				// 4
-	ADS126X_INPUT_MUX_VDD_MON,				// 5
-	ADS126X_INPUT_MUX_EXT_REF,				// 6, Put this last as calculation is dependent on result from ADS126X_INPUT_MUX_ADD_MON
+	ADS126X_INPUT_MUX_VREF			= 0x00,	// 0
+	ADS126X_INPUT_MUX_AG_SENSE_B0,  		// 1
+	ADS126X_INPUT_MUX_AG_SENSE_GX,			// 2
+	ADS126X_INPUT_MUX_AG_B0,    			// 3
+	ADS126X_INPUT_MUX_AG_GX,			    // 4
+	ADS126X_INPUT_MUX_PCB_TEMP,		    	// 5
+	ADS126X_INPUT_MUX_RAIL_4V1,		    	// 6
+	ADS126X_INPUT_MUX_RAIL_6V1,		    	// 7
+	ADS126X_INPUT_MUX_THERMOM,				// 8
+	ADS126X_INPUT_MUX_ADD_MON,				// 9
+	ADS126X_INPUT_MUX_VDD_MON,				// 10
+	ADS126X_INPUT_MUX_EXT_REF,				// 11, Put this last as calculation is dependent on result from ADS126X_INPUT_MUX_ADD_MON
 
 	ADS126X_INPUTS_NUM_TOTAL,
 } ADS126X_INPUTS_ENUM;
@@ -46,7 +53,8 @@ typedef enum
 	ADS126X_SPS_7200,		// 12
 	ADS126X_SPS_14400,		// 13
 	ADS126X_SPS_19200,		// 14
-	ADS126X_SPS_38400,		// 15
+	ADS126X_SPS_25600,		// 15
+	ADS126X_SPS_40000,		// 16
 
 	ADS126X_SPS_NUM_TOTAL
 } ADS126X_SampleRate_Enum;
@@ -59,6 +67,8 @@ typedef enum
 	ADS126X_PGA_GAIN_8,			// 3 => 8 V/V
 	ADS126X_PGA_GAIN_16,		// 4 => 16 V/V
 	ADS126X_PGA_GAIN_32,		// 5 => 32 V/V
+	ADS126X_PGA_GAIN_64,		// 6 => 64 V/V
+	ADS126X_PGA_GAIN_128,		// 7 => 128 V/V
 
 	ADS126X_PGA_GAIN_NUM_TOTAL
 } ADS126X_PgaGain_Enum;
@@ -110,19 +120,19 @@ typedef struct
 
 // Status Byte bit masks (From Table 22 in Datasheet)
 #define ADS126X_STATUS_BYTE_MASK_RESET			(1<<0)
-#define ADS126X_STATUS_BYTE_MASK_PGAD_ALM		(1<<1)
-#define ADS126X_STATUS_BYTE_MASK_PGAH_ALM		(1<<2)
-#define ADS126X_STATUS_BYTE_MASK_PGAL_ALM		(1<<3)
-#define ADS126X_STATUS_BYTE_MASK_REF_ALM		(1<<4)
-#define ADS126X_STATUS_BYTE_MASK_EXTCLK			(1<<5)
-#define ADS126X_STATUS_BYTE_MASK_ADC1_NEW		(1<<6)
-#define ADS126X_STATUS_BYTE_MASK_ADC2_NEW		(1<<7)
+#define ADS126X_STATUS_BYTE_MASK_CLOCK			(1<<1)
+#define ADS126X_STATUS_BYTE_MASK_DATA_READY		(1<<2)
+#define ADS126X_STATUS_BYTE_MASK_REFL_ALM		(1<<3)
+#define ADS126X_STATUS_BYTE_MASK_PGAH_ALM		(1<<4)
+#define ADS126X_STATUS_BYTE_MASK_PGAL_ALM		(1<<5)
+#define ADS126X_STATUS_BYTE_MASK_CRCERR			(1<<6)
+#define ADS126X_STATUS_BYTE_MASK_LOCK			(1<<7)
 
 #define ADS126X_SPS_MINIMUM						(ADS126X_SPS_2_5)
-#define ADS126X_SPS_MAXIMUM						(ADS126X_SPS_38400)
+#define ADS126X_SPS_MAXIMUM						(ADS126X_SPS_40000)
 
 #define ADS126X_PGA_GAIN_MINIMUM				(ADS126X_PGA_GAIN_1)	// 0 => Gain of 1V/V
-#define ADS126X_PGA_GAIN_MAXIMUM				(ADS126X_PGA_GAIN_32)	// 5 => Gain of 32V/V
+#define ADS126X_PGA_GAIN_MAXIMUM				(ADS126X_PGA_GAIN_128)	// 7 => Gain of 128V/V
 
 
 // Low-level functions
@@ -141,4 +151,4 @@ void		ADS126X_GetDiagInfo					(ADC126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosti
 uint32_t 	ADS126X_ShowDiag					(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 
 
-#endif // APP_ADC_ADS126X_H
+#endif // HW_FIELDLOCK_ADS1261_H

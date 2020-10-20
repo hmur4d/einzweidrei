@@ -1,10 +1,12 @@
 /*
- * app_adc_ads126x.c
+ * app_adc_ads1261.c
  *
  *  Created on: Sep 4, 2019
  *      Author: Joel Minski
  *
- *  Note:  This is a driver for the external 32-bit TI ADS1262 (with partial support for the ADS1263).
+ *  Ported: Oct. 16, 2020, to support ADS1261 ADC on Field Lock Board from HPS.
+ *
+ *  Note:  This is a driver for the external 24-bit TI ADS1261 10-input ADC.
  *
  *	WARNING: This driver is *NOT* threadsafe and must only be called from a single thread!
  *
@@ -14,18 +16,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /* Standard C Header Files */
-#include "stdio.h"
-#include "string.h"
-#include "math.h"
-
-/* ST Library Header Files */
-#include "stm32f4xx_hal.h"
-
+#include "std_includes.h"
 
 /* Application Header Files */
-#include "app_always.h"
-#include "app_system.h"
-#include "app_adc_ads126x.h"
+#include "hw_fieldlock_ads1261.h"
 
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,20 +27,16 @@ typedef enum
 {
 	ADS126X_CMD_NOP						= 0x00,
 	ADS126X_CMD_RESET					= 0x06,
-	ADS126X_CMD_START1					= 0x08,
-	ADS126X_CMD_STOP1					= 0x0A,
-	ADS126X_CMD_START2					= 0x0C,
-	ADS126X_CMD_STOP2					= 0x0E,
-	ADS126X_CMD_RDATA1					= 0x12,
-	ADS126X_CMD_RDATA2					= 0x14,
-	ADS126X_CMD_SYOCAL1					= 0x16,
-	ADS126X_CMD_SYGCAL1					= 0x17,
-	ADS126X_CMD_SFOCAL1					= 0x19,
-	ADS126X_CMD_SYOCAL2					= 0x1B,
-	ADS126X_CMD_SYGCAL2					= 0x1C,
-	ADS126X_CMD_SFOCAL2					= 0x1E,
+	ADS126X_CMD_START					= 0x08,
+	ADS126X_CMD_STOP					= 0x0A,
+	ADS126X_CMD_RDATA					= 0x12,
+	ADS126X_CMD_SYOCAL					= 0x16,
+	ADS126X_CMD_SYGCAL					= 0x17,
+	ADS126X_CMD_SFOCAL					= 0x19,
 	ADS126X_CMD_RREG					= 0x20,	// Read registers, special command value, must be OR'd with register value
 	ADS126X_CMD_WREG					= 0x40,	// Write registers, special command value, must be OR'd with register value
+	ADS126X_CMD_LOCK					= 0xF2,	// Register lock, special command value, can be used to control lock-out of write access to registers
+	ADS126X_CMD_UNLOCK					= 0xF5,	// Register unlock, special command value, can be used to control lock-out of write access to registers
 
 	ADS126X_CMD_NUM_TOTAL,
 } ADS126X_COMMANDS_ENUM;
@@ -54,12 +44,12 @@ typedef enum
 typedef enum
 {
 	ADS126X_REG_DEVICE_ID				= 0x00,
-	ADS126X_REG_POWER					= 0x01,
-	ADS126X_REG_INTERFACE				= 0x02,
-	ADS126X_REG_MODE0					= 0x03,
-	ADS126X_REG_MODE1					= 0x04,
-	ADS126X_REG_MODE2					= 0x05,
-	ADS126X_REG_INPUT_MUX				= 0x06,
+	ADS126X_REG_STATUS					= 0x01,
+	ADS126X_REG_MODE0					= 0x02,
+	ADS126X_REG_MODE1					= 0x03,
+	ADS126X_REG_MODE2					= 0x04,
+	ADS126X_REG_MODE3					= 0x05,
+	ADS126X_REG_REF						= 0x06,
 	ADS126X_REG_OFFSET_CAL_0			= 0x07,
 	ADS126X_REG_OFFSET_CAL_1			= 0x08,
 	ADS126X_REG_OFFSET_CAL_2			= 0x09,
@@ -68,18 +58,10 @@ typedef enum
 	ADS126X_REG_FULL_SCALE_CAL_2		= 0x0C,
 	ADS126X_REG_IDAC_MUX				= 0x0D,
 	ADS126X_REG_IDAC_MAG				= 0x0E,
-	ADS126X_REG_REF_MUX					= 0x0F,
-	ADS126X_REG_TDACP_CONTROL			= 0x10,
-	ADS126X_REG_TDACN_CONTROL			= 0x11,
-	ADS126X_REG_GPIO_CONNECTION			= 0x12,
-	ADS126X_REG_GPIO_DIRECTION			= 0x13,
-	ADS126X_REG_GPIO_DATA				= 0x14,
-	ADS126X_REG_ADC2_CONFIG				= 0x15,
-	ADS126X_REG_ADC2_INPUT_MUX			= 0x16,
-	ADS126X_REG_ADC2_OFFSET_CAL_0		= 0x17,
-	ADS126X_REG_ADC2_OFFSET_CAL_1		= 0x18,
-	ADS126X_REG_ADC2_FULL_SCALE_CAL_0	= 0x19,
-	ADS126X_REG_ADC2_FULL_SCALE_CAL_1	= 0x1A,
+	ADS126X_REG_RESERVED				= 0x0F,
+	ADS126X_REG_PGA						= 0x10,
+	ADS126X_REG_INPUT_MUX				= 0x11,
+	ADS126X_REG_INPUT_BIAS				= 0x12,
 
 	ADS126X_REG_NUM_TOTAL,
 } ADS126X_REGISTERS_ENUM;
@@ -146,6 +128,8 @@ typedef struct
 #define	ADS126X_CHECKSUM_POLY			(0b1000001110000000000000000000000000000000000000000000000000000000)
 #define	ADS126X_MAX_MEASURE_NUMBER		(1)
 
+#define ADC126X_MODEL_ADS1260			(1260)
+#define ADC126X_MODEL_ADS1261			(1261)
 #define ADC126X_MODEL_ADS1262			(1262)
 #define ADC126X_MODEL_ADS1263			(1263)
 
@@ -160,12 +144,12 @@ static SPI_HandleTypeDef *phspiX = &hspi2;
 static const ADC126X_CHIP_DESCRIPTION_STRUCT 	ADS126X_CHIP_ARRAY[ADS126X_NUM_CHIPS] =
 {
 	// ADC Model, Enabled
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1262,	.pChipSelectGPIOx = GPIOC,	.wChipSelectPin = GPIO_PIN_6	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1262,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_7	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1262,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_8	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1262,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_9	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1262,	.pChipSelectGPIOx = GPIOA, 	.wChipSelectPin = GPIO_PIN_8	},
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1262,	.pChipSelectGPIOx = GPIOA, 	.wChipSelectPin = GPIO_PIN_10	},
+	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC,	.wChipSelectPin = GPIO_PIN_6	},
+	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_7	},
+	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_8	},
+	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC, 	.wChipSelectPin = GPIO_PIN_9	},
+	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOA, 	.wChipSelectPin = GPIO_PIN_8	},
+	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOA, 	.wChipSelectPin = GPIO_PIN_10	},
 };
 
 static const ADC126X_INPUT_MUX_STRUCT		ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUTS_NUM_TOTAL] =
@@ -265,6 +249,7 @@ static BOOL gfGatherAllInputs = FALSE;	// Set true to force the gathering of con
 
 /* Private function prototypes  ----------------------------------------------*/
 static BOOL 		ADS126X_IsChipUsable		(const uint8_t bChip);
+static void			ADS126X_DelayMs				(const uint32_t dwMilliseconds);
 static void 		ADS126X_SpiOpen				(const uint8_t bChip);
 static void 		ADS126X_SpiCloseAll			(void);
 static uint8_t 		ADS126X_SpiSendRecv			(const uint8_t bData);
@@ -319,7 +304,7 @@ void ADS126X_Initialize(void)
 
 	// Wait at least 9ms after POR before beginning communications
 	// See Datasheet, Section 9.4.10.1
-	SystemTaskDelayMs(20);
+	ADS126X_DelayMs(20);
 
 	// Reset all ADC chips
 	for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
@@ -329,7 +314,7 @@ void ADS126X_Initialize(void)
 		ADS126X_SendCommand(ADS126X_CMD_RESET);
 		ADS126X_SpiCloseAll();
 	}
-	SystemTaskDelayMs(2); // Short delay to ensure reset is complete
+	ADS126X_DelayMs(2); // Short delay to ensure reset is complete
 
 	// Check which chips are present
 	for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
@@ -389,7 +374,7 @@ void ADS126X_Initialize(void)
 				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, 0xFF); // Set input multiplexer to using floating inputs
 				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x07); // Use 555us Conversion Delay, but set to continuous conversion mode for calibration
 
-				ADS126X_SendCommand(ADS126X_CMD_START1);
+				ADS126X_SendCommand(ADS126X_CMD_START);
 
 				ADS126X_SpiCloseAll();
 			}
@@ -403,15 +388,15 @@ void ADS126X_Initialize(void)
 			if (ADS126X_IsChipUsable(bChip))
 			{
 				ADS126X_SpiOpen(bChip);
-				ADS126X_SendCommand(ADS126X_CMD_SFOCAL1);
+				ADS126X_SendCommand(ADS126X_CMD_SFOCAL);
 				ADS126X_SpiCloseAll();
 			}
 		}
 
 		// Wait until calibration is complete
 		// According to Table 32, a sample rate of 400SPS should complete in ~58.41ms
-//		SystemTaskDelayMs(75); //a sample rate of 400SPS should complete in ~58.41ms
-		SystemTaskDelayMs(400); //a sample rate of 60SPS with Sinc3 Filter should complete in ~350.9ms
+//		ADS126X_DelayMs(75); //a sample rate of 400SPS should complete in ~58.41ms
+		ADS126X_DelayMs(400); //a sample rate of 60SPS with Sinc3 Filter should complete in ~350.9ms
 
 		for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 		{
@@ -433,7 +418,7 @@ void ADS126X_Initialize(void)
 			if (ADS126X_IsChipUsable(bChip))
 			{
 				ADS126X_SpiOpen(bChip);
-				ADS126X_SendCommand(ADS126X_CMD_STOP1);
+				ADS126X_SendCommand(ADS126X_CMD_STOP);
 				ADS126X_SpiCloseAll();
 			}
 		}
@@ -482,6 +467,18 @@ BOOL ADS126X_IsInputUsable(const ADS126X_INPUTS_ENUM eInput)
 	}
 
 	return fResult;
+}
+
+
+/*******************************************************************************
+ * Function:	ADS126X_DelayMs()
+ * Parameters:	const uint32_t dwMilliseconds
+ * Return:		void
+ * Notes:		Delay for at least the given number of milliseconds
+ ******************************************************************************/
+void ADS126X_DelayMs(const uint32_t dwMilliseconds)
+{
+	usleep(1000 * dwMilliseconds);
 }
 
 
@@ -670,12 +667,7 @@ void ADS126X_StopAll(void)
 		{
 			ADS126X_SpiOpen(bChip);
 
-			ADS126X_SpiSendRecv(ADS126X_CMD_STOP1);			//send STOP1 to stop conversions on ADC1
-
-			if (ADC126X_MODEL_ADS1263 == ADS126X_CHIP_ARRAY[bChip].wModel)
-			{
-				ADS126X_SpiSendRecv(ADS126X_CMD_STOP2);		//send STOP2 to stop conversions on ADC2
-			}
+			ADS126X_SpiSendRecv(ADS126X_CMD_STOP);			//send STOP1 to stop conversions on ADC1
 
 			ADS126X_SpiCloseAll();
 		}
@@ -698,12 +690,7 @@ void ADS126X_StartAll(void)
 		{
 			ADS126X_SpiOpen(bChip);
 
-			ADS126X_SpiSendRecv(ADS126X_CMD_START1);	// Start conversions
-
-			if (ADC126X_MODEL_ADS1263 == ADS126X_CHIP_ARRAY[bChip].wModel)
-			{
-				ADS126X_SpiSendRecv(ADS126X_CMD_START2);	// Start conversions
-			}
+			ADS126X_SpiSendRecv(ADS126X_CMD_START);	// Start conversions
 
 			ADS126X_SpiCloseAll();
 		}
@@ -938,11 +925,7 @@ BOOL ADS126X_ReadRawResult(const uint8_t bChip, const uint8_t bConverter, ADS126
 
 		if (0 == bConverter)
 		{
-			ADS126X_SpiSendRecv(ADS126X_CMD_RDATA1); // RDATA1 command (for ADC1 input channel)
-		}
-		else
-		{
-			ADS126X_SpiSendRecv(ADS126X_CMD_RDATA2); // RDATA2 command (for ADC2 input channel)
+			ADS126X_SpiSendRecv(ADS126X_CMD_RDATA); // RDATA1 command (for ADC1 input channel)
 		}
 
 		// Get all six bytes from the ADC (status, data[4], checksum)
@@ -1217,7 +1200,7 @@ double ADS126X_ReadTemperatureSensor(const uint8_t bChip)
 
 	ADS126X_SpiOpen(bChip);
 
-	ADS126X_SpiSendRecv(ADS126X_CMD_STOP1);		// Send STOP1 to stop conversions on ADC1
+	ADS126X_SpiSendRecv(ADS126X_CMD_STOP);		// Send STOP1 to stop conversions on ADC1
 
 	// Set the reference mux to use the internal 2.5V reference
 	ADS126X_SetRegister(ADS126X_REG_REF_MUX, 0x00);
@@ -1245,12 +1228,12 @@ double ADS126X_ReadTemperatureSensor(const uint8_t bChip)
 	 */
 	ADS126X_SetRegister(ADS126X_REG_MODE2, 0x0C);
 
-	ADS126X_SendCommand(ADS126X_CMD_START1);
+	ADS126X_SendCommand(ADS126X_CMD_START);
 
 	ADS126X_SpiCloseAll();
 
 	// Wait for a few conversions to occur
-	SystemTaskDelayMs(20);
+	ADS126X_DelayMs(20);
 
 	ADS126X_ReadData_Type 		tAdcData;
 
@@ -1408,7 +1391,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 					}
 
 					ADS126X_StartAll();
-					SystemTaskDelayMs(5);
+					ADS126X_DelayMs(5);
 				}
 				///////////////////////////////////////////////////////////////////////////////////
 				///////////////////////////////////////////////////////////////////////////////////
