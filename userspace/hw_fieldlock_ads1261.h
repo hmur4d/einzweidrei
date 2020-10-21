@@ -108,22 +108,20 @@ typedef struct
 {
 	uint32_t	dwReadingCounter;
 
-	uint32_t	dwChecksumErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwNoNewDataErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-
-	uint32_t	dwAdcClockSourceErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwLowReferenceAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
 	uint32_t	dwChipResetErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-
-	uint32_t	dwPgaOutputHighLowAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwPgaDifferentialOutputAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwAdcClockSourceErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwNoNewDataErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwReferenceLowAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwPgaOutputHighAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwPgaOutputLowAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwChecksumErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
 
 } ADC126X_DIAGNOSTICS_STRUCT;
 
-// Status Byte bit masks (From Table 31 in Datasheet)
+// Status Byte bit masks (From Table 31, "STATUS Register Field Descriptions" in Datasheet)
 #define ADS126X_STATUS_BYTE_MASK_RESET			(1<<0)
 #define ADS126X_STATUS_BYTE_MASK_CLOCK			(1<<1)
-#define ADS126X_STATUS_BYTE_MASK_DATA_READY		(1<<2)
+#define ADS126X_STATUS_BYTE_MASK_DRDY			(1<<2)
 #define ADS126X_STATUS_BYTE_MASK_REFL_ALM		(1<<3)
 #define ADS126X_STATUS_BYTE_MASK_PGAH_ALM		(1<<4)
 #define ADS126X_STATUS_BYTE_MASK_PGAL_ALM		(1<<5)

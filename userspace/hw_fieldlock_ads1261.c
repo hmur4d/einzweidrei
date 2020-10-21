@@ -19,6 +19,12 @@
 #if 0
 #include <./std_includes.h>
 #else
+// Defines and includes to allow using IntelliSense with Visual Studio Code
+#define __INT8_TYPE__
+#define __INT16_TYPE__
+#define __INT32_TYPE__
+#define __INT64_TYPE__
+#include <stdint.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -27,6 +33,7 @@
 
 /* Application Header Files */
 #include "hw_fieldlock_ads1261.h"
+
 
 /* Private typedef -----------------------------------------------------------*/
 typedef enum
@@ -125,8 +132,6 @@ typedef struct
 
 #define ADC126X_ADC_REF_INT				(2.5)
 #define ADC126X_ADC_REF_EXT				(2.048)
-
-#define ADS126X_BASE_TEMPERATURE_DEGC	(32.181356932647873)	// Calculated temperature for an input of 0.0
 
 #define	ADS126X_CHECKSUM_POLY			(0b1000001110000000000000000000000000000000000000000000000000000000)
 #define	ADS126X_MAX_MEASURE_NUMBER		(1)
@@ -912,7 +917,7 @@ BOOL ADS126X_GetReading(const uint8_t bChip, ADS126X_ReadData_Type *ptAdcData)
 				ptAdcData->fChecksumMatch 	= (ptAdcData->bChecksumCalc == ptAdcData->tRawData.bChecksumGiven);	// Ensure the checksum matches
 
 				// Verify that we have received new data
-				ptAdcData->fNewData = ((ptAdcData->tRawData.bStatus & (1 << ((0 == bConverter) ? 6 : 7))) != 0);	// Check if this is a new data reading (for this ADC input)
+				ptAdcData->fNewData = ((ptAdcData->tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_DRDY) != 0);	// Check if this is a new data reading (for this ADC input)
 
 				// The data should only be considered valid if the checksum matches, the data is new, and there are no alarm bits set
 				ptAdcData->fValid = TRUE;
@@ -1130,9 +1135,9 @@ double ADS126X_ReadTemperatureSensor(const uint8_t bChip)
 
 	ADS126X_ReadData_Type 		tAdcData;
 
-	if (ADS126X_GetReading(bChip, 0, &tAdcData))
+	if (ADS126X_GetReading(bChip, &tAdcData))
 	{
-		if (ADS126X_ConvertReading(bChip, ADC126X_CONVERTER_DEFAULT, ADS126X_INPUT_MUX_THERMOM, &tAdcData))
+		if (ADS126X_ConvertReading(bChip, ADS126X_INPUT_MUX_THERMOM, &tAdcData))
 		{
 			dbResult = tAdcData.dbReading;
 		}
@@ -1156,7 +1161,7 @@ double ADS126X_GetReadingFromChip(const uint8_t bChip, const ADS126X_INPUTS_ENUM
 	BOOL					fSuccess = TRUE;
 	ADS126X_ReadData_Type 	tAdcData;
 	const uint8_t			bPGAL_ALM_BIT_MASK = ADS126X_STATUS_BYTE_MASK_PGAL_ALM;
-	const uint8_t 			bPGA_ALARM_ALL_MASK = (ADS126X_STATUS_BYTE_MASK_PGAL_ALM | ADS126X_STATUS_BYTE_MASK_PGAH_ALM | ADS126X_STATUS_BYTE_MASK_PGAD_ALM);
+	const uint8_t 			bPGA_ALARM_ALL_MASK = (ADS126X_STATUS_BYTE_MASK_PGAL_ALM | ADS126X_STATUS_BYTE_MASK_PGAH_ALM);
 
 	if ((bChip  < ADS126X_NUM_CHIPS) && (eInput < ADS126X_INPUTS_NUM_TOTAL))
 	{
@@ -1165,12 +1170,13 @@ double ADS126X_GetReadingFromChip(const uint8_t bChip, const ADS126X_INPUTS_ENUM
 			// Ignore any Status byte errors when measuring the External Reference voltage
 			// Note: Measuring the External Reference will trigger a PGA alarm (as AVSS is within 0.2V of GND)
 			//			Will trigger PGAL_ALM (Bit 3)
-			const BOOL fResult = ADS126X_GetReading(bChip, 0, &tAdcData);
+			const BOOL fResult = ADS126X_GetReading(bChip, &tAdcData);
 
 			if (fResult)
 			{
 				// The reading is known to be good
 			}
+#if 0
 			// Note:  The reading might still be usable!
 			// Ignore any Status byte errors when measuring the External Reference voltage
 			// Note: Measuring the External Reference will trigger a PGA alarm (as AVSS is within 0.2V of GND)
@@ -1179,12 +1185,13 @@ double ADS126X_GetReadingFromChip(const uint8_t bChip, const ADS126X_INPUTS_ENUM
 			{
 				// The reading is found to be good after further investigation
 			}
-			else if (/* (eInput >= ADS126X_INPUT_MUX_RTD1) && */ (eInput <= ADS126X_INPUT_MUX_RTD3) && ((tAdcData.tRawData.bStatus & ~bPGA_ALARM_ALL_MASK) == ADS126X_STATUS_BYTE_MASK_ADC1_NEW))
+			else if (/* (eInput >= ADS126X_INPUT_MUX_RTD1) && */ (eInput <= ADS126X_INPUT_MUX_RTD3) && ((tAdcData.tRawData.bStatus & ~bPGA_ALARM_ALL_MASK) == ADS126X_STATUS_BYTE_MASK_DRDY))
 			{
 				// The reading is found to be possibly usable after further investigation
 				// Only PGA alarm bits were found to be set
 				fSuccess = FALSE;	// Keep returning NAN (prevent any possibly invalid reading from being used)
 			}
+#endif
 			else
 			{
 				fSuccess = FALSE;
@@ -1201,34 +1208,34 @@ double ADS126X_GetReadingFromChip(const uint8_t bChip, const ADS126X_INPUTS_ENUM
 				ADS126X_ADC_DIAGNOSTICS.dwNoNewDataErrorCounter[bChip][eInput]++;
 			}
 
+			// RESET
+			if (tAdcData.tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_RESET)
+			{
+				ADS126X_ADC_DIAGNOSTICS.dwChipResetErrorCounter[bChip][eInput]++;
+			}
+
 			// ADC Clock
-			if (tAdcData.tRawData.bStatus & (1<<5))
+			if (tAdcData.tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_CLOCK)
 			{
 				ADS126X_ADC_DIAGNOSTICS.dwAdcClockSourceErrorCounter[bChip][eInput]++;
 			}
 
-			// ADC1 Low Reference Alarm
-			if (tAdcData.tRawData.bStatus & (1<<4))
+			// ADC Reference Low Alarm
+			if (tAdcData.tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_REFL_ALM)
 			{
-				ADS126X_ADC_DIAGNOSTICS.dwLowReferenceAlarmCounter[bChip][eInput]++;
+				ADS126X_ADC_DIAGNOSTICS.dwReferenceLowAlarmCounter[bChip][eInput]++;
 			}
 
-			// ADC1 PGA Output Low Alarm or ADC1 PGA Output High Alarm
-			if (tAdcData.tRawData.bStatus & ((1<<3) | (1<<2)))
+			// ADC PGA Output High Alarm
+			if (tAdcData.tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_PGAH_ALM)
 			{
-				ADS126X_ADC_DIAGNOSTICS.dwPgaOutputHighLowAlarmCounter[bChip][eInput]++;
+				ADS126X_ADC_DIAGNOSTICS.dwPgaOutputHighAlarmCounter[bChip][eInput]++;
 			}
 
-			// ADC1 PGA Differential Output Alarm
-			if (tAdcData.tRawData.bStatus & (1<<1))
+			// ADC PGA Output Low Alarm
+			if (tAdcData.tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_PGAL_ALM)
 			{
-				ADS126X_ADC_DIAGNOSTICS.dwPgaDifferentialOutputAlarmCounter[bChip][eInput]++;
-			}
-
-			// RESET
-			if (tAdcData.tRawData.bStatus & (1<<0))
-			{
-				ADS126X_ADC_DIAGNOSTICS.dwChipResetErrorCounter[bChip][eInput]++;
+				ADS126X_ADC_DIAGNOSTICS.dwPgaOutputLowAlarmCounter[bChip][eInput]++;
 			}
 
 			if (fSuccess)
@@ -1403,15 +1410,10 @@ uint32_t ADS126X_ShowStatus(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 	for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-									"PGA Gain: %u (%-7s),   %u,    %u,    %u,    %u,    %u,    %u,\r\n",
+									"PGA Gain: %u (%-7s),   %u\r\n",
 									eInput,
 									ADS126X_INPUT_MUX_ARRAY[eInput].pcInputName,
-									ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[0][eInput],
-									ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[1][eInput],
-									ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[2][eInput],
-									ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[3][eInput],
-									ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[4][eInput],
-									ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[5][eInput]
+									ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[0][eInput]
 									);
 	}
 
@@ -1437,21 +1439,11 @@ uint32_t ADS126X_ShowData(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct
 	for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-							"Input: %u (%-7s),   %+9.4f (0x%02X)  %+9.4f (0x%02X)  %+9.4f (0x%02X)  %+9.4f (0x%02X)  %+9.4f (0x%02X)  %+9.4f (0x%02X)\r\n",
+							"Input: %u (%-7s),   %+9.4f (0x%02X)\r\n",
 							eInput,
 							ADS126X_INPUT_MUX_ARRAY[eInput].pcInputName,
 							ptAdcExtResultStruct->dbResultArray[0][eInput],
-							ptAdcExtResultStruct->bStatusByteArray[0][eInput],
-							ptAdcExtResultStruct->dbResultArray[1][eInput],
-							ptAdcExtResultStruct->bStatusByteArray[1][eInput],
-							ptAdcExtResultStruct->dbResultArray[2][eInput],
-							ptAdcExtResultStruct->bStatusByteArray[2][eInput],
-							ptAdcExtResultStruct->dbResultArray[3][eInput],
-							ptAdcExtResultStruct->bStatusByteArray[3][eInput],
-							ptAdcExtResultStruct->dbResultArray[4][eInput],
-							ptAdcExtResultStruct->bStatusByteArray[4][eInput],
-							ptAdcExtResultStruct->dbResultArray[5][eInput],
-							ptAdcExtResultStruct->bStatusByteArray[5][eInput]
+							ptAdcExtResultStruct->bStatusByteArray[0][eInput]
 							);
 	}
 
@@ -1462,15 +1454,10 @@ uint32_t ADS126X_ShowData(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct
 	for (ADS126X_INPUTS_ENUM eInput=ADS126X_INPUT_MUX_RTD1; eInput<=ADS126X_INPUT_MUX_RTD3; eInput++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-							"Input: %u (%-7s), Voltage (volts),     %+9.5f   %+9.5f   %+9.5f   %+9.5f   %+9.5f   %+9.5f\r\n",
+							"Input: %u (%-7s), Voltage (volts),     %+9.5f\r\n",
 							eInput,
 							ADS126X_INPUT_MUX_ARRAY[eInput].pcInputName,
-							(ptAdcExtResultStruct->dbResultArray[0][eInput] * ADC126X_ADC_REF_EXT),
-							(ptAdcExtResultStruct->dbResultArray[1][eInput] * ADC126X_ADC_REF_EXT),
-							(ptAdcExtResultStruct->dbResultArray[2][eInput] * ADC126X_ADC_REF_EXT),
-							(ptAdcExtResultStruct->dbResultArray[3][eInput] * ADC126X_ADC_REF_EXT),
-							(ptAdcExtResultStruct->dbResultArray[4][eInput] * ADC126X_ADC_REF_EXT),
-							(ptAdcExtResultStruct->dbResultArray[5][eInput] * ADC126X_ADC_REF_EXT)
+							(ptAdcExtResultStruct->dbResultArray[0][eInput] * ADC126X_ADC_REF_EXT)
 							);
 	}
 #endif
@@ -1478,38 +1465,16 @@ uint32_t ADS126X_ShowData(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
 						"\r\n"
 						);
-	for (ADS126X_INPUTS_ENUM eInput=ADS126X_INPUT_MUX_RTD1; eInput<=ADS126X_INPUT_MUX_RTD3; eInput++)
-	{
-		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-							"Input: %u (%-7s), Resistance (ohms),   %+9.2f   %+9.2f   %+9.2f   %+9.2f   %+9.2f   %+9.2f\r\n",
-							eInput,
-							ADS126X_INPUT_MUX_ARRAY[eInput].pcInputName,
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[0][eInput], TRUE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[1][eInput], TRUE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[2][eInput], TRUE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[3][eInput], TRUE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[4][eInput], TRUE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[5][eInput], TRUE)
-							);
-	}
-
+	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
+						"Input: %u (%-7s), Voltage (volts),   %+9.4f, Temperature (degC),  %+9.4f\r\n",
+						ADS126X_INPUT_MUX_BOARD_TEMP,
+						ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_BOARD_TEMP].pcInputName,
+						ptAdcExtResultStruct->dbResultArray[0][ADS126X_INPUT_MUX_BOARD_TEMP],
+						ADS126X_CalculateBoardTemperature(ptAdcExtResultStruct->dbResultArray[0][ADS126X_INPUT_MUX_BOARD_TEMP])
+						);
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
 						"\r\n"
 						);
-	for (ADS126X_INPUTS_ENUM eInput=ADS126X_INPUT_MUX_RTD1; eInput<=ADS126X_INPUT_MUX_RTD3; eInput++)
-	{
-		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-							"Input: %u (%-7s), Temperature (degC),  %+9.4f   %+9.4f   %+9.4f   %+9.4f   %+9.4f   %+9.4f\r\n",
-							eInput,
-							ADS126X_INPUT_MUX_ARRAY[eInput].pcInputName,
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[0][eInput], FALSE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[1][eInput], FALSE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[2][eInput], FALSE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[3][eInput], FALSE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[4][eInput], FALSE),
-							ADS126X_CalculateRtdTemperature(ptAdcExtResultStruct->dbResultArray[5][eInput], FALSE)
-							);
-	}
 
 	return dwNumChars;
 }
@@ -1549,14 +1514,9 @@ uint32_t ADS126X_Test(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 	for (uint8_t bRegister=0; bRegister<ADS126X_REG_NUM_TOTAL; bRegister++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-							"Register: 0x%02X,    0x%02X    0x%02X    0x%02X    0x%02X    0x%02X    0x%02X\r\n",
+							"Register: 0x%02X,    0x%02X\r\n",
 							bRegister,
-							bRegisterBuffer[0][bRegister],
-							bRegisterBuffer[1][bRegister],
-							bRegisterBuffer[2][bRegister],
-							bRegisterBuffer[3][bRegister],
-							bRegisterBuffer[4][bRegister],
-							bRegisterBuffer[5][bRegister]
+							bRegisterBuffer[0][bRegister]
 							);
 	}
 
@@ -1679,14 +1639,9 @@ uint32_t ADS126X_ShowDiag(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 	for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-				"Diag (Checksum, New Data), Input: %u,  %lu,%lu   %lu,%lu  %lu,%lu  %lu,%lu   %lu,%lu  %lu,%lu\r\n",
+				"Diag (Checksum, New Data), Input: %u,  %lu,%lu\r\n",
 				eInput,
-				tAdcDiagnosticsStruct.dwChecksumErrorCounter[0][eInput], tAdcDiagnosticsStruct.dwNoNewDataErrorCounter[0][eInput],
-				tAdcDiagnosticsStruct.dwChecksumErrorCounter[1][eInput], tAdcDiagnosticsStruct.dwNoNewDataErrorCounter[1][eInput],
-				tAdcDiagnosticsStruct.dwChecksumErrorCounter[2][eInput], tAdcDiagnosticsStruct.dwNoNewDataErrorCounter[2][eInput],
-				tAdcDiagnosticsStruct.dwChecksumErrorCounter[3][eInput], tAdcDiagnosticsStruct.dwNoNewDataErrorCounter[3][eInput],
-				tAdcDiagnosticsStruct.dwChecksumErrorCounter[4][eInput], tAdcDiagnosticsStruct.dwNoNewDataErrorCounter[4][eInput],
-				tAdcDiagnosticsStruct.dwChecksumErrorCounter[5][eInput], tAdcDiagnosticsStruct.dwNoNewDataErrorCounter[5][eInput]
+				tAdcDiagnosticsStruct.dwChecksumErrorCounter[0][eInput], tAdcDiagnosticsStruct.dwNoNewDataErrorCounter[0][eInput]
 				);
 	}
 
@@ -1694,14 +1649,9 @@ uint32_t ADS126X_ShowDiag(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 	for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-				"Diag (ADC Clock, Ref, Reset), Input: %u,  %lu,%lu,%lu   %lu,%lu,%lu  %lu,%lu,%lu  %lu,%lu,%lu   %lu,%lu,%lu  %lu,%lu,%lu\r\n",
+				"Diag (ADC Clock, Ref, Reset), Input: %u,  %lu,%lu,%lu\r\n",
 				eInput,
-				tAdcDiagnosticsStruct.dwAdcClockSourceErrorCounter[0][eInput], tAdcDiagnosticsStruct.dwLowReferenceAlarmCounter[0][eInput], tAdcDiagnosticsStruct.dwChipResetErrorCounter[0][eInput],
-				tAdcDiagnosticsStruct.dwAdcClockSourceErrorCounter[1][eInput], tAdcDiagnosticsStruct.dwLowReferenceAlarmCounter[1][eInput], tAdcDiagnosticsStruct.dwChipResetErrorCounter[1][eInput],
-				tAdcDiagnosticsStruct.dwAdcClockSourceErrorCounter[2][eInput], tAdcDiagnosticsStruct.dwLowReferenceAlarmCounter[2][eInput], tAdcDiagnosticsStruct.dwChipResetErrorCounter[2][eInput],
-				tAdcDiagnosticsStruct.dwAdcClockSourceErrorCounter[3][eInput], tAdcDiagnosticsStruct.dwLowReferenceAlarmCounter[3][eInput], tAdcDiagnosticsStruct.dwChipResetErrorCounter[3][eInput],
-				tAdcDiagnosticsStruct.dwAdcClockSourceErrorCounter[4][eInput], tAdcDiagnosticsStruct.dwLowReferenceAlarmCounter[4][eInput], tAdcDiagnosticsStruct.dwChipResetErrorCounter[4][eInput],
-				tAdcDiagnosticsStruct.dwAdcClockSourceErrorCounter[5][eInput], tAdcDiagnosticsStruct.dwLowReferenceAlarmCounter[5][eInput], tAdcDiagnosticsStruct.dwChipResetErrorCounter[5][eInput]
+				tAdcDiagnosticsStruct.dwAdcClockSourceErrorCounter[0][eInput], tAdcDiagnosticsStruct.dwReferenceLowAlarmCounter[0][eInput], tAdcDiagnosticsStruct.dwChipResetErrorCounter[0][eInput]
 				);
 	}
 
@@ -1709,14 +1659,9 @@ uint32_t ADS126X_ShowDiag(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 	for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-				"Diag (PGA High/Low Alarm, Diff), Input: %u,  %3lu,%3lu   %3lu,%3lu  %3lu,%3lu  %3lu,%3lu   %3lu,%3lu  %3lu,%3lu\r\n",
+				"Diag (PGA High/Low Alarm, Diff), Input: %u,  %3lu,%3lu\r\n",
 				eInput,
-				tAdcDiagnosticsStruct.dwPgaOutputHighLowAlarmCounter[0][eInput], tAdcDiagnosticsStruct.dwPgaDifferentialOutputAlarmCounter[0][eInput],
-				tAdcDiagnosticsStruct.dwPgaOutputHighLowAlarmCounter[1][eInput], tAdcDiagnosticsStruct.dwPgaDifferentialOutputAlarmCounter[1][eInput],
-				tAdcDiagnosticsStruct.dwPgaOutputHighLowAlarmCounter[2][eInput], tAdcDiagnosticsStruct.dwPgaDifferentialOutputAlarmCounter[2][eInput],
-				tAdcDiagnosticsStruct.dwPgaOutputHighLowAlarmCounter[3][eInput], tAdcDiagnosticsStruct.dwPgaDifferentialOutputAlarmCounter[3][eInput],
-				tAdcDiagnosticsStruct.dwPgaOutputHighLowAlarmCounter[4][eInput], tAdcDiagnosticsStruct.dwPgaDifferentialOutputAlarmCounter[4][eInput],
-				tAdcDiagnosticsStruct.dwPgaOutputHighLowAlarmCounter[5][eInput], tAdcDiagnosticsStruct.dwPgaDifferentialOutputAlarmCounter[5][eInput]
+				tAdcDiagnosticsStruct.dwPgaOutputHighAlarmCounter[0][eInput], tAdcDiagnosticsStruct.dwPgaOutputLowAlarmCounter[0][eInput]
 				);
 	}
 
