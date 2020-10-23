@@ -81,11 +81,13 @@ typedef struct
 {
 	union
 	{
-		uint8_t bArray[6];
+		uint8_t bArray[5];
 		struct __attribute__ ((packed))
 		{
 			uint8_t 	bStatus;
-			int32_t 	idwData;
+			uint8_t 	bDataMsb;
+			uint8_t 	bDataMid;
+			uint8_t 	bDataLsb;
 			uint8_t		bChecksumGiven;
 		};
 	} tRawData;
@@ -94,6 +96,7 @@ typedef struct
 	BOOL 		fNewData;
 	BOOL		fChecksumMatch;
 	uint8_t 	bChecksumCalc;
+	int32_t 	idwData;
 	double 		dbReading;
 
 } ADS126X_ReadData_Type;

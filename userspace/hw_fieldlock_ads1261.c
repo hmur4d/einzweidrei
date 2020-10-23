@@ -7,6 +7,8 @@
  *  Ported: Oct. 16, 2020, to support ADS1261 ADC on Field Lock Board from HPS.
  *
  *  Note:  This is a driver for the external 24-bit TI ADS1261 10-input ADC.
+ * 
+ *  Note:  TI ADS1261 C driver example source code is available here: https://www.ti.com/lit/zip/sbac199
  *
  *	WARNING: This driver is *NOT* threadsafe and must only be called from a single thread!
  *
@@ -133,7 +135,6 @@ typedef struct
 #define ADC126X_ADC_REF_INT				(2.5)
 #define ADC126X_ADC_REF_EXT				(2.048)
 
-#define	ADS126X_CHECKSUM_POLY			(0b1000001110000000000000000000000000000000000000000000000000000000)
 #define	ADS126X_MAX_MEASURE_NUMBER		(1)
 
 #define ADC126X_MODEL_ADS1260			(1260)
@@ -273,7 +274,7 @@ static BOOL 		ADS126X_ReadRegisterArray	(const ADS126X_REGISTERS_ENUM eRegisterS
 static void 		ADS126X_StopAll				(void);
 static void 		ADS126X_StartAll			(void);
 static BOOL 		ADS126X_ReadRawResult		(const uint8_t bChip, ADS126X_ReadData_Type * const ptData);
-static uint8_t 		ADS126X_CalculateChecksumCrc(int32_t i32DataBytes);		//Does Checksum Operations
+static uint8_t		ADS126X_CalculateCrc		(const uint8_t * const pbBuffer, const uint8_t bBufferSize);
 static void 		ADS126X_ConfigureInput		(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput);
 static BOOL 		ADS126X_ConvertReading		(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_Type *ptAdcData);
 static BOOL 		ADS126X_GetReading			(const uint8_t bChip, ADS126X_ReadData_Type *ptAdcData);
@@ -385,6 +386,9 @@ void ADS126X_Initialize(void)
 				ADS126X_SetRegister(ADS126X_REG_MODE2, (ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_RTD1].eSampleRate & 0x0F));
 */
 				ADS126X_ConfigureInput(bChip, ADS126X_INPUT_MUX_AG_SENSE_B0);
+
+				ADS126X_SpiOpen(bChip);
+
 				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, 0xFF); // Set input multiplexer to using floating inputs
 				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x08); // Use 605us Conversion Delay, but set to continuous conversion mode for calibration
 
@@ -851,32 +855,52 @@ BOOL ADS126X_ReadRawResult(const uint8_t bChip, ADS126X_ReadData_Type * const pt
 
 
 /*******************************************************************************
- * Function:	ADS126X_CalculateChecksumCrc()
- * Parameters:	int32_t i32DataBytes,
+ * Function:	ADS126X_CalculateCrc()
+ * Parameters:	const uint8_t * const pbBuffer,
+ * 				const uint8_t bBufferSize, must be in the range of one to four bytes
  * Return:		uint8_t, calculated checksum
  * Notes:		Worker function to calculate checksum for the given data bytes
  ******************************************************************************/
-uint8_t ADS126X_CalculateChecksumCrc(int32_t i32DataBytes)
+uint8_t ADS126X_CalculateCrc(const uint8_t * const pbBuffer, const uint8_t bBufferSize)
 {
-	//IMPLEMENT CHECKSUM CRC CODE
-	uint64_t tempBuf = 0;
-	uint8_t LeadZeros = 0;
+	uint8_t bReturn = 0x00;
 
-	tempBuf = tempBuf|(uint32_t)i32DataBytes;
-
-	//STEP1: LEFT SHIFT BY 8 BITS
-	tempBuf = tempBuf << 8;
-
-	//STEP4: STOP WHEN RESULT IS LESS THAN 100h.  THIS IS THE CRC BYTE.
-	while(tempBuf >= 256)
+	// Only valid to calculate CRC on between 1 and 4 bytes
+	if ((bBufferSize >= 1) && (bBufferSize <= 4))
 	{
-		//STEP2: ALIGN THE MSB OF THE CRC POLYNOMIAL (100000111) TO LEFTMOST LOGIC 1
-		LeadZeros = __builtin_clzll(tempBuf);
+		const uint8_t bCrcPoly = 0x07;
 
-		//STEP3: PERFORM XOR ^
-		tempBuf ^= (ADS126X_CHECKSUM_POLY >> LeadZeros);
+		uint8_t bCrc = 0xFF;
+		uint32_t dwData = 0;
+		uint32_t dwMask = (0x80000000 >> (8 * (4 * bBufferSize)));
+
+		// Populate the working data
+		for (uint8_t i=0; i<bBufferSize; i++)
+		{
+			dwData |= (pbBuffer[i] << (8 * (4 - i - 1)));
+		}
+
+		while (dwMask != 0)
+		{
+			const BOOL fDataMsb = ((dwData & dwMask) != 0);
+			const BOOL fCrcMsb = ((bCrc & 0x80) != 0);
+
+			if (fDataMsb ^ fCrcMsb)
+			{
+				bCrc = ((bCrc << 1) ^ bCrcPoly);
+			}
+			else
+			{
+				bCrc <<= 1;
+			}
+			
+			dwMask >>= 1;
+		}
+
+		bReturn = bCrc;
 	}
-	return (uint8_t)tempBuf;
+
+	return bReturn;
 }
 
 
@@ -904,16 +928,13 @@ BOOL ADS126X_GetReading(const uint8_t bChip, ADS126X_ReadData_Type *ptAdcData)
 
 			if (fReadValid)
 			{
-				// Swap the bytes so they are in the same ordering as previously
-				const uint32_t in = ptAdcData->tRawData.idwData;
-				const uint32_t dwSwap = ((in & 0xff000000) >> 24) | ((in & 0x00FF0000) >> 8) | ((in & 0x0000FF00) << 8) | ((in & 0xFF) << 24);
-				ptAdcData->tRawData.idwData = (int32_t) dwSwap;
-
-				// Data from ADC2 is 24-bits and must be right-shifted by 8-bits for the CRC calculation to work properly
-				ptAdcData->tRawData.idwData >>= 8;
+				// Convert the received bytes to a signed value, put in upper 24-bits and right-shift to sign-extend
+				// Data from ADC is 24-bits and must be right-shifted by 8-bits to sign-extend
+				ptAdcData->idwData = ((ptAdcData->tRawData.bDataMsb << 24) | (ptAdcData->tRawData.bDataMid << 16) | (ptAdcData->tRawData.bDataLsb << 8));
+				ptAdcData->idwData >>= 8;
 
 				// Verify the checksum matches the given value
-				ptAdcData->bChecksumCalc	= ADS126X_CalculateChecksumCrc(ptAdcData->tRawData.idwData);	// Calculate the checksum
+				ptAdcData->bChecksumCalc	= ADS126X_CalculateCrc(&ptAdcData->tRawData.bArray[0], 4);	// Calculate the checksum
 				ptAdcData->fChecksumMatch 	= (ptAdcData->bChecksumCalc == ptAdcData->tRawData.bChecksumGiven);	// Ensure the checksum matches
 
 				// Verify that we have received new data
@@ -968,7 +989,7 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 
 			// Convert the ADC reading to voltage (interim value for future calculations)
 			// Return the raw value here (only update for type of converter used)
-			ptAdcData->dbReading = ptAdcData->tRawData.idwData;
+			ptAdcData->dbReading = ptAdcData->idwData;
 			ptAdcData->dbReading /= ADS126X_DIVISOR_24BIT;
 			ptAdcData->dbReading /= dbGainDivisor;
 
@@ -1163,7 +1184,7 @@ double ADS126X_GetReadingFromChip(const uint8_t bChip, const ADS126X_INPUTS_ENUM
 	const uint8_t			bPGAL_ALM_BIT_MASK = ADS126X_STATUS_BYTE_MASK_PGAL_ALM;
 	const uint8_t 			bPGA_ALARM_ALL_MASK = (ADS126X_STATUS_BYTE_MASK_PGAL_ALM | ADS126X_STATUS_BYTE_MASK_PGAH_ALM);
 
-	if ((bChip  < ADS126X_NUM_CHIPS) && (eInput < ADS126X_INPUTS_NUM_TOTAL))
+	if ((bChip < ADS126X_NUM_CHIPS) && (eInput < ADS126X_INPUTS_NUM_TOTAL))
 	{
 		if (ADS126X_IsChipUsable(bChip))
 		{
@@ -1279,24 +1300,6 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 		{
 			if (ADS126X_IsInputUsable(eInput))
 			{
-#if 0
-				///////////////////////////////////////////////////////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////
-				if ((eInput >= ADS126X_INPUT_MUX_RTD1) && (eInput <= ADS126X_INPUT_MUX_RTD3))
-				{
-					// Configure all chips to get the requested type of reading
-					for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
-					{
-						ADS126X_ConfigureInput(bChip, eInput + ADS126X_INPUT_MUX_RTDX_TEST);
-					}
-
-					ADS126X_StartAll();
-					ADS126X_DelayMs(5);
-				}
-				///////////////////////////////////////////////////////////////////////////////////
-				///////////////////////////////////////////////////////////////////////////////////
-#endif
-
 				// Ensure all conversions are stopped
 				ADS126X_StopAll();
 
@@ -1304,6 +1307,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 				for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 				{
 					ptAdcExtResultStruct->dbResultArray[bChip][eInput] = 0.0;
+					ptAdcExtResultStruct->bStatusByteArray[bChip][eInput] = 0x00;
 					ADS126X_ConfigureInput(bChip, eInput);
 				}
 
@@ -1522,6 +1526,8 @@ uint32_t ADS126X_Test(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 
 	ADS126X_RESULT_TYPE tAdcExtResultStruct;
 
+	memset(&tAdcExtResultStruct, 0, sizeof(tAdcExtResultStruct));
+
 	gfGatherAllInputs = TRUE;
 	ADS126X_GatherAll(&tAdcExtResultStruct);
 	gfGatherAllInputs = FALSE;
@@ -1537,23 +1543,21 @@ uint32_t ADS126X_Test(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 
 		memset(&tAdcData, 0, sizeof(tAdcData));
 		tAdcData.fNewData = TRUE;
-		tAdcData.tRawData.idwData = ADS126X_ADC_STATUS_ARRAY[bChip].idwOffsetCalValue;
+		tAdcData.idwData = ADS126X_ADC_STATUS_ARRAY[bChip].idwOffsetCalValue;
 
-		ADS126X_ConvertReading(bChip, ADS126X_INPUT_MUX_RTD1, &tAdcData);
+		ADS126X_ConvertReading(bChip, ADS126X_INPUT_MUX_AG_SENSE_B0, &tAdcData);
 
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-							"Chip: %u, Found: %u, IsUsable: %u, Offset: %9.4f, MeasuredAvdd: %9.4f, OffsetCalValue: %+9ld (%+e V, %+9.6f degC)\r\n",
+							"Chip: %u, Found: %u, IsUsable: %u, Offset: %9.4f, MeasuredAvdd: %9.4f, OffsetCalValue: %+9ld (%+e V)\r\n",
 							bChip,
 							ADS126X_ADC_STATUS_ARRAY[bChip].fFound,
 							ADS126X_IsChipUsable(bChip),
 							ADS126X_ADC_STATUS_ARRAY[bChip].sgOffset,
 							ADS126X_ADC_STATUS_ARRAY[bChip].dbMeasuredAvdd,
 							ADS126X_ADC_STATUS_ARRAY[bChip].idwOffsetCalValue,
-							(tAdcData.dbReading * ADC126X_ADC_REF_EXT),
-							(ADS126X_CalculateRtdTemperature(tAdcData.dbReading, FALSE) - ADS126X_BASE_TEMPERATURE_DEGC)
+							(tAdcData.dbReading * ADC126X_ADC_REF_EXT)
 							);
 	}
-
 
 #if 0
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
