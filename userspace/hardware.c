@@ -163,7 +163,7 @@ int hardware_init() {
 	
 	fpga_revision_t fpga_rev=read_fpga_revision();
 	int fpga_id = (fpga_rev.fw_rev_major & 0xFFFFFFF);
-	if (fpga_id != 211) {
+	if (fpga_id < 211) {
 		log_error("FPGA should be in rev >=211 for HPS >=9, rev=%d", fpga_id);
 		return - 1;
 	}
