@@ -75,6 +75,9 @@ Command handlers: command id and implementation.
 #define CMD_ARTIFICIAL_GROUND_CURRENT				9000 + 0x5
 #define CMD_AMPS_BOARD_TEMPERATURE					9000 + 0x6
 
+// PA Board
+#define CMD_PA_UART_COMMAND							10000 + 0x0		// Arbitrary PA UART command
+
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message
 #define PROBE_CHANGED                               0x20000 + 0x1

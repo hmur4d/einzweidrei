@@ -9,6 +9,6 @@ BASE_BRANCH=${1:-master}
 # Directories that support clang-tidy
 DIRS=userspace
 # Use a minimal set of build flags
-BUILD_FLAGS=-std=c99
+BUILD_FLAGS=-std=gnu99
 git diff origin/${BASE_BRANCH} --diff-filter=ACMRTUXB ${DIRS} | clang-tidy-diff -p1 -- ${BUILD_FLAGS}
 exit $?

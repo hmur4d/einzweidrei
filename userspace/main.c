@@ -13,6 +13,7 @@ int test_main(int argc, char** argv);
 int epcq_image_main(int argc, char** argv);
 int shim_config_main(int argc, char** argv);
 int amps_main(int argc, char** argv);
+int pa_main(int argc, char** argv);
 
 int main(int argc, char** argv) {
 	if (!log_init(config_log_level(), config_log_file())) {
@@ -26,6 +27,8 @@ int main(int argc, char** argv) {
 		return shim_config_main(argc - 1, argv + 1);
 	}else if (argc > 1 && strcmp(argv[1], "amps") == 0) {
 		return amps_main(argc - 1, argv + 1);
+	}else if (argc > 1 && strcmp(argv[1], "pa") == 0) {
+		return pa_main(argc - 1, argv + 1);
 	}
 	else {
 		return cameleon_main(argc, argv);
