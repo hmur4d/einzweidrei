@@ -5,7 +5,7 @@
 
 #include "std_includes.h"
 
-#define PA_UART_BAUDRATE 115200
+#define PA_UART_BAUDRATE 921600
 #define PA_UART_DEVICE "/dev/ttyS1"
 
 // The prompt from the PA microcontroller, indicating the end of the command
