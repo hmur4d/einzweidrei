@@ -202,10 +202,10 @@ bool pa_write_command(const char* command) {
 		}
 	}
 	// If the command did not end in '\n', send it now
-	if (command[chars_to_write - 1] != '\n') {
+	if (command[chars_to_write - 1] != '\r') {
 		int write_result = 0;
 		while (write_result < 1) {
-			write_result = write(pa_uart_fd, "\n", 1);
+			write_result = write(pa_uart_fd, "\r", 1);
 			if (write_result < 0) {
 				log_error_errno("Final write failed");
 				return false;
