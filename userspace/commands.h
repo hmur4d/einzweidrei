@@ -52,6 +52,7 @@ Command handlers: command id and implementation.
 #define DEVICE_FEATURE_CAMELEON                     400
 #define DEVICE_FEATURE_GRADIENT                     800
 #define DEVICE_FEATURE_SHIM                         900
+#define DEVICE_FEATURE_PA                           700
 #define DEVICE_FEATURE_UNKNOWN                      -1
 
 #define CMD_UPDATE                                  0x30

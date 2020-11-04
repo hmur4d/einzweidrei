@@ -24,4 +24,15 @@
  */
 char *pa_run_command(const char *command, unsigned int timeout_ms);
 
+/**
+ Init the commm with the PA, 
+ do a hard reset on PA uC
+ open uart
+*/
+int pa_init();
+
+/**
+ return true if response to command "\r\n" is not NULL
+*/
+bool is_pa_board_responding();
 #endif // _HW_PA_H

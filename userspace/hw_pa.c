@@ -5,6 +5,7 @@
 
 #include "log.h"
 #include "hw_pa.h"
+#include "shared_memory.h"
 
 // The file descriptor for the PA board UART
 int pa_uart_fd = -1;
@@ -201,7 +202,7 @@ bool pa_write_command(const char* command) {
 			log_info("Sent %d bytes, %d total", write_result, total_written);
 		}
 	}
-	// If the command did not end in '\n', send it now
+	// If the command did not end in '\r', send it now
 	if (command[chars_to_write - 1] != '\r') {
 		int write_result = 0;
 		while (write_result < 1) {
@@ -325,13 +326,44 @@ char* pa_run_command(const char* command, unsigned int timeout_ms) {
 	return pa_read_until_prompt(timeout_ms);
 }
 
+int pa_init() {
+	log_info("PA init started");
+	shared_memory_t* mem= shared_memory_acquire();
+	log_info("PA init -> reset = 1");
+	write_property(mem->pa_reset, 1);
+	usleep(100000);
+	write_property(mem->pa_reset, 0);
+	log_info("PA init -> reset = 0");
+	shared_memory_release(mem);
+	usleep(100000);
+	log_info("PA init -> open uart %s at %d", PA_UART_DEVICE, PA_UART_BAUDRATE);
+	if (pa_uart_open(PA_UART_DEVICE, PA_UART_BAUDRATE) == -1)
+		return 1;
+	return 0;
+}
+
+bool is_pa_board_responding() {
+
+	char* pa_fw_version = pa_run_command("\r\n", 100);
+	if (pa_fw_version != NULL) {
+		return true;
+	}
+	return false;
+}
+
 int pa_main(int argc, char** argv) {
 	if (argc < 3) {
 		fprintf(stderr, "Usage: cameleon pa <COMMAND> <TIMEOUT_MS>\n");
 		return 1;
 	}
-	if (pa_uart_open(PA_UART_DEVICE, PA_UART_BAUDRATE) == -1)
+
+	char* memory_file = config_memory_file();
+	if (!shared_memory_init(memory_file)) {
+		log_error("Unable to open shared memory (%s), exiting", memory_file);
 		return 1;
+	}
+	pa_init();
+
 	char* response = pa_run_command(argv[1], atoi(argv[2]));
 	if (response != NULL) {
 		printf("Response was: %s\n", response);

@@ -613,6 +613,7 @@ void write_traces(clientsocket_t* client, header_t* header, const void* body) {
 
 static void run_pa_uart_command(clientsocket_t* client, header_t* header, const void* body) {
 	char* command = (char*) body;
+
 	// The client could request a different timeout, but this should be good enough for now
 	unsigned timeout_ms = 1000;
 	// Run the command and get the response
