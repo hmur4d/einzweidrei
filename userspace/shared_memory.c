@@ -365,7 +365,6 @@ void write_property(property_t prop, int32_t value)
 		uint32_t umask = ~mask;
 		int previous = (*prop.write_ptr) & umask;
 		*prop.write_ptr = previous | ((value << prop.bit_offset) & mask);
-		//log_info("Write property : %s = %d", prop.name, value);
 	}
 	else {
 		log_error("Property '%s' is not an output!",prop.name);

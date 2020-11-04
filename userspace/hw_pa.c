@@ -3,10 +3,10 @@
 #include <termios.h>
 #include <time.h>
 
-#include "config.h"
 #include "log.h"
 #include "hw_pa.h"
 #include "shared_memory.h"
+#include "config.h"
 
 // The file descriptor for the PA board UART
 int pa_uart_fd = -1;
@@ -257,11 +257,6 @@ char* pa_read_until_prompt(unsigned int timeout_ms)
 		ssize_t bytes_read = read(pa_uart_fd, response + total_response_read, 1);
 		if (bytes_read > 0)
 			total_response_read += bytes_read;
-		if (bytes_read < 0) {
-			log_error_errno("read() failed");
-			free(response);
-			return NULL;
-		}
 		// See if the response was found
 		int possible_response_position = total_response_read - prompt_length;
 		if (possible_response_position < 0)
@@ -337,11 +332,13 @@ int pa_init() {
 	shared_memory_t* mem= shared_memory_acquire();
 	log_info("PA init -> reset = 1");
 	write_property(mem->pa_reset, 1);
-	usleep(100000);
-	write_property(mem->pa_reset, 0);
+	usleep(500000);//500ms
 	log_info("PA init -> reset = 0");
-	shared_memory_release(mem);
+	write_property(mem->pa_reset, 0);
 	usleep(100000);
+
+	shared_memory_release(mem);
+	
 	log_info("PA init -> open uart %s at %d", PA_UART_DEVICE, PA_UART_BAUDRATE);
 	if (pa_uart_open(PA_UART_DEVICE, PA_UART_BAUDRATE) == -1)
 		return 1;
@@ -368,6 +365,7 @@ int pa_main(int argc, char** argv) {
 		log_error("Unable to open shared memory (%s), exiting", memory_file);
 		return 1;
 	}
+
 	pa_init();
 
 	char* response = pa_run_command(argv[1], atoi(argv[2]));
