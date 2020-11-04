@@ -3,6 +3,7 @@
 #include <termios.h>
 #include <time.h>
 
+#include "config.h"
 #include "log.h"
 #include "hw_pa.h"
 #include "shared_memory.h"
@@ -256,6 +257,11 @@ char* pa_read_until_prompt(unsigned int timeout_ms)
 		ssize_t bytes_read = read(pa_uart_fd, response + total_response_read, 1);
 		if (bytes_read > 0)
 			total_response_read += bytes_read;
+		if (bytes_read < 0) {
+			log_error_errno("read() failed");
+			free(response);
+			return NULL;
+		}
 		// See if the response was found
 		int possible_response_position = total_response_read - prompt_length;
 		if (possible_response_position < 0)
