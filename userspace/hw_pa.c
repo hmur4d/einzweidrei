@@ -28,25 +28,6 @@ char* malloc_string(size_t size) {
 }
 
 /**
- * Join two strings together into a newly allocated string.
- * The arguments are freed, so do not use them after.
- * @param first The first string
- * @param second The second string
- * @return A newly allocated string
- */
-char* join_strings(char* first, char* second) {
-	size_t first_size = strlen(first);
-	size_t second_size = strlen(second);
-	size_t new_size = first_size + second_size + 1;
-	char* joined = malloc_string(new_size);
-	strncat(joined, first, first_size);
-	strncat(joined, second, second_size);
-	free(first);
-	free(second);
-	return joined;
-}
-
-/**
  * Get the monotonic time, in milliseconds
  */
 long long monotonic_ms()
@@ -386,22 +367,6 @@ do {													\
         printf("Test failed on line %d\n", __LINE__);	\
 } while(false)
 
-void test_join_strings() {
-	// Join two small strings
-	char* t1_first = malloc_string(2);
-	strncpy(t1_first, "1", 2);
-	char* t1_second = malloc_string(3);
-	strncpy(t1_second, "23", 3);
-	char* t1_joined = join_strings(t1_first, t1_second);
-	if (t1_joined == NULL)
-		printf("t1_joined was NULL\n");
-	if (strlen(t1_joined) != 3)
-		printf("t1_joined had unexpected length of %d\n", (int)strlen(t1_joined));
-	if (strcmp(t1_joined, "123") != 0)
-		printf("t1_joined was not \"123\": %s\n", t1_joined);
-	free(t1_joined);
-}
-
 void test_find_response_end() {
 	TEST_RETURNS_EXPECTED(4, find_response_end, "asdf\r\n>", 0);
 	TEST_RETURNS_EXPECTED(4, find_response_end, "asdf\r\n>", 1);
@@ -434,7 +399,6 @@ void test_pa_read_until_prompt() {
 // gcc -g3 -o /tmp/test -D UNIT_TESTS -D INTERACTIVE_TESTS log.c hw_pa.c -l ubsan && /tmp/test
 int main(int argc, char**argv) {
 	log_init(LEVEL_ALL, "/tmp/test.log");
-	test_join_strings();
 	test_find_response_end();
 #ifdef INTERACTIVE_TESTS
 	// Interactive test:
