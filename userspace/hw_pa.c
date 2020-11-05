@@ -335,7 +335,7 @@ int pa_init() {
 	usleep(500000);//500ms
 	log_info("PA init -> reset = 0");
 	write_property(mem->pa_reset, 0);
-	usleep(100000);
+	usleep(1000000);
 
 	shared_memory_release(mem);
 	
@@ -347,7 +347,7 @@ int pa_init() {
 
 bool is_pa_board_responding() {
 
-	char* pa_fw_version = pa_run_command("\r\n", 100);
+	char* pa_fw_version = pa_run_command("\r\n", 2000);
 	if (pa_fw_version != NULL) {
 		return true;
 	}
@@ -367,7 +367,7 @@ int pa_main(int argc, char** argv) {
 	}
 
 	pa_init();
-
+	
 	char* response = pa_run_command(argv[1], atoi(argv[2]));
 	if (response != NULL) {
 		printf("Response was: %s\n", response);

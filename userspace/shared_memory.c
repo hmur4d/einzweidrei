@@ -248,7 +248,7 @@ bool shared_memory_init(const char* memory_file) {
 	.read_ptr = NULL,
 	.write_ptr = sharedmem.lwbridge + 16363,
 	.bit_size = 1,
-	.bit_offset = 1,
+	.bit_offset = 0,
 	.name = "pa_reset",
 	};
 
