@@ -92,7 +92,7 @@ bool pa_uart_set_nonblocking() {
  * @param uart_dev The filename of the UART device, e.g. /dev/ttyS1
  * @return The file descriptor, or -1 on error.
  */
-int pa_uart_open(char* uart_dev, unsigned int baudrate) {
+int pa_uart_open(char* uart_dev, speed_t baudrate) {
 	log_info("PA: Opening %s", uart_dev);
 
 	// Open the port
