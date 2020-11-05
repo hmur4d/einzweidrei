@@ -261,6 +261,8 @@ char* pa_read_until_prompt(unsigned int timeout_ms)
 		int possible_response_position = total_response_read - prompt_length;
 		if (possible_response_position < 0)
 			possible_response_position = 0;
+		// Nul terminate the response before looking for the prompt
+		response[total_response_read] = 0;
 		response_position = find_response_end(response, possible_response_position);
 		if (response_position != -1) {
 			// Done!
