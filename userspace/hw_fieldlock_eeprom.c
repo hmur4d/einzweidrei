@@ -1,8 +1,10 @@
 /*
- * app_eeprom.c
+ * hw_fieldlock_eeprom.c
  *
  *  Created on: Sept. 19, 2019
  *      Author: Joel Minski
+ * 
+ *  Ported: Nov. 03, 2020, to support ST M95256-WMN6P 32-Kbyte SPI EEPROM on Field Lock Board from HPS.
  *
  *  Note: This is a driver for controlling the EEPROM (ST M95256-WMN6P 32-Kbyte SPI EEPROM).
  *
@@ -11,19 +13,24 @@
  */
 
 /* Standard C Header Files */
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-
-/* STM32 HAL Library Header Files */
-#include "stm32f4xx_hal.h"
+#if 1
+#include <./std_includes.h>
+#include "shared_memory.h"
+#else
+// Defines and includes to allow using IntelliSense with Visual Studio Code
+#define __INT8_TYPE__
+#define __INT16_TYPE__
+#define __INT32_TYPE__
+#define __INT64_TYPE__
+#include <stdint.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
+#endif
 
 /* Application Header Files */
-#include "main.h"
-
-#include "app_always.h"
-#include "app_system.h"
-#include "app_eeprom.h"
+#include "hw_fieldlock_eeprom.h"
 
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,10 +48,6 @@
 
 
 /* Private define ------------------------------------------------------------*/
-#define EEPROM_SPI_PERIPHERAL_HANDLE	(&hspi2)
-#define EEPROM_SPI_CS_GPIO_PORT			(GPIOB)
-#define EEPROM_SPI_CS_GPIO_PIN			(GPIO_PIN_12)
-
 #define EEPROM_SPI_DUMMY_BYTE			(0x00)
 
 #define EEPROM_STATUS_WIP_MASK			(0x01)
@@ -56,42 +59,46 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-extern SPI_HandleTypeDef hspi2;
+static const uint8_t eeprom_spi_bits = 8;
+static const uint32_t eeprom_spi_speed = 1000*100;	// Use 100kHz until higher speeds are verified
+static const uint32_t eeprom_write_time_us = 5500;	// Datasheet specifies 5ms max, use slighlty longer
+
 
 /* Private function prototypes  ----------------------------------------------*/
-
-static void 	EepromSpiOpen(void);
-static void 	EepromSpiClose(void);
+static int 		EepromSpiOpen(shared_memory_t* p_mem);
+static void 	EepromSpiClose(const int spi_fd, shared_memory_t* p_mem);
+static void		EepromSpiSetCs(const shared_memory_t * const p_mem, const bool fAssertCs);
 static uint8_t 	EepromGetStatus(void);
+static void 	EepromWriteEnable(void);
 static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint8_t bBufferSize);
 
 
 /*******************************************************************************
  * Function:	EepromInitialize()
  * Parameters:	void
- * Return:		BOOL, TRUE if initialization was successful, FALSE otherwise
+ * Return:		bool, true if initialization was successful, false otherwise
  * Summary:		Initialize the EEPROM module.
  ******************************************************************************/
-BOOL EepromInitialize(void)
+bool EepromInitialize(void)
 {
-	BOOL fSuccess = TRUE;
+	bool fSuccess = true;
 
 	const uint8_t bStatus = EepromGetStatus();
 
 	// Ensure the Status byte has the expected mask in it
 	if ((bStatus & EEPROM_STATUS_WIP_MASK) != 0x00)
 	{
-		fSuccess = FALSE;
+		fSuccess = false;
 	}
 
 	if ((bStatus & EEPROM_STATUS_WEL_MASK) != 0x00)
 	{
-		fSuccess = FALSE;
+		fSuccess = false;
 	}
 
 	if ((bStatus & EEPROM_STATUS_BPX_MASK) != EEPROM_STATUS_BPX_DEFAULT)
 	{
-		fSuccess = FALSE;
+		fSuccess = false;
 	}
 
 	return fSuccess;
@@ -101,13 +108,35 @@ BOOL EepromInitialize(void)
 /*******************************************************************************
  * Function:	EepromSpiOpen()
  * Parameters:	void
- * Return:		void
- * Summary:		Open SPI communications to chip.
+ * Return:		int, file descriptor
+ * Summary:		Open SPI communications to chip and assert chip select
  ******************************************************************************/
-void EepromSpiOpen(void)
+int EepromSpiOpen(shared_memory_t* p_mem)
 {
+	// TODO: Verify cs value
+	const uint8_t cs = 1;
+	const uint8_t mode = 0;
+
+	char dev[64];
+	// TODO: Update with actual spidev name
+	sprintf(dev, "/dev/spidev32765.%d", cs);
+	//log_info("open spi %s in mode %d",dev, mode);
+	int spi_fd = open(dev, O_RDWR);
+	if (spi_fd == 0) {
+		log_error("can't open spi dev");
+		return 0;
+	}
+	int ret = ioctl(spi_fd, SPI_IOC_WR_MODE, &mode);
+	if (ret == -1) {
+		log_error("can't set spi mode");
+		return 0;
+	}
+
 	// Assert chip select
-	HAL_GPIO_WritePin(EEPROM_SPI_CS_GPIO_PORT, EEPROM_SPI_CS_GPIO_PIN, GPIO_PIN_RESET);
+	p_mem = shared_memory_acquire();
+	write_property(p_mem->amps_adc_cs, 1);
+
+	return spi_fd;
 }
 
 
@@ -117,10 +146,28 @@ void EepromSpiOpen(void)
  * Return:		void
  * Summary:		Close SPI communications to chip.
  ******************************************************************************/
-void EepromSpiClose(void)
+void EepromSpiClose(const int spi_fd, shared_memory_t* p_mem)
 {
-	// De-assert chip select
-	HAL_GPIO_WritePin(EEPROM_SPI_CS_GPIO_PORT, EEPROM_SPI_CS_GPIO_PIN, GPIO_PIN_SET);
+	// De-assert chip select and close SPI
+	write_property(p_mem->fieldlock_eeprom_cs, 0);
+	shared_memory_release(p_mem);
+	close(spi_fd);
+}
+
+
+/*******************************************************************************
+ * Function:	EepromSpiSetCs()
+ * Parameters:	const shared_memory_t * const p_mem, 
+ * 				const bool fAssertCs, true to assert CS, false to de-assert CS
+ * Return:		void
+ * Summary:		Set CS signal for EEPROM
+ ******************************************************************************/
+void EepromSpiSetCs(const shared_memory_t * const p_mem, const bool fAssertCs)
+{
+	if (NULL != p_mem)
+	{
+		write_property(p_mem->fieldlock_eeprom_cs, fAssertCs ? 1 : 0);
+	}
 }
 
 
@@ -136,9 +183,22 @@ uint8_t EepromGetStatus(void)
 	uint8_t bCommandArray[2] = { EEPROM_REG_RDSR, EEPROM_SPI_DUMMY_BYTE };
 	uint8_t bResponseArray[2] = { 0x00, 0x00 };
 
-	EepromSpiOpen();
-	HAL_SPI_TransmitReceive(EEPROM_SPI_PERIPHERAL_HANDLE, &bCommandArray[0], &bResponseArray[0], sizeof(bResponseArray), HAL_MAX_DELAY);
-	EepromSpiClose();
+	// Create SPI transfer struct array and ensure it is zeroed out
+	struct spi_ioc_transfer transfers[1] = {{0}};
+
+	transfers[0].tx_buf = (unsigned long) &bCommandArray[0];
+	transfers[0].rx_buf = (unsigned long) &bResponseArray[0];
+	transfers[0].len = sizeof(bCommandArray);
+	transfers[0].speed_hz = eeprom_spi_speed;
+	transfers[0].bits_per_word = eeprom_spi_bits;
+
+	shared_memory_t* p_mem = NULL;
+	int spi_fd = EepromSpiOpen(p_mem);
+
+	// Perform the SPI transfers
+	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(sizeof(transfers)/sizeof(struct spi_ioc_transfer)), &transfers[0]);
+
+	EepromSpiClose(spi_fd, p_mem);
 
 	return bResponseArray[1];
 }
@@ -160,10 +220,59 @@ void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
 
 	memset(&pbBuffer[0], 0, wNumBytes);
 
-	EepromSpiOpen();
-	HAL_SPI_Transmit(EEPROM_SPI_PERIPHERAL_HANDLE, &bCommandArray[0], sizeof(bCommandArray), HAL_MAX_DELAY);
-	HAL_SPI_Receive(EEPROM_SPI_PERIPHERAL_HANDLE, &pbBuffer[0], wReadBytes, HAL_MAX_DELAY);
-	EepromSpiClose();
+	// Create SPI transfer struct array and ensure it is zeroed out
+	struct spi_ioc_transfer transfers[2] = {{0},{0}};
+
+	transfers[0].tx_buf = (unsigned long) &bCommandArray[0];
+	transfers[0].rx_buf = NULL;
+	transfers[0].len = sizeof(bCommandArray);
+	transfers[0].speed_hz = eeprom_spi_speed;
+	transfers[0].bits_per_word = eeprom_spi_bits;
+	transfers[0].delay_usecs = 0;
+	transfers[0].cs_change = false;
+	transfers[1].tx_buf = NULL;
+	transfers[1].rx_buf = (unsigned long) pbBuffer;
+	transfers[1].len = wReadBytes;
+	transfers[1].speed_hz = eeprom_spi_speed;
+	transfers[1].bits_per_word = eeprom_spi_bits;
+
+	shared_memory_t* p_mem = NULL;
+	int spi_fd = EepromSpiOpen(p_mem);
+	
+	// Perform the SPI transfers
+	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(sizeof(transfers)/sizeof(struct spi_ioc_transfer)), &transfers);
+
+	EepromSpiClose(spi_fd, p_mem);
+}
+
+
+/*******************************************************************************
+ * Function:	EepromWriteEnable()
+ * Parameters:	Send Write Enable command
+ * Return:		void
+ * Summary:		Send the Write Enable command to the EEPROM
+ ******************************************************************************/
+
+void EepromWriteEnable(void)
+{
+	uint8_t bWriteEnable = EEPROM_REG_WREN;
+
+	// Create SPI transfer struct array and ensure it is zeroed out
+	struct spi_ioc_transfer transfers[1] = {{0}};
+
+	transfers[0].tx_buf = (unsigned long) &bWriteEnable;
+	transfers[0].rx_buf = NULL;
+	transfers[0].len = sizeof(bWriteEnable);
+	transfers[0].speed_hz = eeprom_spi_speed;
+	transfers[0].bits_per_word = eeprom_spi_bits;
+
+	shared_memory_t* p_mem = NULL;
+	int spi_fd = EepromSpiOpen(p_mem);
+	
+	// Perform the SPI transfers
+	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(sizeof(transfers)/sizeof(struct spi_ioc_transfer)), &transfers[0]);
+
+	EepromSpiClose(spi_fd, p_mem);
 }
 
 
@@ -179,14 +288,6 @@ void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
 
 uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint8_t bBufferSize)
 {
-	uint8_t bWriteEnable = EEPROM_REG_WREN;
-
-	////////////////////////////////////////////////////////////////////////////
-	// Must first send write enable command in a separate transaction
-	EepromSpiOpen();
-	HAL_SPI_Transmit(EEPROM_SPI_PERIPHERAL_HANDLE, &bWriteEnable, sizeof(bWriteEnable), HAL_MAX_DELAY);
-	EepromSpiClose();
-
 	////////////////////////////////////////////////////////////////////////////
 	// Calculate how many bytes we can write at this offset to remain in the given page
 	// Note:  Writes cannot span EEPROM pages.  If bytes are written past the end of a page,
@@ -194,18 +295,39 @@ uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint8_t
 	const uint8_t bBytesToWriteMax = (EEPROM_PAGE_SIZE_BYTES - (wOffset % EEPROM_PAGE_SIZE_BYTES));
 	const uint8_t bBytesToWrite = MINIMUM(bBytesToWriteMax, bBufferSize);
 
+	// Prepare to send Page Write command
 	uint8_t bCommandArray[3] = { EEPROM_REG_WRITE, ((wOffset >> 8) & 0xFF), (wOffset & 0xFF) };
+
+	// Create SPI transfer struct array and ensure it is zeroed out
+	struct spi_ioc_transfer transfers[2] = {{0},{0}};
+
+	transfers[0].tx_buf = (unsigned long) &bCommandArray;
+	transfers[0].rx_buf = NULL;
+	transfers[0].len = sizeof(bCommandArray);
+	transfers[0].speed_hz = eeprom_spi_speed;
+	transfers[0].bits_per_word = eeprom_spi_bits;
+	transfers[0].delay_usecs = 0;
+	transfers[0].cs_change = false;
+	transfers[1].tx_buf = (unsigned long) pbBuffer;
+	transfers[1].rx_buf = NULL;
+	transfers[1].len = bBytesToWrite;
+	transfers[1].speed_hz = eeprom_spi_speed;
+	transfers[1].bits_per_word = eeprom_spi_bits;
 
 	////////////////////////////////////////////////////////////////////////////
 	// Write the given data to the EEPROM
-	EepromSpiOpen();
-	HAL_SPI_Transmit(EEPROM_SPI_PERIPHERAL_HANDLE, &bCommandArray[0], sizeof(bCommandArray), HAL_MAX_DELAY);
-	HAL_SPI_Transmit(EEPROM_SPI_PERIPHERAL_HANDLE, &pbBuffer[0], bBytesToWrite, HAL_MAX_DELAY);
-	EepromSpiClose();
+	shared_memory_t* p_mem = NULL;
+	int spi_fd = EepromSpiOpen(p_mem);
+	
+	// Perform the SPI transfers
+	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(sizeof(transfers)/sizeof(struct spi_ioc_transfer)), &transfers[0]);
+
+	EepromSpiClose(spi_fd, p_mem);
 
 	////////////////////////////////////////////////////////////////////////////
 	// Wait until the write operation has completed (should be a max of 5 ms)
-	SystemTaskDelayMs(6);
+	// TODO: Replace fixed wait time with looped status read to determine when write has actually completed
+	usleep(eeprom_write_time_us);
 
 	////////////////////////////////////////////////////////////////////////////
 	// Ensure the write has actually completed
@@ -243,6 +365,10 @@ uint16_t EepromWriteBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint1
 		// The EepromWritePage() must be called multiple times until there is no data left to write
 		while (wBytesWritten < wAllowedBytes)
 		{
+			// Send Write Enable command
+			EepromWriteEnable();
+
+			// Send data using Page Write command
 			const uint16_t wBytesToWrite = (wAllowedBytes - wBytesWritten);
 			wBytesWritten += EepromWritePage(wOffset + wBytesWritten, &pbBuffer[wBytesWritten], wBytesToWrite);
 		}
@@ -379,3 +505,4 @@ uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char 
 
 	return dwNumChars;
 }
+
