@@ -65,6 +65,8 @@ typedef struct {
 	property_t amps_eeprom_cs;
 	property_t amps_adc_cs;
 
+	property_t fieldlock_adc_cs;
+	property_t fieldlock_eeprom_cs;
 
 	int32_t* lwbridge;
 	int32_t* rams;

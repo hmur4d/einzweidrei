@@ -243,6 +243,20 @@ bool shared_memory_init(const char* memory_file) {
 		.bit_offset = 1,
 		.name = "amps_eeprom_cs",
 	};
+	sharedmem.fieldlock_adc_cs = (property_t){
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 17001,	// TODO: Change to use correct values
+		.bit_size = 1,
+		.bit_offset = 0,
+		.name = "fieldlock_adc_cs",
+	};
+	sharedmem.fieldlock_eeprom_cs = (property_t){
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 17001,	// TODO: Change to use correct values
+		.bit_size = 1,
+		.bit_offset = 1,
+		.name = "fieldlock_eeprom_cs",
+	};
 
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
 	if (sharedmem.rams == MAP_FAILED) {

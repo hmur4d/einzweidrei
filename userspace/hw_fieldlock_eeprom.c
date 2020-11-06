@@ -65,9 +65,9 @@ static const uint32_t eeprom_write_time_us = 5500;	// Datasheet specifies 5ms ma
 
 
 /* Private function prototypes  ----------------------------------------------*/
-static int 		EepromSpiOpen(shared_memory_t* p_mem);
-static void 	EepromSpiClose(const int spi_fd, shared_memory_t* p_mem);
-static void		EepromSpiSetCs(const shared_memory_t * const p_mem, const bool fAssertCs);
+static int 		EepromSpiOpen(void);
+static void 	EepromSpiClose(const int spi_fd);
+static void 	EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, const unsigned int num_transfers);
 static uint8_t 	EepromGetStatus(void);
 static void 	EepromWriteEnable(void);
 static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint8_t bBufferSize);
@@ -108,14 +108,14 @@ bool EepromInitialize(void)
 /*******************************************************************************
  * Function:	EepromSpiOpen()
  * Parameters:	void
- * Return:		int, file descriptor
+ * Return:		int, file descriptor, valid values are greater than zero
  * Summary:		Open SPI communications to chip and assert chip select
  ******************************************************************************/
-int EepromSpiOpen(shared_memory_t* p_mem)
+int EepromSpiOpen(void)
 {
 	// TODO: Verify cs value
-	const uint8_t cs = 1;
-	const uint8_t mode = 0;
+	const uint8_t cs = 1;		// Index of chip select on this SPI Bus
+	const uint8_t mode = 0;		// Use SPI Mode 0 (CPHA=0, CPOL=0)
 
 	char dev[64];
 	// TODO: Update with actual spidev name
@@ -132,41 +132,48 @@ int EepromSpiOpen(shared_memory_t* p_mem)
 		return 0;
 	}
 
-	// Assert chip select
-	p_mem = shared_memory_acquire();
-	write_property(p_mem->amps_adc_cs, 1);
-
 	return spi_fd;
 }
 
 
 /*******************************************************************************
  * Function:	EepromSpiClose()
- * Parameters:	void
+ * Parameters:	const int spi_fd
  * Return:		void
  * Summary:		Close SPI communications to chip.
  ******************************************************************************/
-void EepromSpiClose(const int spi_fd, shared_memory_t* p_mem)
+void EepromSpiClose(const int spi_fd)
 {
-	// De-assert chip select and close SPI
-	write_property(p_mem->fieldlock_eeprom_cs, 0);
-	shared_memory_release(p_mem);
 	close(spi_fd);
 }
 
 
 /*******************************************************************************
- * Function:	EepromSpiSetCs()
- * Parameters:	const shared_memory_t * const p_mem, 
- * 				const bool fAssertCs, true to assert CS, false to de-assert CS
+ * Function:	EepromSpiTransfer()
+ * Parameters:	const struct spi_ioc_transfer * const p_transfer_array, 
+ * 				const unsigned int num_transfers,
  * Return:		void
- * Summary:		Set CS signal for EEPROM
+ * Summary:		Close SPI communications to chip.
  ******************************************************************************/
-void EepromSpiSetCs(const shared_memory_t * const p_mem, const bool fAssertCs)
+void EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, const unsigned int num_transfers)
 {
-	if (NULL != p_mem)
+	const int spi_fd = EepromSpiOpen();
+
+	if (spi_fd > 0)
 	{
-		write_property(p_mem->fieldlock_eeprom_cs, fAssertCs ? 1 : 0);
+		// Assert chip select
+		shared_memory_t *p_mem = shared_memory_acquire();
+		write_property(p_mem->fieldlock_eeprom_cs, 1);
+
+		// Perform the SPI transfers
+		int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
+
+		// De-assert chip select
+		write_property(p_mem->fieldlock_eeprom_cs, 0);
+		shared_memory_release(p_mem);
+	
+		// Close SPI
+		EepromSpiClose(spi_fd);
 	}
 }
 
@@ -184,21 +191,15 @@ uint8_t EepromGetStatus(void)
 	uint8_t bResponseArray[2] = { 0x00, 0x00 };
 
 	// Create SPI transfer struct array and ensure it is zeroed out
-	struct spi_ioc_transfer transfers[1] = {{0}};
+	struct spi_ioc_transfer transfer_array[1] = {{0}};
 
-	transfers[0].tx_buf = (unsigned long) &bCommandArray[0];
-	transfers[0].rx_buf = (unsigned long) &bResponseArray[0];
-	transfers[0].len = sizeof(bCommandArray);
-	transfers[0].speed_hz = eeprom_spi_speed;
-	transfers[0].bits_per_word = eeprom_spi_bits;
+	transfer_array[0].tx_buf = (unsigned long) &bCommandArray[0];
+	transfer_array[0].rx_buf = (unsigned long) &bResponseArray[0];
+	transfer_array[0].len = sizeof(bCommandArray);
+	transfer_array[0].speed_hz = eeprom_spi_speed;
+	transfer_array[0].bits_per_word = eeprom_spi_bits;
 
-	shared_memory_t* p_mem = NULL;
-	int spi_fd = EepromSpiOpen(p_mem);
-
-	// Perform the SPI transfers
-	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(sizeof(transfers)/sizeof(struct spi_ioc_transfer)), &transfers[0]);
-
-	EepromSpiClose(spi_fd, p_mem);
+	EepromSpiTransfer(&transfer_array[0], (sizeof(transfer_array)/sizeof(struct spi_ioc_transfer)));
 
 	return bResponseArray[1];
 }
@@ -221,28 +222,22 @@ void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
 	memset(&pbBuffer[0], 0, wNumBytes);
 
 	// Create SPI transfer struct array and ensure it is zeroed out
-	struct spi_ioc_transfer transfers[2] = {{0},{0}};
+	struct spi_ioc_transfer transfer_array[2] = {{0},{0}};
 
-	transfers[0].tx_buf = (unsigned long) &bCommandArray[0];
-	transfers[0].rx_buf = NULL;
-	transfers[0].len = sizeof(bCommandArray);
-	transfers[0].speed_hz = eeprom_spi_speed;
-	transfers[0].bits_per_word = eeprom_spi_bits;
-	transfers[0].delay_usecs = 0;
-	transfers[0].cs_change = false;
-	transfers[1].tx_buf = NULL;
-	transfers[1].rx_buf = (unsigned long) pbBuffer;
-	transfers[1].len = wReadBytes;
-	transfers[1].speed_hz = eeprom_spi_speed;
-	transfers[1].bits_per_word = eeprom_spi_bits;
+	transfer_array[0].tx_buf = (unsigned long) &bCommandArray[0];
+	transfer_array[0].rx_buf = NULL;
+	transfer_array[0].len = sizeof(bCommandArray);
+	transfer_array[0].speed_hz = eeprom_spi_speed;
+	transfer_array[0].bits_per_word = eeprom_spi_bits;
+	transfer_array[0].delay_usecs = 0;
+	transfer_array[0].cs_change = false;
+	transfer_array[1].tx_buf = NULL;
+	transfer_array[1].rx_buf = (unsigned long) pbBuffer;
+	transfer_array[1].len = wReadBytes;
+	transfer_array[1].speed_hz = eeprom_spi_speed;
+	transfer_array[1].bits_per_word = eeprom_spi_bits;
 
-	shared_memory_t* p_mem = NULL;
-	int spi_fd = EepromSpiOpen(p_mem);
-	
-	// Perform the SPI transfers
-	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(sizeof(transfers)/sizeof(struct spi_ioc_transfer)), &transfers);
-
-	EepromSpiClose(spi_fd, p_mem);
+	EepromSpiTransfer(&transfer_array[0], (sizeof(transfer_array)/sizeof(struct spi_ioc_transfer)));
 }
 
 
@@ -258,21 +253,15 @@ void EepromWriteEnable(void)
 	uint8_t bWriteEnable = EEPROM_REG_WREN;
 
 	// Create SPI transfer struct array and ensure it is zeroed out
-	struct spi_ioc_transfer transfers[1] = {{0}};
+	struct spi_ioc_transfer transfer_array[1] = {{0}};
 
-	transfers[0].tx_buf = (unsigned long) &bWriteEnable;
-	transfers[0].rx_buf = NULL;
-	transfers[0].len = sizeof(bWriteEnable);
-	transfers[0].speed_hz = eeprom_spi_speed;
-	transfers[0].bits_per_word = eeprom_spi_bits;
+	transfer_array[0].tx_buf = (unsigned long) &bWriteEnable;
+	transfer_array[0].rx_buf = NULL;
+	transfer_array[0].len = sizeof(bWriteEnable);
+	transfer_array[0].speed_hz = eeprom_spi_speed;
+	transfer_array[0].bits_per_word = eeprom_spi_bits;
 
-	shared_memory_t* p_mem = NULL;
-	int spi_fd = EepromSpiOpen(p_mem);
-	
-	// Perform the SPI transfers
-	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(sizeof(transfers)/sizeof(struct spi_ioc_transfer)), &transfers[0]);
-
-	EepromSpiClose(spi_fd, p_mem);
+	EepromSpiTransfer(&transfer_array[0], (sizeof(transfer_array)/sizeof(struct spi_ioc_transfer)));
 }
 
 
@@ -299,30 +288,24 @@ uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint8_t
 	uint8_t bCommandArray[3] = { EEPROM_REG_WRITE, ((wOffset >> 8) & 0xFF), (wOffset & 0xFF) };
 
 	// Create SPI transfer struct array and ensure it is zeroed out
-	struct spi_ioc_transfer transfers[2] = {{0},{0}};
+	struct spi_ioc_transfer transfer_array[2] = {{0},{0}};
 
-	transfers[0].tx_buf = (unsigned long) &bCommandArray;
-	transfers[0].rx_buf = NULL;
-	transfers[0].len = sizeof(bCommandArray);
-	transfers[0].speed_hz = eeprom_spi_speed;
-	transfers[0].bits_per_word = eeprom_spi_bits;
-	transfers[0].delay_usecs = 0;
-	transfers[0].cs_change = false;
-	transfers[1].tx_buf = (unsigned long) pbBuffer;
-	transfers[1].rx_buf = NULL;
-	transfers[1].len = bBytesToWrite;
-	transfers[1].speed_hz = eeprom_spi_speed;
-	transfers[1].bits_per_word = eeprom_spi_bits;
+	transfer_array[0].tx_buf = (unsigned long) &bCommandArray;
+	transfer_array[0].rx_buf = NULL;
+	transfer_array[0].len = sizeof(bCommandArray);
+	transfer_array[0].speed_hz = eeprom_spi_speed;
+	transfer_array[0].bits_per_word = eeprom_spi_bits;
+	transfer_array[0].delay_usecs = 0;
+	transfer_array[0].cs_change = false;
+	transfer_array[1].tx_buf = (unsigned long) pbBuffer;
+	transfer_array[1].rx_buf = NULL;
+	transfer_array[1].len = bBytesToWrite;
+	transfer_array[1].speed_hz = eeprom_spi_speed;
+	transfer_array[1].bits_per_word = eeprom_spi_bits;
 
 	////////////////////////////////////////////////////////////////////////////
 	// Write the given data to the EEPROM
-	shared_memory_t* p_mem = NULL;
-	int spi_fd = EepromSpiOpen(p_mem);
-	
-	// Perform the SPI transfers
-	int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(sizeof(transfers)/sizeof(struct spi_ioc_transfer)), &transfers[0]);
-
-	EepromSpiClose(spi_fd, p_mem);
+	EepromSpiTransfer(&transfer_array[0], (sizeof(transfer_array)/sizeof(struct spi_ioc_transfer)));
 
 	////////////////////////////////////////////////////////////////////////////
 	// Wait until the write operation has completed (should be a max of 5 ms)
