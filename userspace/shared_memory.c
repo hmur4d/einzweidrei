@@ -243,6 +243,20 @@ bool shared_memory_init(const char* memory_file) {
 		.bit_offset = 1,
 		.name = "amps_eeprom_cs",
 	};
+	sharedmem.lock_adc_cs = (property_t){
+	.read_ptr = NULL,
+	.write_ptr = sharedmem.lwbridge + 16364,
+	.bit_size = 1,
+	.bit_offset = 2,
+	.name = "lock_adc_cs",
+	};
+	sharedmem.lock_eeprom_cs = (property_t){
+	.read_ptr = NULL,
+	.write_ptr = sharedmem.lwbridge + 16364,
+	.bit_size = 1,
+	.bit_offset = 3,
+	.name = "lock_eeprom_cs",
+	};
 
 	sharedmem.pa_reset = (property_t){
 	.read_ptr = NULL,
