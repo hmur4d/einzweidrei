@@ -18,6 +18,7 @@ typedef struct  {
 	device_info_t gradient;
 	device_info_t lock;
 	device_info_t shim;
+	device_info_t pa;
 }udp_info_t;
 
 

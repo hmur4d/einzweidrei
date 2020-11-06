@@ -64,6 +64,7 @@ typedef struct {
 
 	property_t amps_eeprom_cs;
 	property_t amps_adc_cs;
+	property_t pa_reset;
 
 
 	int32_t* lwbridge;

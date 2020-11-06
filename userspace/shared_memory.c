@@ -244,6 +244,14 @@ bool shared_memory_init(const char* memory_file) {
 		.name = "amps_eeprom_cs",
 	};
 
+	sharedmem.pa_reset = (property_t){
+	.read_ptr = NULL,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 0,
+	.name = "pa_reset",
+	};
+
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
 	if (sharedmem.rams == MAP_FAILED) {
 		log_error_errno("Unable to mmap MEM_INTERFACE (hps2fpga bridge");
@@ -357,7 +365,6 @@ void write_property(property_t prop, int32_t value)
 		uint32_t umask = ~mask;
 		int previous = (*prop.write_ptr) & umask;
 		*prop.write_ptr = previous | ((value << prop.bit_offset) & mask);
-		//log_info("Write property : %s = %d", prop.name, value);
 	}
 	else {
 		log_error("Property '%s' is not an output!",prop.name);

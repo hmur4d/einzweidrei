@@ -13,7 +13,7 @@
 #define SHIM_PROFIL_DIR	"/opt/RS2D/shim_profils/"
 #define SHIM_BOARD_FILE	"/opt/RS2D/amps_board.txt/"
 
-#define HPS_REVISION		9
+#define HPS_REVISION		10
 // HPS_REVISION		1 : base
 // HPS_REVISION		2 : delay (1,1,1,1) pour cam4 2.0 
 // HPS_REVISION		3 : annulé

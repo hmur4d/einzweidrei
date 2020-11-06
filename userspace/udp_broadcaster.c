@@ -5,6 +5,7 @@
 #include "pthread.h"
 #include "clientgroup.h"
 #include "shim_config_files.h"
+#include "hw_pa.h"
 
 conn_udp_t connUDP;
 udp_info_t udpInfo;
@@ -44,6 +45,12 @@ static void init_device_info(udp_info_t * pUDPinfo) {
 	pUDPinfo->shim = (device_info_t){
 		.type = DEVICE_TYPE_CAMELEON4,
 		.feature = config_hardware_shim_activated() && is_amps_board_responding() ? DEVICE_FEATURE_SHIM : DEVICE_FEATURE_UNKNOWN,
+		.cmdPort = COMMAND_PORT,
+		.dataPort = -1,
+	};
+	pUDPinfo->pa = (device_info_t){
+		.type = DEVICE_TYPE_CAMELEON4,
+		.feature = is_pa_board_responding() ? DEVICE_FEATURE_PA : DEVICE_FEATURE_UNKNOWN,
 		.cmdPort = COMMAND_PORT,
 		.dataPort = -1,
 	};

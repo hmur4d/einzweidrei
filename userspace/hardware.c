@@ -5,6 +5,7 @@
 #include "config.h"
 #include "memory_map.h"
 #include "hw_transmitter.h"
+#include "hw_pa.h"
 
 extern float last_sync_temperature;
 
@@ -188,6 +189,10 @@ int hardware_init() {
 		log_info("Shim not activated");
 	}
 	
+	if (pa_init()!=0) {
+		log_error("PA init error");
+	}
+
 	return 0;
 }
 fpga_revision_t read_fpga_revision() {
