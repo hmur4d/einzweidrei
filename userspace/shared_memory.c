@@ -259,11 +259,67 @@ bool shared_memory_init(const char* memory_file) {
 	};
 
 	sharedmem.pa_reset = (property_t){
-	.read_ptr = NULL,
+	.read_ptr = sharedmem.lwbridge + 16363,
 	.write_ptr = sharedmem.lwbridge + 16363,
 	.bit_size = 1,
 	.bit_offset = 0,
 	.name = "pa_reset",
+	};
+	sharedmem.pa_boot = (property_t){
+	.read_ptr = sharedmem.lwbridge + 16363,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 1,
+	.name = "pa_boot",
+	};
+	sharedmem.amps_ag_enuc_disable = (property_t){
+	.read_ptr = sharedmem.lwbridge + 16363,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 2,
+	.name = "amps_ag_enuc_disable",
+	};
+	sharedmem.amps_sh_i_gain_enable = (property_t){
+	.read_ptr = sharedmem.lwbridge + 16363,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 3,
+	.name = "amps_sh_i_gain_enable",
+	};
+	sharedmem.amps_ldac_enable = (property_t){
+	.read_ptr = sharedmem.lwbridge + 16363,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 4,
+	.name = "amps_ldac_enable",
+	};
+	sharedmem.amps_dac_clr_enable = (property_t){
+	.read_ptr = sharedmem.lwbridge + 16363,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 5,
+	.name = "amps_dac_clr_enable",
+	};
+	sharedmem.lock_ag_en_b0_disable = (property_t){
+	.read_ptr = sharedmem.lwbridge + 16363,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 6,
+	.name = "lock_ag_en_b0_disable",
+	};
+	sharedmem.lock_ag_en_gx_disable = (property_t){
+	.read_ptr = sharedmem.lwbridge + 16363,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 7,
+	.name = "lock_ag_en_gx_disable",
+	};
+	sharedmem.lock_ldac_enable = (property_t){
+	.read_ptr = sharedmem.lwbridge + 16363,
+	.write_ptr = sharedmem.lwbridge + 16363,
+	.bit_size = 1,
+	.bit_offset = 8,
+	.name = "lock_ldac_enable",
 	};
 
 	sharedmem.rams = (int32_t*)mmap(NULL, MEM_INTERFACE_SPAN, PROT_READ | PROT_WRITE, MAP_SHARED, fd, MEM_INTERFACE_BASE);
