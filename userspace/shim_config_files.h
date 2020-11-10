@@ -1,7 +1,6 @@
 #ifndef _SHIM_CONFIG_FILES_H_
 #define _SHIM_CONFIG_FILES_H_
 #include "std_includes.h"
-
 #define SHIM_PROFILES_FOLDER "/opt/RS2D/shim_config/profiles/"
 #define SHIM_CALIBRATIONS_FOLDER "/opt/RS2D/shim_config/calibrations/"
 #define SHIM_FILE "/opt/RS2D/shim_config/Shim_d2o.cfg"
@@ -63,6 +62,7 @@ void write_profiles();
 void use_profile_factors();
 void shim_value_tostring(shim_value_t sv, char * str);
 bool is_amps_board_responding();
+char* substring(char* src, char* cstart, char* cstop);
 
 #endif
 
