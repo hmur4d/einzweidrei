@@ -16,6 +16,8 @@
 #if 1
 #include "std_includes.h"
 #include "shared_memory.h"
+#include "hardware.h"
+#include "log.h"
 #else
 // Defines and includes to allow using IntelliSense with Visual Studio Code
 #define __INT8_TYPE__
@@ -58,6 +60,10 @@
 
 
 /* Private macro -------------------------------------------------------------*/
+#define MINIMUM(a, b)  	(((a) < (b)) ? (a) : (b))
+#define MAXIMUM(a, b)  	(((a) > (b)) ? (a) : (b))
+
+
 /* Private variables ---------------------------------------------------------*/
 static const uint8_t eeprom_spi_bits = 8;
 static const uint32_t eeprom_spi_speed = 1000*100;	// Use 100kHz until higher speeds are verified
@@ -230,13 +236,13 @@ void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
 	struct spi_ioc_transfer transfer_array[2] = {{0},{0}};
 
 	transfer_array[0].tx_buf = (unsigned long) &bCommandArray[0];
-	transfer_array[0].rx_buf = NULL;
+	transfer_array[0].rx_buf = (unsigned long) NULL;
 	transfer_array[0].len = sizeof(bCommandArray);
 	transfer_array[0].speed_hz = eeprom_spi_speed;
 	transfer_array[0].bits_per_word = eeprom_spi_bits;
 	transfer_array[0].delay_usecs = 0;
 	transfer_array[0].cs_change = false;
-	transfer_array[1].tx_buf = NULL;
+	transfer_array[1].tx_buf = (unsigned long) NULL;
 	transfer_array[1].rx_buf = (unsigned long) pbBuffer;
 	transfer_array[1].len = wReadBytes;
 	transfer_array[1].speed_hz = eeprom_spi_speed;
@@ -261,7 +267,7 @@ void EepromWriteEnable(void)
 	struct spi_ioc_transfer transfer_array[1] = {{0}};
 
 	transfer_array[0].tx_buf = (unsigned long) &bWriteEnable;
-	transfer_array[0].rx_buf = NULL;
+	transfer_array[0].rx_buf = (unsigned long) NULL;
 	transfer_array[0].len = sizeof(bWriteEnable);
 	transfer_array[0].speed_hz = eeprom_spi_speed;
 	transfer_array[0].bits_per_word = eeprom_spi_bits;
@@ -296,14 +302,14 @@ uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint8_t
 	struct spi_ioc_transfer transfer_array[2] = {{0},{0}};
 
 	transfer_array[0].tx_buf = (unsigned long) &bCommandArray;
-	transfer_array[0].rx_buf = NULL;
+	transfer_array[0].rx_buf = (unsigned long) NULL;
 	transfer_array[0].len = sizeof(bCommandArray);
 	transfer_array[0].speed_hz = eeprom_spi_speed;
 	transfer_array[0].bits_per_word = eeprom_spi_bits;
 	transfer_array[0].delay_usecs = 0;
 	transfer_array[0].cs_change = false;
 	transfer_array[1].tx_buf = (unsigned long) pbBuffer;
-	transfer_array[1].rx_buf = NULL;
+	transfer_array[1].rx_buf = (unsigned long) NULL;
 	transfer_array[1].len = bBytesToWrite;
 	transfer_array[1].speed_hz = eeprom_spi_speed;
 	transfer_array[1].bits_per_word = eeprom_spi_bits;
