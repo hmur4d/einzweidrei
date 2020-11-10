@@ -601,7 +601,7 @@ uint8_t ADS126X_SpiSendRecv(const uint8_t bChip, uint8_t *pbBufferSend, const ui
 			uint8_t tx_buff[9] = { 0 };
 			uint8_t rx_buff[9] = { 0 };
 
-			mempcy(&tx_buff[0], pbBufferSend, bBufferSendSize);
+			memcpy(&tx_buff[0], pbBufferSend, bBufferSendSize);
 
 			// Create SPI transfer struct array and ensure it is zeroed out
 			struct spi_ioc_transfer transfer_array[1] = { {0} };
