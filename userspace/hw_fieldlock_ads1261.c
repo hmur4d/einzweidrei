@@ -557,7 +557,7 @@ void ADS126X_SpiTransfer(const uint8_t bChip, const struct spi_ioc_transfer * co
 	{
 		// Assert chip select
 		shared_memory_t *p_mem = shared_memory_acquire();
-		write_property(p_mem->fieldlock_eeprom_cs, 1);
+		write_property(p_mem->lock_adc_cs, 1);
 
 		// Perform the SPI transfers
 		const int16_t result = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
@@ -568,7 +568,7 @@ void ADS126X_SpiTransfer(const uint8_t bChip, const struct spi_ioc_transfer * co
 		}
 
 		// De-assert chip select
-		write_property(p_mem->fieldlock_eeprom_cs, 0);
+		write_property(p_mem->lock_adc_cs, 0);
 		shared_memory_release(p_mem);
 	
 		// Close SPI

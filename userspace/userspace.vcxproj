@@ -132,6 +132,8 @@
     <ClInclude Include="hardware.h" />
     <ClInclude Include="hw_amps.h" />
     <ClInclude Include="hw_clock.h" />
+    <ClInclude Include="hw_fieldlock_ads1261.h" />
+    <ClInclude Include="hw_fieldlock_eeprom.h" />
     <ClInclude Include="hw_gradient.h" />
     <ClInclude Include="hw_lock.h" />
     <ClInclude Include="hw_pa.h" />
@@ -165,6 +167,8 @@
     <ClCompile Include="hardware.c" />
     <ClCompile Include="hw_amps.c" />
     <ClCompile Include="hw_clock.c" />
+    <ClCompile Include="hw_fieldlock_ads1261.c" />
+    <ClCompile Include="hw_fieldlock_eeprom.c" />
     <ClCompile Include="hw_gradient.c" />
     <ClCompile Include="hw_lock.c" />
     <ClCompile Include="hw_pa.c" />
