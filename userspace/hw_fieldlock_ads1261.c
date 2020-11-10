@@ -18,8 +18,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /* Standard C Header Files */
-#if 0
-#include <./std_includes.h>
+#if 1
+#include "std_includes.h"
+#include "shared_memory.h"
+#include "hardware.h"
 #else
 // Defines and includes to allow using IntelliSense with Visual Studio Code
 #define __INT8_TYPE__
@@ -85,8 +87,8 @@ typedef struct
 {
 	BOOL			fEnabled;
 	uint16_t 		wModel;
-	GPIO_TypeDef* 	pChipSelectGPIOx;
-	uint16_t 		wChipSelectPin;
+	uint8_t			bChipSelect;
+	BOOL			fCrcEnabled;	// Will be set to TRUE when CRC is enabled
 
 } ADC126X_CHIP_DESCRIPTION_STRUCT;
 
@@ -147,13 +149,13 @@ typedef struct
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-extern SPI_HandleTypeDef hspi2;
-static SPI_HandleTypeDef *phspiX = &hspi2;
+static const uint32_t gdwSpiSpeedHz = 1000*1000*1;
+static const uint32_t gdwSpiBitsPerWord = 8;
 
 static const ADC126X_CHIP_DESCRIPTION_STRUCT 	ADS126X_CHIP_ARRAY[ADS126X_NUM_CHIPS] =
 {
 	// ADC Model, Enabled
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.pChipSelectGPIOx = GPIOC,	.wChipSelectPin = GPIO_PIN_6	},
+	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.bChipSelect = 1, 	.fCrcEnabled = FALSE	},
 };
 
 static const ADC126X_INPUT_MUX_STRUCT		ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUTS_NUM_TOTAL] =
@@ -263,13 +265,14 @@ static BOOL gfGatherAllInputs = FALSE;	// Set true to force the gathering of con
 /* Private function prototypes  ----------------------------------------------*/
 static BOOL 		ADS126X_IsChipUsable		(const uint8_t bChip);
 static void			ADS126X_DelayMs				(const uint32_t dwMilliseconds);
-static void 		ADS126X_SpiOpen				(const uint8_t bChip);
-static void 		ADS126X_SpiCloseAll			(void);
-static uint8_t 		ADS126X_SpiSendRecv			(const uint8_t bData);
-static void 		ADS126X_SendCommand			(const ADS126X_COMMANDS_ENUM eCommand);
-static uint8_t		ADS126X_GetRegister			(const ADS126X_REGISTERS_ENUM eRegister);
-static void			ADS126X_SetRegister			(const ADS126X_REGISTERS_ENUM eRegister, const uint8_t bValue);
-static BOOL 		ADS126X_ReadRegisterArray	(const ADS126X_REGISTERS_ENUM eRegisterStart, uint8_t * const pbBuffer, const uint8_t bBufferSize);
+static int 			ADS126X_SpiOpen				(const uint8_t bChip);
+static void 		ADS126X_SpiClose			(const int spi_fd);
+static uint8_t		ADS126X_SpiSendRecv			(const uint8_t bChip, uint8_t *pbBufferSend, const uint8_t bBufferSendSize, uint8_t *pbBufferRecv, const uint8_t bBufferRecvSize);
+static void 		ADS126X_SpiTransfer			(const uint8_t bChip, const struct spi_ioc_transfer * const p_transfer_array, const unsigned int num_transfers);
+static BOOL 		ADS126X_SendCommand			(const uint8_t bChip, const ADS126X_COMMANDS_ENUM eCommand);
+static BOOL 		ADS126X_GetRegister			(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegister, uint8_t *pbValue);
+static BOOL 		ADS126X_SetRegister			(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegister, const uint8_t bValue);
+static BOOL 		ADS126X_ReadRegisterArray	(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegisterStart, uint8_t * const pbBuffer, const uint8_t bBufferSize);
 //static BOOL 		ADS126X_WriteRegisterArray	(const ADS126X_REGISTERS_ENUM eRegisterStart, const uint8_t * const pbBuffer, const uint8_t bBufferSize);
 static void 		ADS126X_StopAll				(void);
 static void 		ADS126X_StartAll			(void);
@@ -309,12 +312,6 @@ void ADS126X_Initialize(void)
 		}
 	}
 
-	// Ensure all CS pins are high (to reset serial interface of ADC chips)
-	ADS126X_SpiCloseAll();
-
-	// Send a byte through the SPI to ensure SCLK is low at the start of the first real transaction
-	ADS126X_SpiSendRecv(ADS126X_DUMMY_BYTE);
-
 	// Wait at least 9ms after POR before beginning communications
 	// See Datasheet, Figure 5, "Power-Up Characterisitics"
 	// tp(PRCM) = 2^16 clocks of (1/7.3728e6) => ((1<<16)*(1/7.3728e6)) = 8.9ms
@@ -323,10 +320,11 @@ void ADS126X_Initialize(void)
 	// Reset all ADC chips
 	for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 	{
+		// Send NOP command to ensure the SPI interface is reset
+		ADS126X_SendCommand(bChip, ADS126X_CMD_NOP);
+
 		// Send reset command
-		ADS126X_SpiOpen(bChip);
-		ADS126X_SendCommand(ADS126X_CMD_RESET);
-		ADS126X_SpiCloseAll();
+		ADS126X_SendCommand(bChip, ADS126X_CMD_RESET);
 	}
 	ADS126X_DelayMs(2); // Short delay to ensure reset is complete
 
@@ -335,13 +333,13 @@ void ADS126X_Initialize(void)
 	{
 		if (ADS126X_CHIP_ARRAY[bChip].fEnabled)
 		{
-			ADS126X_SpiOpen(bChip);
-			const uint8_t bValue = ADS126X_GetRegister(ADS126X_REG_DEVICE_ID);
-			ADS126X_SpiCloseAll();
-
-			if ((bValue & 0xF0) == ADS126X_DEVICE_ID_EXPECTED)
+			uint8_t bValue = 0x00;
+			if (ADS126X_GetRegister(bChip, ADS126X_REG_DEVICE_ID, &bValue))
 			{
-				ADS126X_ADC_STATUS_ARRAY[bChip].fFound = TRUE;
+				if ((bValue & 0xF0) == ADS126X_DEVICE_ID_EXPECTED)
+				{
+					ADS126X_ADC_STATUS_ARRAY[bChip].fFound = TRUE;
+				}
 			}
 
 			/*
@@ -359,11 +357,9 @@ void ADS126X_Initialize(void)
 	{
 		if (ADS126X_IsChipUsable(bChip))
 		{
-			ADS126X_SpiOpen(bChip);
-			ADS126X_SetRegister(ADS126X_REG_STATUS, 0x00);		// Clear the RESET bit, clear CRC Error bit
-			ADS126X_SetRegister(ADS126X_REG_MODE3, 0x60);		// Enable STATUS Byte, enable CRC Data Verification
-			ADS126X_SetRegister(ADS126X_REG_REF, 0x19);			// Enable internal reference, select external reference input pins
-			ADS126X_SpiCloseAll();
+			ADS126X_SetRegister(bChip, ADS126X_REG_STATUS, 0x00);		// Clear the RESET bit, clear CRC Error bit
+			ADS126X_SetRegister(bChip, ADS126X_REG_MODE3, 0x60);		// Enable STATUS Byte, enable CRC Data Verification
+			ADS126X_SetRegister(bChip, ADS126X_REG_REF, 0x19);			// Enable internal reference, select external reference input pins
 		}
 	}
 
@@ -377,37 +373,30 @@ void ADS126X_Initialize(void)
 		{
 			if (ADS126X_IsChipUsable(bChip))
 			{
-				ADS126X_SpiOpen(bChip);
-
+/*				
 				// Set input multiplexer to using floating inputs
-/*				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, 0xFF);
-				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x00);
-				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x60);
-				ADS126X_SetRegister(ADS126X_REG_MODE2, (ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_RTD1].eSampleRate & 0x0F));
+				ADS126X_SetRegister(bChip, ADS126X_REG_INPUT_MUX, 0xFF);
+				ADS126X_SetRegister(bChip, ADS126X_REG_MODE0, 0x00);
+				ADS126X_SetRegister(bChip, ADS126X_REG_MODE1, 0x60);
+				ADS126X_SetRegister(bChip, ADS126X_REG_MODE2, (ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_RTD1].eSampleRate & 0x0F));
 */
 				ADS126X_ConfigureInput(bChip, ADS126X_INPUT_MUX_AG_SENSE_B0);
 
-				ADS126X_SpiOpen(bChip);
+				ADS126X_SetRegister(bChip, ADS126X_REG_INPUT_MUX, 0xFF); // Set input multiplexer to using floating inputs
+				ADS126X_SetRegister(bChip, ADS126X_REG_MODE0, 0x08); // Use 605us Conversion Delay, but set to continuous conversion mode for calibration
 
-				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, 0xFF); // Set input multiplexer to using floating inputs
-				ADS126X_SetRegister(ADS126X_REG_MODE0, 0x08); // Use 605us Conversion Delay, but set to continuous conversion mode for calibration
-
-				ADS126X_SendCommand(ADS126X_CMD_START);
-
-				ADS126X_SpiCloseAll();
+				ADS126X_SendCommand(bChip, ADS126X_CMD_START);
 			}
 		}
 
 		// Wait for the system to settle
-		SystemTaskDelayUs(ADS126X_GATHER_ARRAY[ADS126X_INPUT_MUX_AG_SENSE_B0].dwDwellUs * 3);
+		usleep(ADS126X_GATHER_ARRAY[ADS126X_INPUT_MUX_AG_SENSE_B0].dwDwellUs * 3);
 
 		for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 		{
 			if (ADS126X_IsChipUsable(bChip))
 			{
-				ADS126X_SpiOpen(bChip);
-				ADS126X_SendCommand(ADS126X_CMD_SFOCAL);
-				ADS126X_SpiCloseAll();
+				ADS126X_SendCommand(bChip, ADS126X_CMD_SFOCAL);
 			}
 		}
 
@@ -420,11 +409,13 @@ void ADS126X_Initialize(void)
 			if (ADS126X_IsChipUsable(bChip))
 			{
 				// Get the Offset Calibration value
-				ADS126X_SpiOpen(bChip);
-				const uint8_t bOffsetCal0 = ADS126X_GetRegister(ADS126X_REG_OFFSET_CAL_0);
-				const uint8_t bOffsetCal1 = ADS126X_GetRegister(ADS126X_REG_OFFSET_CAL_1);
-				const uint8_t bOffsetCal2 = ADS126X_GetRegister(ADS126X_REG_OFFSET_CAL_2);
-				ADS126X_SpiCloseAll();
+				uint8_t bOffsetCal0 = 0x00;
+				uint8_t bOffsetCal1 = 0x00;
+				uint8_t bOffsetCal2 = 0x00;
+
+				ADS126X_GetRegister(bChip, ADS126X_REG_OFFSET_CAL_0, &bOffsetCal0);
+				ADS126X_GetRegister(bChip, ADS126X_REG_OFFSET_CAL_1, &bOffsetCal1);
+				ADS126X_GetRegister(bChip, ADS126X_REG_OFFSET_CAL_2, &bOffsetCal2);
 
 				ADS126X_ADC_STATUS_ARRAY[bChip].idwOffsetCalValue = (int32_t) ((bOffsetCal2 << 24) | (bOffsetCal1 << 16) | (bOffsetCal0 << 8));
 			}
@@ -434,9 +425,7 @@ void ADS126X_Initialize(void)
 		{
 			if (ADS126X_IsChipUsable(bChip))
 			{
-				ADS126X_SpiOpen(bChip);
-				ADS126X_SendCommand(ADS126X_CMD_STOP);
-				ADS126X_SpiCloseAll();
+				ADS126X_SendCommand(bChip, ADS126X_CMD_STOP);
 			}
 		}
 	}
@@ -503,121 +492,261 @@ void ADS126X_DelayMs(const uint32_t dwMilliseconds)
  * Function:	ADS126X_SpiOpen()
  * Parameters:	const uint8_t bChip, Chip index to use
  * Return:		void
- * Notes:		Assert SPI Chip Select pin for given chip
+ * Notes:		Open SPI peripheral
  ******************************************************************************/
-void ADS126X_SpiOpen(const uint8_t bChip)
+int ADS126X_SpiOpen(const uint8_t bChip)
 {
+	int iReturn = 0;
+
 	if (bChip < ADS126X_NUM_CHIPS)
 	{
-		HAL_GPIO_WritePin(ADS126X_CHIP_ARRAY[bChip].pChipSelectGPIOx, ADS126X_CHIP_ARRAY[bChip].wChipSelectPin, GPIO_PIN_RESET);
+		const uint8_t mode = 1;		// Use SPI Mode 1 (CPHA=0, CPOL=1)
+
+		char dev[64];
+		// TODO: Update with actual spidev name
+		// TODO: Verify cs value
+		sprintf(dev, "/dev/spidev32765.%d", ADS126X_CHIP_ARRAY[bChip].bChipSelect);
+		//log_info("open spi %s in mode %d",dev, mode);
+		int spi_fd = open(dev, O_RDWR);
+		if (spi_fd == 0)
+		{
+			log_error("can't open spi dev");
+			return 0;
+		}
+		int ret = ioctl(spi_fd, SPI_IOC_WR_MODE, &mode);
+		if (-1 == ret)
+		{
+			log_error("can't set spi mode");
+			return 0;
+		}
+
+		iReturn = spi_fd;
 	}
+
+	return iReturn;
 }
 
 
 /*******************************************************************************
- * Function:	ADS126X_SpiCloseAll()
+ * Function:	ADS126X_SpiClose()
  * Parameters:	void
  * Return:		void
- * Notes:		De-assert all SPI Chip Select pins
+ * Notes:		De-assert given SPI Chip Select pin
  ******************************************************************************/
-void ADS126X_SpiCloseAll(void)
+void ADS126X_SpiClose(const int spi_fd)
 {
-	for (uint32_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
+	close(spi_fd);
+}
+
+
+/*******************************************************************************
+ * Function:	ADS126X_SpiClose()
+ * Parameters:	const uint8_t bChip, 
+ * 				const struct spi_ioc_transfer * const p_transfer_array, 
+ * 				const unsigned int num_transfers,
+ * Return:		void
+ * Notes:		Perform the SPI transfer
+ ******************************************************************************/
+
+void ADS126X_SpiTransfer(const uint8_t bChip, const struct spi_ioc_transfer * const p_transfer_array, const unsigned int num_transfers)
+{
+	const int spi_fd = ADS126X_SpiOpen(bChip);
+
+	if (spi_fd > 0)
 	{
-		HAL_GPIO_WritePin(ADS126X_CHIP_ARRAY[bChip].pChipSelectGPIOx, ADS126X_CHIP_ARRAY[bChip].wChipSelectPin, GPIO_PIN_SET);
+		// Assert chip select
+		shared_memory_t *p_mem = shared_memory_acquire();
+		write_property(p_mem->fieldlock_eeprom_cs, 1);
+
+		// Perform the SPI transfers
+		const int16_t result = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
+		if (-1 == result) 
+		{
+			log_error("can't write to ADS1261");
+			return 0;
+		}
+
+		// De-assert chip select
+		write_property(p_mem->fieldlock_eeprom_cs, 0);
+		shared_memory_release(p_mem);
+	
+		// Close SPI
+		ADS126X_SpiClose(spi_fd);
 	}
 }
 
 
 /*******************************************************************************
  * Function:	ADS126X_SpiSendRecv()
- * Parameters:	const uint8_t bData
- * Return:		uint8_t
- * Notes:		Send and receive a single byte via SPI
+ * Parameters:	const uint8_t bChip, 
+ * 				uint8_t *pbBufferSend, 
+ * 				const uint8_t bBufferSendSize, 
+ * 				uint8_t *pbBufferRecv, 
+ * 				const uint8_t bBufferRecvSize,
+ * Return:		uint8_t, number of bytes transferred
+ * Notes:		Set up structures to perform the SPI transfer
  ******************************************************************************/
-uint8_t ADS126X_SpiSendRecv(const uint8_t bData)
+uint8_t ADS126X_SpiSendRecv(const uint8_t bChip, uint8_t *pbBufferSend, const uint8_t bBufferSendSize, uint8_t *pbBufferRecv, const uint8_t bBufferRecvSize)
 {
-	uint8_t bTxData = bData;
-	uint8_t bRxData;
+	uint8_t bReturn = 0;
 
-	HAL_SPI_TransmitReceive(phspiX, &bTxData, &bRxData, 1, HAL_MAX_DELAY);
+	if (bChip < ADS126X_NUM_CHIPS)
+	{
+		const uint8_t bBufferSizeMax = MAXIMUM(bBufferSendSize, bBufferRecvSize);
+	
+		if ((bBufferSizeMax >= 2) && (bBufferSizeMax <=9))
+		{
+			// Allow up to 9 bytes to be sent/received in single transaction
+			uint8_t tx_buff[9] = { 0 };
+			uint8_t rx_buff[9] = { 0 };
 
-	return bRxData;
+			mempcy(&tx_buff[0], pbBufferSend, bBufferSendSize);
+
+			// Create SPI transfer struct array and ensure it is zeroed out
+			struct spi_ioc_transfer transfer_array[1] = { 0 };
+
+			transfer_array[0].tx_buf = (unsigned long)tx_buff;
+			transfer_array[0].rx_buf = (unsigned long)rx_buff;
+			transfer_array[0].len = bBufferSizeMax;
+			transfer_array[0].speed_hz = gdwSpiSpeedHz;
+			transfer_array[0].bits_per_word = gdwSpiBitsPerWord;
+
+			ADS126X_SpiTransfer(bChip, &transfer_array[0], sizeof(transfer_array)/sizeof(struct spi_ioc_transfer));
+
+			if (NULL != pbBufferRecv)
+			{
+				memcpy(pbBufferRecv, &rx_buff[0], bBufferRecvSize);
+			}
+
+			bReturn = bBufferSizeMax;
+		}
+	}
+
+	return bReturn;
 }
 
 
 /*******************************************************************************
  * Function:	ADS126X_SendCommand()
- * Parameters:	const ADS126X_COMMANDS_ENUM eCommand, ADS126X command to send
- * Return:		void
+ * Parameters:	const uint8_t bChip, 
+ * 				const ADS126X_COMMANDS_ENUM eCommand, ADS126X command to send
+ * Return:		BOOL, TRUE if successful, FALSE otherwise
  * Notes:		Send a ADS126X command
  ******************************************************************************/
-void ADS126X_SendCommand(const ADS126X_COMMANDS_ENUM eCommand)
+BOOL ADS126X_SendCommand(const uint8_t bChip, const ADS126X_COMMANDS_ENUM eCommand)
 {
+	BOOL fReturn = FALSE;
+
 	if (eCommand < ADS126X_CMD_NUM_TOTAL)
 	{
-		ADS126X_SpiSendRecv(eCommand);
+		uint8_t bSendBuf[4] = {eCommand, ADS126X_DUMMY_BYTE, 0x00, 0x00 };
+		uint8_t bRecvBuf[4] = { 0x00 };
+
+		bSendBuf[2] = ADS126X_CalculateCrc(&bSendBuf[0], 2);
+
+		if (ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf)))
+		{
+			// Verify all response bytes are exactly as expected
+			fReturn = ((0xFF == bRecvBuf[0]) && (eCommand == bRecvBuf[1]) && (ADS126X_DUMMY_BYTE == bRecvBuf[2]) && (bSendBuf[2] == bRecvBuf[3]));
+		}
 	}
+
+	return fReturn;
 }
 
 
 /*******************************************************************************
  * Function:	ADS126X_GetRegister()
- * Parameters:	const ADS126X_REGISTERS_ENUM eRegister
- * Return:		uint8_t
+ * Parameters:	const uint8_t bChip, 
+ * 				const ADS126X_REGISTERS_ENUM eRegister
+ * Return:		BOOL, TRUE if successful, FALSE otherwise
  * Notes:		Get the value from a single register
  ******************************************************************************/
-uint8_t	ADS126X_GetRegister(const ADS126X_REGISTERS_ENUM eRegister)
+BOOL ADS126X_GetRegister(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegister, uint8_t *pbValue)
 {
-	uint8_t bValue = 0x00;
+	BOOL fReturn = FALSE;
 
 	if (eRegister < ADS126X_REG_NUM_TOTAL)
 	{
-		ADS126X_SpiSendRecv(ADS126X_CMD_RREG | (eRegister & ADS126X_REG_MASK));	// Register to read from
-		ADS126X_SpiSendRecv(0); 									// Read from a single register
-		bValue = ADS126X_SpiSendRecv(ADS126X_DUMMY_BYTE);			// Dummy write to read the register
+		uint8_t bSendBuf[6] = {(ADS126X_CMD_RREG | (eRegister & ADS126X_REG_MASK)), ADS126X_DUMMY_BYTE, 0x00, 0x00 };
+		uint8_t bRecvBuf[6] = { 0x00 };
+
+		bSendBuf[2] = ADS126X_CalculateCrc(&bSendBuf[0], 2);
+
+		if (ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf)))
+		{
+			// Verify all response bytes are exactly as expected
+			const uint8_t bCrcCalc = ADS126X_CalculateCrc(&bRecvBuf[4], 1);
+			fReturn = ((0xFF == bRecvBuf[0]) && (bSendBuf[0] == bRecvBuf[1]) && (bSendBuf[1] == bRecvBuf[2]) && (bSendBuf[2] == bRecvBuf[3]) && (bCrcCalc == bRecvBuf[5]));
+
+			if (NULL != pbValue)
+			{
+				*pbValue = bRecvBuf[4];
+			}
+		}
 	}
 
-	return bValue;
+	return fReturn;
 }
 
 
 /*******************************************************************************
  * Function:	ADS126X_SetRegister()
- * Parameters:	const ADS126X_REGISTERS_ENUM eRegister,
- * 				const uint8_t bValue
- * Return:		void
+ * Parameters:	const uint8_t bChip, 
+ * 				const ADS126X_REGISTERS_ENUM eRegister,
+ * 				const uint8_t bValue,
+ * Return:		BOOL, TRUE if successful, FALSE otherwise
  * Notes:		Set the value for a single register
  ******************************************************************************/
-void ADS126X_SetRegister(const ADS126X_REGISTERS_ENUM eRegister, const uint8_t bValue)
+BOOL ADS126X_SetRegister(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegister, const uint8_t bValue)
 {
+	BOOL fReturn = FALSE;
+
 	if (eRegister < ADS126X_REG_NUM_TOTAL)
 	{
-		ADS126X_SpiSendRecv(ADS126X_CMD_WREG | (eRegister & ADS126X_REG_MASK));	// Register to write to
-		ADS126X_SpiSendRecv(0); 						// Write to a single register
-		ADS126X_SpiSendRecv(bValue);					// Write the value into the register
+		uint8_t bSendBuf[4] = {(ADS126X_CMD_WREG | (eRegister & ADS126X_REG_MASK)), bValue, 0x00, 0x00 };
+		uint8_t bRecvBuf[4] = { 0x00 };
+
+		bSendBuf[2] = ADS126X_CalculateCrc(&bSendBuf[0], 2);
+
+		ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf));
 	}
+
+	return fReturn;
 }
 
 
 /*******************************************************************************
  * Function:	ADS126X_ReadRegisterArray()
- * Parameters:	const ADS126X_REGISTERS_ENUM eRegisterStart,
+ * Parameters:	const uint8_t bChip, 
+ * 				const ADS126X_REGISTERS_ENUM eRegisterStart,
  * 				uint8_t * const pbBuffer,
  * 				const uint8_t bBufferSize,
- * Return:		BOOL
+ * Return:		BOOL, TRUE if successful, FALSE otherwise
  * Notes:		Read multiple registers from the ADS126X
  ******************************************************************************/
-BOOL ADS126X_ReadRegisterArray(const ADS126X_REGISTERS_ENUM eRegisterStart, uint8_t * const pbBuffer, const uint8_t bBufferSize)
+BOOL ADS126X_ReadRegisterArray(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegisterStart, uint8_t * const pbBuffer, const uint8_t bBufferSize)
 {
 	BOOL fReturn = TRUE;
 
 	if ((eRegisterStart < ADS126X_REG_NUM_TOTAL) && (bBufferSize >= 1))
 	{
-		uint8_t bCommandBuffer[2] = { (ADS126X_CMD_RREG | (eRegisterStart & ADS126X_REG_MASK)), (bBufferSize - 1)	};
+		for (uint8_t bIndex = 0; bIndex < bBufferSize; bIndex++)
+		{
+			uint8_t bValue = 0x00;
 
-		HAL_SPI_Transmit(phspiX, &bCommandBuffer[0], sizeof(bCommandBuffer), HAL_MAX_DELAY);
-		HAL_SPI_Receive(phspiX, &pbBuffer[0], bBufferSize, HAL_MAX_DELAY);
+			if (ADS126X_GetRegister(bChip, (bIndex + eRegisterStart), &bValue))
+			{
+				if (NULL != pbBuffer)
+				{
+					pbBuffer[bIndex] = bValue;
+				}
+			}
+			else
+			{
+				fReturn = FALSE;
+			}
+		}
 	}
 
 	return fReturn;
@@ -682,11 +811,7 @@ void ADS126X_StopAll(void)
 	{
 		if (ADS126X_IsChipUsable(bChip))
 		{
-			ADS126X_SpiOpen(bChip);
-
-			ADS126X_SpiSendRecv(ADS126X_CMD_STOP);			//send STOP1 to stop conversions on ADC1
-
-			ADS126X_SpiCloseAll();
+			ADS126X_SendCommand(bChip, ADS126X_CMD_STOP);			// Send STOP command to stop conversions on ADC
 		}
 	}
 }
@@ -705,11 +830,7 @@ void ADS126X_StartAll(void)
 	{
 		if (ADS126X_IsChipUsable(bChip))
 		{
-			ADS126X_SpiOpen(bChip);
-
-			ADS126X_SpiSendRecv(ADS126X_CMD_START);	// Start conversions
-
-			ADS126X_SpiCloseAll();
+			ADS126X_SendCommand(bChip, ADS126X_CMD_START);	// Start conversions
 		}
 	}
 }
@@ -726,8 +847,6 @@ void ADS126X_ConfigureInput(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 {
 	if (ADS126X_IsChipUsable(bChip))
 	{
-		ADS126X_SpiOpen(bChip);
-
 		// Configure all ADC chips for the given input
 		switch(eInput)
 		{
@@ -740,17 +859,17 @@ void ADS126X_ConfigureInput(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				 * Set the reference mux to use the external AIN0/AINCOM 2.048V LDO as reference
 				 * Leave the internal reference enabled
 				 */				
-				ADS126X_SetRegister(ADS126X_REG_REF, 0x19);
+				ADS126X_SetRegister(bChip, ADS126X_REG_REF, 0x19);
 
 				// Set the input mux to use the correct input signals
-				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput].bInputMux);
+				ADS126X_SetRegister(bChip, ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput].bInputMux);
 
 				/* *************************************************************
 				 * Set Mode0 Register settings:
 				 * 	- Set the ADC data rate
 				 * 	- Set the digital filter mode to sinc3
 				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE0, ((ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F)<<3) | 0x02);
+				ADS126X_SetRegister(bChip, ADS126X_REG_MODE0, ((ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F)<<3) | 0x02);
 
 				/* *************************************************************
 				 * Set Mode1 Register settings:
@@ -758,14 +877,14 @@ void ADS126X_ConfigureInput(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				 * 	- Use pulse conversion (one-shot)
 				 * 	- Use a conversion start delay of 605us
 				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x18);
+				ADS126X_SetRegister(bChip, ADS126X_REG_MODE1, 0x18);
 
 				/* *************************************************************
 				 * Set PGA Register settings:
 				 * 	- Enable PGA (do not enable PGA bypass)
 				 * 	- Set PGA gain as set in ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray array
 				 */
-				ADS126X_SetRegister(ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] & 0x7));
+				ADS126X_SetRegister(bChip, ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] & 0x7));
 
 				break;
 			}
@@ -780,17 +899,17 @@ void ADS126X_ConfigureInput(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				/* *************************************************************
 				 * Set the reference mux to use the internal 2.5V reference as reference (ensure stabilization time honored)
 				 */
-				ADS126X_SetRegister(ADS126X_REG_REF, 0x10);
+				ADS126X_SetRegister(bChip, ADS126X_REG_REF, 0x10);
 
 				// Set the input mux to use the Internal Temperature Sensor
-				ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput].bInputMux);
+				ADS126X_SetRegister(bChip, ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[eInput].bInputMux);
 
 				/* *************************************************************
 				 * Set Mode0 Register settings:
 				 * 	- Set the ADC data rate
 				 * 	- Set the digital filter mode to sinc3
 				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE0,  ((ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F)<<3) | 0x02);
+				ADS126X_SetRegister(bChip, ADS126X_REG_MODE0,  ((ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F)<<3) | 0x02);
 
 				/* *************************************************************
 				 * SSet Mode1 Register settings:
@@ -798,14 +917,14 @@ void ADS126X_ConfigureInput(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				 * 	- Use pulse conversion (one-shot)
 				 * 	- Use a conversion start delay of 605us
 				 */
-				ADS126X_SetRegister(ADS126X_REG_MODE1, 0x18);
+				ADS126X_SetRegister(bChip, ADS126X_REG_MODE1, 0x18);
 
 				/* *************************************************************
 				 * Set PGA Register settings:
 				 * 	- Enable PGA (do not enable PGA bypass)
 				 * 	- Set PGA gain as set in ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray array
 				 */
-				ADS126X_SetRegister(ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] & 0x7));
+				ADS126X_SetRegister(bChip, ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] & 0x7));
 
 				break;
 			}
@@ -814,8 +933,6 @@ void ADS126X_ConfigureInput(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				break;
 			}
 		}
-
-		ADS126X_SpiCloseAll();
 	}
 }
 
@@ -833,17 +950,18 @@ BOOL ADS126X_ReadRawResult(const uint8_t bChip, ADS126X_ReadData_Type * const pt
 
 	if ((bChip < ADS126X_NUM_CHIPS) && (NULL != ptAdcData))
 	{
-		ADS126X_SpiOpen(bChip);
+		uint8_t bSendBuf[9] = { ADS126X_CMD_RDATA, ADS126X_DUMMY_BYTE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+		uint8_t bRecvBuf[9] = { 0x00 };
 
-		ADS126X_SpiSendRecv(ADS126X_CMD_RDATA);
-		
-		// Get all six bytes from the ADC (status, data[4], checksum)
-		for (uint8_t i=0; i<sizeof(ptAdcData->tRawData.bArray); i++)
+		bSendBuf[2] = ADS126X_CalculateCrc(&bSendBuf[0], 2);
+
+		if (ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf)))
 		{
-			ptAdcData->tRawData.bArray[i] = ADS126X_SpiSendRecv(0);
-		}
+			// Verify all response bytes are exactly as expected
+			fReturn = ((0xFF == bRecvBuf[0]) && (bSendBuf[0] == bRecvBuf[1]) && (bSendBuf[1] == bRecvBuf[2]) && (bSendBuf[2] == bRecvBuf[3]));
 
-		ADS126X_SpiCloseAll();
+			memcpy(&ptAdcData->tRawData.bArray[0], bRecvBuf[4], sizeof(ptAdcData->tRawData.bArray));
+		}
 	}
 	else
 	{
@@ -1115,22 +1233,20 @@ double ADS126X_ReadTemperatureSensor(const uint8_t bChip)
 	 *  - Turn on internal voltage reference (done inside ADS126X_Initialize() function)
 	 */
 
-	ADS126X_SpiOpen(bChip);
-
-	ADS126X_SpiSendRecv(ADS126X_CMD_STOP);		// Send STOP1 to stop conversions on ADC1
+	ADS126X_SendCommand(bChip, ADS126X_CMD_STOP);		// Send STOP1 to stop conversions on ADC1
 
 	// Set the reference mux to use the internal 2.5V reference (ensure stabilization time honored)
-	ADS126X_SetRegister(ADS126X_REG_REF, 0x10);
+	ADS126X_SetRegister(bChip, ADS126X_REG_REF, 0x10);
 
 	// Set the input mux to use the Internal Temperature Sensor
-	ADS126X_SetRegister(ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_THERMOM].bInputMux);
+	ADS126X_SetRegister(bChip, ADS126X_REG_INPUT_MUX, ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_THERMOM].bInputMux);
 
 	/* *************************************************************
 	 * Set Mode0 Register settings:
 	 * 	- Set the ADC data rate
 	 * 	- Set the digital filter mode to sinc3
 	 */
-	ADS126X_SetRegister(ADS126X_REG_MODE0,  ((ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_THERMOM].eSampleRate & 0x0F)<<3) | 0x02);
+	ADS126X_SetRegister(bChip, ADS126X_REG_MODE0,  ((ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUT_MUX_THERMOM].eSampleRate & 0x0F)<<3) | 0x02);
 
 	/* *************************************************************
 	 * SSet Mode1 Register settings:
@@ -1138,18 +1254,16 @@ double ADS126X_ReadTemperatureSensor(const uint8_t bChip)
 	 * 	- Use continuous conversion mode (one-shot)
 	 * 	- Use a conversion start delay of 605us
 	 */
-	ADS126X_SetRegister(ADS126X_REG_MODE1, 0x08);
+	ADS126X_SetRegister(bChip, ADS126X_REG_MODE1, 0x08);
 
 	/* *************************************************************
 	 * Set PGA Register settings:
 	 * 	- Enable PGA (do not enable PGA bypass)
 	 * 	- Set PGA gain as set in ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray array
 	 */
-	ADS126X_SetRegister(ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][ADS126X_INPUT_MUX_THERMOM] & 0x7));
+	ADS126X_SetRegister(bChip, ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][ADS126X_INPUT_MUX_THERMOM] & 0x7));
 
-	ADS126X_SendCommand(ADS126X_CMD_START);
-
-	ADS126X_SpiCloseAll();
+	ADS126X_SendCommand(bChip, ADS126X_CMD_START);
 
 	// Wait for a few conversions to occur
 	ADS126X_DelayMs(20);
@@ -1315,7 +1429,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 				// Only request any delay if the given value is greater than zero
 				if (ADS126X_GATHER_ARRAY[eInput].dwSettleUs > 0)
 				{
-					SystemTaskDelayUs(ADS126X_GATHER_ARRAY[eInput].dwSettleUs);
+					usleep(ADS126X_GATHER_ARRAY[eInput].dwSettleUs);
 				}
 
 				//const uint8_t bConversionsTotal = ((eInput >= ADS126X_INPUT_MUX_RTD1) && (eInput <= ADS126X_INPUT_MUX_RTD3)) ? 4 : 1;
@@ -1325,7 +1439,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 				{
 					ADS126X_StartAll();
 
-					SystemTaskDelayUs(ADS126X_GATHER_ARRAY[eInput].dwDwellUs);
+					usleep(ADS126X_GATHER_ARRAY[eInput].dwDwellUs);
 
 					// Get the conversion results
 					for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
@@ -1507,9 +1621,7 @@ uint32_t ADS126X_Test(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 
 	for (uint8_t bChip=0; bChip<ADS126X_NUM_CHIPS; bChip++)
 	{
-		ADS126X_SpiOpen(bChip);
-		ADS126X_ReadRegisterArray(ADS126X_REG_DEVICE_ID, &bRegisterBuffer[bChip][0], ADS126X_REG_NUM_TOTAL);
-		ADS126X_SpiCloseAll();
+		ADS126X_ReadRegisterArray(bChip, ADS126X_REG_DEVICE_ID, &bRegisterBuffer[bChip][0], ADS126X_REG_NUM_TOTAL);
 	}
 
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
