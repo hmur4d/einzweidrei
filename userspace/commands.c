@@ -11,6 +11,7 @@
 #include "config.h"
 #include "shim_config_files.h"
 #include "hw_amps.h"
+#include "hw_pa.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -609,6 +610,34 @@ void write_traces(clientsocket_t* client, header_t* header, const void* body) {
 		log_error("Unable to send response!");
 	}
 }
+
+static void run_pa_uart_command(clientsocket_t* client, header_t* header, const void* body) {
+	char* command = (char*) body;
+
+	// The client could request a different timeout, but this should be good enough for now
+	unsigned timeout_ms = 1000;
+	// Run the command and get the response
+	char* response = pa_run_command(command, timeout_ms);
+	if (response == NULL) {
+		log_error("run_pa_uart_command(%s) failed");
+		// Allocate an empty string so log_info() and free() can be called
+		response = malloc(1);
+		response[0] = 0;
+	}
+	else {
+		log_info("run_pa_uart_command(%s) -> %s", command, response);
+	}
+
+	reset_header(header);
+	header->body_size = strlen(response);
+
+	if (!send_message(client, header, response)) {
+		log_error("Unable to send response!");
+	}
+
+	free(response);
+}
+
 //--
 
 bool register_all_commands() {
@@ -643,7 +672,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_AMPS_BOARD_TEMPERATURE, get_amps_board_temperature);
 	success &= register_command_handler(CMD_WRITE_TRACE, write_traces);
 	success &= register_command_handler(CMD_READ_TRACE, read_traces);
-
+	success &= register_command_handler(CMD_PA_UART_COMMAND, run_pa_uart_command);
 
 
 	return success;

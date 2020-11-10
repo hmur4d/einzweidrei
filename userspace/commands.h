@@ -52,6 +52,7 @@ Command handlers: command id and implementation.
 #define DEVICE_FEATURE_CAMELEON                     400
 #define DEVICE_FEATURE_GRADIENT                     800
 #define DEVICE_FEATURE_SHIM                         900
+#define DEVICE_FEATURE_PA                           700
 #define DEVICE_FEATURE_UNKNOWN                      -1
 
 #define CMD_UPDATE                                  0x30
@@ -74,6 +75,9 @@ Command handlers: command id and implementation.
 #define CMD_READ_TRACE								9000 + 0x4
 #define CMD_ARTIFICIAL_GROUND_CURRENT				9000 + 0x5
 #define CMD_AMPS_BOARD_TEMPERATURE					9000 + 0x6
+
+// PA Board
+#define CMD_PA_UART_COMMAND							10000 + 0x0		// Arbitrary PA UART command
 
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message

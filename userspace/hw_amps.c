@@ -1,4 +1,5 @@
-#include "hw_clock.h"
+#include <unistd.h>
+
 #include "std_includes.h"
 #include "shared_memory.h"
 #include "log.h"

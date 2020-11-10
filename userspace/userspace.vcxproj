@@ -133,6 +133,8 @@
     <ClInclude Include="hw_amps.h" />
     <ClInclude Include="hw_clock.h" />
     <ClInclude Include="hw_gradient.h" />
+    <ClInclude Include="hw_lock.h" />
+    <ClInclude Include="hw_pa.h" />
     <ClInclude Include="hw_transmitter.h" />
     <ClInclude Include="hw_receiver.h" />
     <ClInclude Include="sequencer_interrupts.h" />
@@ -164,6 +166,8 @@
     <ClCompile Include="hw_amps.c" />
     <ClCompile Include="hw_clock.c" />
     <ClCompile Include="hw_gradient.c" />
+    <ClCompile Include="hw_lock.c" />
+    <ClCompile Include="hw_pa.c" />
     <ClCompile Include="hw_transmitter.c" />
     <ClCompile Include="hw_receiver.c" />
     <ClCompile Include="sequencer_interrupts.c" />

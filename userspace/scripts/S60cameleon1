@@ -24,8 +24,7 @@ case "$1" in
 				break
 			fi
         fi
-	echo "Setting uart..."
-	stty -F /dev/ttyS1 115200 -echo onlcr -icrnl -ixon -ignbrk opost -isig -icanon
+
         echo "Starting cameleon..."
         source /opt/RS2D/cameleon.conf
         insmod /opt/RS2D/modcameleon.ko
