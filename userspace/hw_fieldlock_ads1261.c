@@ -22,6 +22,7 @@
 #include "std_includes.h"
 #include "shared_memory.h"
 #include "hardware.h"
+#include "log.h"
 #else
 // Defines and includes to allow using IntelliSense with Visual Studio Code
 #define __INT8_TYPE__
@@ -563,7 +564,7 @@ void ADS126X_SpiTransfer(const uint8_t bChip, const struct spi_ioc_transfer * co
 		if (-1 == result) 
 		{
 			log_error("can't write to ADS1261");
-			return 0;
+			return;
 		}
 
 		// De-assert chip select
@@ -592,7 +593,7 @@ uint8_t ADS126X_SpiSendRecv(const uint8_t bChip, uint8_t *pbBufferSend, const ui
 
 	if (bChip < ADS126X_NUM_CHIPS)
 	{
-		const uint8_t bBufferSizeMax = MAXIMUM(bBufferSendSize, bBufferRecvSize);
+		const uint8_t bBufferSizeMax = ((bBufferSendSize > bBufferRecvSize) ? bBufferSendSize : bBufferRecvSize);
 	
 		if ((bBufferSizeMax >= 2) && (bBufferSizeMax <=9))
 		{
@@ -603,7 +604,7 @@ uint8_t ADS126X_SpiSendRecv(const uint8_t bChip, uint8_t *pbBufferSend, const ui
 			mempcy(&tx_buff[0], pbBufferSend, bBufferSendSize);
 
 			// Create SPI transfer struct array and ensure it is zeroed out
-			struct spi_ioc_transfer transfer_array[1] = { 0 };
+			struct spi_ioc_transfer transfer_array[1] = { {0} };
 
 			transfer_array[0].tx_buf = (unsigned long)tx_buff;
 			transfer_array[0].rx_buf = (unsigned long)rx_buff;
@@ -960,7 +961,7 @@ BOOL ADS126X_ReadRawResult(const uint8_t bChip, ADS126X_ReadData_Type * const pt
 			// Verify all response bytes are exactly as expected
 			fReturn = ((0xFF == bRecvBuf[0]) && (bSendBuf[0] == bRecvBuf[1]) && (bSendBuf[1] == bRecvBuf[2]) && (bSendBuf[2] == bRecvBuf[3]));
 
-			memcpy(&ptAdcData->tRawData.bArray[0], bRecvBuf[4], sizeof(ptAdcData->tRawData.bArray));
+			memcpy(&ptAdcData->tRawData.bArray[0], &bRecvBuf[4], sizeof(ptAdcData->tRawData.bArray));
 		}
 	}
 	else
@@ -1295,8 +1296,10 @@ double ADS126X_GetReadingFromChip(const uint8_t bChip, const ADS126X_INPUTS_ENUM
 	double 					dbResult = NAN;
 	BOOL					fSuccess = TRUE;
 	ADS126X_ReadData_Type 	tAdcData;
+#if 0
 	const uint8_t			bPGAL_ALM_BIT_MASK = ADS126X_STATUS_BYTE_MASK_PGAL_ALM;
 	const uint8_t 			bPGA_ALARM_ALL_MASK = (ADS126X_STATUS_BYTE_MASK_PGAL_ALM | ADS126X_STATUS_BYTE_MASK_PGAH_ALM);
+#endif
 
 	if ((bChip < ADS126X_NUM_CHIPS) && (eInput < ADS126X_INPUTS_NUM_TOTAL))
 	{
@@ -1487,6 +1490,33 @@ void ADS126X_SetPgaGain(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, c
 	{
 		ADS126X_ADC_CONTROL_EXTERNAL.tPgaGainArray[bChip][eInput] = ePgaGain;
 	}
+}
+
+
+/*******************************************************************************
+ * Function:	SystemSnprintfCat()
+ * Parameters:	char *__restrict s, size_t n, const char *__restrict format, ...
+ * Return:		uint32_t, Number of chars added to the given buffer, or Zero if an error occurs
+ * Notes:		Safer replacement for snprintf() to help prevent buffer overruns when concatenating buffers
+ ******************************************************************************/
+size_t SystemSnprintfCat(char *__restrict s, size_t n, const char *__restrict format, ...)
+{
+	va_list 	args;
+
+	va_start(args, format);
+	int len = vsnprintf(s, n, format, args);
+	va_end(args);
+
+	if (len < 0)
+	{
+		len = 0;
+	}
+	else if (((size_t) len) > n)
+	{
+		len = n;
+	}
+
+	return len;
 }
 
 
