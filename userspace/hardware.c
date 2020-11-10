@@ -6,6 +6,8 @@
 #include "memory_map.h"
 #include "hw_transmitter.h"
 #include "hw_pa.h"
+#include "hw_lock.h"
+
 
 extern float last_sync_temperature;
 
@@ -176,7 +178,7 @@ int hardware_init() {
 	
 	if (config_hardware_lock_activated()) {
 		init_lock();
-		start_lock();
+		//start_lock();
 	}
 	else {
 		log_info("Lock not activated");
@@ -192,6 +194,8 @@ int hardware_init() {
 	if (pa_init()!=0) {
 		log_error("PA init error");
 	}
+
+	init_lock_board();
 
 	return 0;
 }

@@ -64,8 +64,18 @@ typedef struct {
 
 	property_t amps_eeprom_cs;
 	property_t amps_adc_cs;
-	property_t pa_reset;
+	property_t lock_eeprom_cs;
+	property_t lock_adc_cs;
 
+	property_t pa_reset;
+	property_t pa_boot;
+	property_t amps_ag_enuc_disable;
+	property_t amps_sh_i_gain_enable;
+	property_t amps_ldac_enable;
+	property_t amps_dac_clr_enable;
+	property_t lock_ag_en_b0_disable;
+	property_t lock_ag_en_gx_disable;
+	property_t lock_ldac_enable;
 
 	int32_t* lwbridge;
 	int32_t* rams;
