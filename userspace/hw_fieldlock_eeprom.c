@@ -150,7 +150,6 @@ int EepromSpiOpen(void)
  ******************************************************************************/
 void EepromSpiClose(const int spi_fd)
 {
-	write_property(p_mem->lock_eeprom_cs, 0);
 	close(spi_fd);
 }
 
@@ -168,9 +167,9 @@ void EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, c
 
 	if (spi_fd > 0)
 	{
-		write_property(p_mem->lock_eeprom_cs, fAssertCs ? 1 : 0);
+
 		shared_memory_t *p_mem = shared_memory_acquire();
-		write_property(p_mem->fieldlock_eeprom_cs, 1);
+		write_property(p_mem->lock_eeprom_cs, 1);
 
 		// Perform the SPI transfers
 		const int result = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
@@ -181,7 +180,7 @@ void EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, c
 		}
 
 		// De-assert chip select
-		write_property(p_mem->fieldlock_eeprom_cs, 0);
+		write_property(p_mem->lock_eeprom_cs, 0);
 		shared_memory_release(p_mem);
 	
 		// Close SPI
