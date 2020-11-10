@@ -14,7 +14,7 @@
 
 /* Standard C Header Files */
 #if 1
-#include <./std_includes.h>
+#include "std_includes.h"
 #include "shared_memory.h"
 #else
 // Defines and includes to allow using IntelliSense with Visual Studio Code
@@ -149,7 +149,7 @@ int EepromSpiOpen(shared_memory_t* p_mem)
 void EepromSpiClose(const int spi_fd, shared_memory_t* p_mem)
 {
 	// De-assert chip select and close SPI
-	write_property(p_mem->fieldlock_eeprom_cs, 0);
+	write_property(p_mem->lock_eeprom_cs, 0);
 	shared_memory_release(p_mem);
 	close(spi_fd);
 }
@@ -166,7 +166,7 @@ void EepromSpiSetCs(const shared_memory_t * const p_mem, const bool fAssertCs)
 {
 	if (NULL != p_mem)
 	{
-		write_property(p_mem->fieldlock_eeprom_cs, fAssertCs ? 1 : 0);
+		write_property(p_mem->lock_eeprom_cs, fAssertCs ? 1 : 0);
 	}
 }
 
