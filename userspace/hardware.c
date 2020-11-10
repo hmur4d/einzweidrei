@@ -194,7 +194,7 @@ int hardware_init() {
 		log_error("PA init error");
 	}
 
-	init_lock_board();
+	lock_init_board();
 
 	return 0;
 }

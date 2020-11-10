@@ -18,7 +18,7 @@ typedef struct {
 } dac_profile_t;
 
 
-int init_lock_board();
+int lock_init_board();
 
 
 

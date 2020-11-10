@@ -2,6 +2,8 @@
 #include "std_includes.h"
 #include "log.h"
 #include "shim_config_files.h"
+#include "shared_memory.h"
+#include "config.h"
 
 
 
@@ -147,7 +149,7 @@ int load_lock_calibrations(int board_id) {
 	return 0;
 }
 
-int init_lock_board() {
+int lock_init_board() {
 
 	load_lock_profile(&b0_profile, B0_PROFILE_FILENAME);
 	load_lock_profile(&gx_profile, GX_PROFILE_FILENAME);
@@ -157,6 +159,24 @@ int init_lock_board() {
 	print_lock_profil(&b0_profile, B0_PROFILE_FILENAME);
 	print_lock_profil(&gx_profile, GX_PROFILE_FILENAME);
 	print_lock_calib();
+
+	return 0;
+}
+
+int lock_main(int argc, char** argv) {
+	if (argc < 3) {
+		fprintf(stderr, "Usage: cameleon lock <COMMAND> <TIMEOUT_MS>\n");
+		return 1;
+	}
+
+	char* memory_file = config_memory_file();
+	if (!shared_memory_init(memory_file)) {
+		log_error("Unable to open shared memory (%s), exiting", memory_file);
+		return 1;
+	}
+
+	lock_init_board();
+
 
 	return 0;
 }
