@@ -14,7 +14,7 @@
 
 /* Standard C Header Files */
 #if 1
-#include <./std_includes.h>
+#include "std_includes.h"
 #include "shared_memory.h"
 #else
 // Defines and includes to allow using IntelliSense with Visual Studio Code
@@ -71,7 +71,7 @@ static void 	EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_
 static uint8_t 	EepromGetStatus(void);
 static void 	EepromWriteEnable(void);
 static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint8_t bBufferSize);
-
+static size_t 	SystemSnprintfCat(char *__restrict s, size_t n, const char *__restrict format, ...);
 
 /*******************************************************************************
  * Function:	EepromInitialize()
@@ -427,6 +427,33 @@ void EepromEraseAll(void)
 	{
 		EepromWriteBytes(i, &bPageBuffer[0], sizeof(bPageBuffer));
 	}
+}
+
+
+/*******************************************************************************
+ * Function:	SystemSnprintfCat()
+ * Parameters:	char *__restrict s, size_t n, const char *__restrict format, ...
+ * Return:		uint32_t, Number of chars added to the given buffer, or Zero if an error occurs
+ * Notes:		Safer replacement for snprintf() to help prevent buffer overruns when concatenating buffers
+ ******************************************************************************/
+size_t SystemSnprintfCat(char *__restrict s, size_t n, const char *__restrict format, ...)
+{
+	va_list 	args;
+
+	va_start(args, format);
+	int len = vsnprintf(s, n, format, args);
+	va_end(args);
+
+	if (len < 0)
+	{
+		len = 0;
+	}
+	else if (((size_t) len) > n)
+	{
+		len = n;
+	}
+
+	return len;
 }
 
 

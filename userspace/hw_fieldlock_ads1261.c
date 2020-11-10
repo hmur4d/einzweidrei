@@ -283,7 +283,7 @@ static void 		ADS126X_ConfigureInput		(const uint8_t bChip, const ADS126X_INPUTS
 static BOOL 		ADS126X_ConvertReading		(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_Type *ptAdcData);
 static BOOL 		ADS126X_GetReading			(const uint8_t bChip, ADS126X_ReadData_Type *ptAdcData);
 static double 		ADS126X_GetReadingFromChip	(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, uint8_t *pbStatusByte);
-
+static size_t 		SystemSnprintfCat			(char *__restrict s, size_t n, const char *__restrict format, ...);
 
 /*******************************************************************************
  * Function:	ADS126X_Initialize()
