@@ -112,6 +112,11 @@ Memory map, copied as-is from CameleonNIOS
 
 #define RAM_REGISTER_SHIM_0								189
 
+#define RAM_REGISTER_GX_SCALE_TRACE_0					253
+#define RAM_REGISTER_B0_SCALE_TRACE_0					261
+#define RAM_REGISTER_GX_OFFSET_0						269
+#define RAM_REGISTER_B0_OFFSET_0						277
+
 /************************RAM_REGISTERS_LOCK************************/
 #define RAM_REGISTERS_LOCK_OFFSET_STEP                   0x00000004
 #define RAM_REGISTERS_LOCK_INDEX							88
