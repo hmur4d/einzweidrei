@@ -176,7 +176,6 @@ int hardware_init() {
 	
 	if (config_hardware_lock_activated()) {
 		init_lock();
-		start_lock();
 	}
 	else {
 		log_info("Lock not activated");
