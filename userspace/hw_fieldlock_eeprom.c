@@ -166,7 +166,12 @@ void EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, c
 		write_property(p_mem->fieldlock_eeprom_cs, 1);
 
 		// Perform the SPI transfers
-		int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
+		const int result = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
+		if (result < 1)
+		{
+			log_error("can't write to EEPROM");
+			return;
+		}
 
 		// De-assert chip select
 		write_property(p_mem->fieldlock_eeprom_cs, 0);
