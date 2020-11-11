@@ -152,6 +152,7 @@ uint32_t 	ADS126X_ShowStatus					(char *pcWriteBuffer, uint32_t dwWriteBufferLen
 uint32_t 	ADS126X_ShowData					(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct, char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 void		ADS126X_GetDiagInfo					(ADC126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct);
 uint32_t 	ADS126X_ShowDiag					(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
+int			ADS126X_TestMain					(void);
 
 
 #endif // HW_FIELDLOCK_ADS1261_H

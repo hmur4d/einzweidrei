@@ -150,7 +150,7 @@ typedef struct
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static const uint32_t gdwSpiSpeedHz = 1000*1000*1;
+static const uint32_t gdwSpiSpeedHz = 1000*100;
 static const uint32_t gdwSpiBitsPerWord = 8;
 
 static const ADC126X_CHIP_DESCRIPTION_STRUCT 	ADS126X_CHIP_ARRAY[ADS126X_NUM_CHIPS] =
@@ -255,7 +255,6 @@ typedef struct
 } ADS126X_CONTROL_STRUCT;
 
 
-static volatile ADS126X_CONTROL_STRUCT		ADS126X_ADC_CONTROL_EXTERNAL;	// May be changed from other tasks
 static ADS126X_CONTROL_STRUCT				ADS126X_ADC_CONTROL_INTERNAL;
 static ADC126X_STATUS_STRUCT				ADS126X_ADC_STATUS_ARRAY[ADS126X_NUM_CHIPS];
 static ADC126X_DIAGNOSTICS_STRUCT			ADS126X_ADC_DIAGNOSTICS;
@@ -310,7 +309,6 @@ void ADS126X_Initialize(void)
 		for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
 		{
 			ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] = ADS126X_INPUT_MUX_ARRAY[eInput].eGain;
-			ADS126X_ADC_CONTROL_EXTERNAL.tPgaGainArray[bChip][eInput] = ADS126X_INPUT_MUX_ARRAY[eInput].eGain;
 		}
 	}
 
@@ -1117,9 +1115,35 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 			{
 				case ADS126X_INPUT_MUX_AG_SENSE_B0:
 				case ADS126X_INPUT_MUX_AG_SENSE_GX:
+				{
+					// Convert the ADC reading to Current in Amps
+					ptAdcData->dbReading *= ADC126X_ADC_REF_EXT;
+					ptAdcData->dbReading /= 100.0;	// Gain of Current Sense chip
+					ptAdcData->dbReading /= 0.033;	// Current Sense resistor
+					break;
+				}
 				case ADS126X_INPUT_MUX_AG_B0:
 				case ADS126X_INPUT_MUX_AG_GX:
 				{
+					// Convert the ADC reading to Volts
+					ptAdcData->dbReading *= ADC126X_ADC_REF_EXT;
+					break;
+				}
+				case ADS126X_INPUT_MUX_BOARD_TEMP:
+				{
+					// Convert this ADC reading to Temperature in degrees Celsius
+					ptAdcData->dbReading *= ADC126X_ADC_REF_INT;
+					ptAdcData->dbReading -= 0.5;
+					ptAdcData->dbReading /= 0.010;
+					break;
+				}
+				case ADS126X_INPUT_MUX_RAIL_4V1:
+				case ADS126X_INPUT_MUX_RAIL_6V1:
+				{
+					// Convert the ADC reading to Rail Voltage
+					ptAdcData->dbReading *= ADC126X_ADC_REF_INT;
+					ptAdcData->dbReading *= (976.0 + 10e3);
+					ptAdcData->dbReading /= 976.0;
 					break;
 				}
 				case ADS126X_INPUT_MUX_THERMOM:
@@ -1409,9 +1433,6 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 	{
 		memset(&ptAdcExtResultStruct->dbResultArray[0][0], 0, sizeof(ptAdcExtResultStruct->dbResultArray));
 
-		// Update the Internal struct from the External struct to ensure all aspects of the Gather use the values from the Internal struct
-		memcpy(&ADS126X_ADC_CONTROL_INTERNAL, (void*)&ADS126X_ADC_CONTROL_EXTERNAL, sizeof(ADS126X_ADC_CONTROL_INTERNAL));
-
 		ADS126X_ADC_DIAGNOSTICS.dwReadingCounter++;
 
 		for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
@@ -1489,7 +1510,7 @@ void ADS126X_SetPgaGain(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, c
 {
 	if ((bChip < ADS126X_NUM_CHIPS) && (eInput < ADS126X_INPUTS_NUM_TOTAL) && (ePgaGain < ADS126X_PGA_GAIN_NUM_TOTAL))
 	{
-		ADS126X_ADC_CONTROL_EXTERNAL.tPgaGainArray[bChip][eInput] = ePgaGain;
+		ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[bChip][eInput] = ePgaGain;
 	}
 }
 
@@ -1816,4 +1837,94 @@ uint32_t ADS126X_ShowDiag(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 }
 
 
+/*******************************************************************************
+ * Function:	ADS126X_TestMain()
+ * Parameters:	void
+ * Return:		int, -1 if error, 0 otherwise
+ * Notes:		Wrapper for test functions
+ ******************************************************************************/
+int ADS126X_TestMain(void)
+{
+	int iReturn = 0;
 
+	ADS126X_RESULT_TYPE		tAdcExtResultStruct;
+
+	// Allocate buffers that are the full size of the EEPROM
+	const uint32_t dwBufferSize = 1024*8;
+	char *pcBuffer = (char*) malloc(dwBufferSize);
+
+	ADS126X_Initialize();
+
+	// Determine how long it took to capture the data
+	long long start_ms = monotonic_ms();
+	ADS126X_GatherAll(&tAdcExtResultStruct);
+	long long stop_ms = monotonic_ms();
+
+	ADS126X_ShowData(&tAdcExtResultStruct, pcBuffer, dwBufferSize);
+	log_debug("ADS126X_TestMain, Gather All results: \r\n\r\n%s\r\n\r\n", pcBuffer);
+
+	ADC126X_DIAGNOSTICS_STRUCT tAdcDiagnosticsStruct;
+	ADS126X_GetDiagInfo(&tAdcDiagnosticsStruct);
+	ADS126X_ShowDiag(pcBuffer, dwBufferSize);
+	log_debug("ADS126X_TestMain, Diagnositcs results: \r\n\r\n%s\r\n\r\n", pcBuffer);
+
+	// Expected time is (11 inputs * (600us dwell time + ~200us overhead)) = ~8.8ms
+	const long long gather_time_ms = (stop_ms - start_ms);
+	if (gather_time_ms > 10)
+	{
+		iReturn = -1;
+		log_error("ADS126X_TestMain, Gather all took too long (%lld ms)!", gather_time_ms);
+	}
+
+	const double dbBrdTempDegC	= tAdcExtResultStruct.dbResultArray[0][ADS126X_INPUT_MUX_BOARD_TEMP];
+	const double dbRail4V1Volts	= tAdcExtResultStruct.dbResultArray[0][ADS126X_INPUT_MUX_RAIL_4V1];
+	const double dbRail6V1Volts	= tAdcExtResultStruct.dbResultArray[0][ADS126X_INPUT_MUX_RAIL_6V1];
+	const double dbThermomDegC 	= tAdcExtResultStruct.dbResultArray[0][ADS126X_INPUT_MUX_THERMOM];
+	const double dbAvddMonVolts	= tAdcExtResultStruct.dbResultArray[0][ADS126X_INPUT_MUX_AVDD_MON];
+	const double dbDvddMonVolts	= tAdcExtResultStruct.dbResultArray[0][ADS126X_INPUT_MUX_DVDD_MON];
+	const double dbExtVrefVolts	= tAdcExtResultStruct.dbResultArray[0][ADS126X_INPUT_MUX_EXT_VREF];
+	
+	if ((dbBrdTempDegC < 15.0) || (dbBrdTempDegC > 30.0))
+	{
+		iReturn = -1;
+		log_error("ADS126X_TestMain, dbBrdTempDegC out of range (%.3f)!", dbBrdTempDegC);
+	}
+
+	if ((dbRail4V1Volts < 4.0) || (dbRail4V1Volts > 4.2))
+	{
+		iReturn = -1;
+		log_error("ADS126X_TestMain, dbRail4V1Volts out of range (%.3f)!", dbRail4V1Volts);
+	}
+
+	if ((dbRail6V1Volts < 6.0) || (dbRail6V1Volts > 6.2))
+	{
+		iReturn = -1;
+		log_error("ADS126X_TestMain, dbRail6V1Volts out of range (%.3f)!", dbRail6V1Volts);
+	}
+
+	if ((dbThermomDegC < 15.0) || (dbThermomDegC > 30.0))
+	{
+		iReturn = -1;
+		log_error("ADS126X_TestMain, dbThermomDegC out of range (%.3f)!", dbThermomDegC);
+	}
+
+	if ((dbAvddMonVolts < 4.9) || (dbAvddMonVolts > 5.1))
+	{
+		iReturn = -1;
+		log_error("ADS126X_TestMain, dbAvddMonVolts out of range (%.3f)!", dbAvddMonVolts);
+	}
+
+	if ((dbDvddMonVolts < 4.9) || (dbDvddMonVolts > 5.1))
+	{
+		iReturn = -1;
+		log_error("ADS126X_TestMain, dbDvddMonVolts out of range (%.3f)!", dbDvddMonVolts);
+	}
+
+	if ((dbExtVrefVolts < 2.000) || (dbExtVrefVolts > 2.100))
+	{
+		iReturn = -1;
+		log_error("ADS126X_TestMain, dbExtVrefVolts out of range (%.3f)!", dbExtVrefVolts);
+	}
+
+	return iReturn;
+}

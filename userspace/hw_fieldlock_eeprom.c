@@ -527,3 +527,102 @@ uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char 
 	return dwNumChars;
 }
 
+
+/*******************************************************************************
+ * Function:	EepromTestMain()
+ * Parameters:	void
+ * Return:		int, -1 if error, 0 otherwise
+ * Notes:		Wrapper for test functions
+ ******************************************************************************/
+int EepromTestMain(void)
+{
+	int iReturn = 0;
+
+	if (!EepromInitialize())
+	{
+		iReturn = -1;
+		log_error("EepromTest, Error initializing EEPROM!");
+	}
+	else
+	{
+		// Allocate buffers that are the full size of the EEPROM
+		uint8_t *pbBuffer1 = (uint8_t*) malloc(EEPROM_WRITABLE_SIZE_BYTES);
+		uint8_t *pbBuffer2 = (uint8_t*) malloc(EEPROM_WRITABLE_SIZE_BYTES);
+
+		if ((NULL != pbBuffer1) && (NULL != pbBuffer2))
+		{
+			memset(&pbBuffer1[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
+			memset(&pbBuffer2[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
+			
+			// Verify consecutive reads have identical data
+			EepromReadBytes(0x0000, &pbBuffer1[0], EEPROM_WRITABLE_SIZE_BYTES);
+			EepromReadBytes(0x0000, &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES);
+
+			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			{
+				iReturn = -1;
+				log_error("EepromTest, Consecutive reads do not match!");
+			}
+
+			// Write a known pattern to the EEPROM and verify it matches what is read back
+			memset(&pbBuffer1[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
+			memset(&pbBuffer2[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
+			for (int i=0; i<EEPROM_WRITABLE_SIZE_BYTES; i++)
+			{
+				pbBuffer1[i] = ((i + 0x19) & 0xFF);
+			}
+
+			EepromWriteBytes(0x0000, &pbBuffer1[0], EEPROM_WRITABLE_SIZE_BYTES);
+			EepromReadBytes(0x0000, &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES);
+
+			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			{
+				iReturn = -1;
+				log_error("EepromTest, Write and read-back does not match!");
+			}
+
+			// Write to random addresses and verify correct data is read back
+			memset(&pbBuffer1[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
+			memset(&pbBuffer2[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
+
+			pbBuffer1[0] = 0x17;
+			EepromWriteBytes(0x1111, &pbBuffer1[0], 1);
+			pbBuffer1[1] = 0x35;
+			EepromWriteBytes(0x3333, &pbBuffer1[1], 1);
+			pbBuffer1[2] = 0x79;
+			EepromWriteBytes(0x7777, &pbBuffer1[2], 1);
+
+			EepromReadBytes(0x1111, &pbBuffer2[0], 1);
+			EepromReadBytes(0x3333, &pbBuffer2[1], 1);
+			EepromReadBytes(0x7777, &pbBuffer2[2], 1);
+
+			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			{
+				iReturn = -1;
+				log_error("EepromTest, Random access write and read-back does not match!");
+			}
+
+			// Verify erase operation works as expected
+			EepromEraseAll();
+			memset(&pbBuffer1[0], 0xFF, EEPROM_WRITABLE_SIZE_BYTES);
+			EepromReadBytes(0x0000, &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES);
+
+			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			{
+				iReturn = -1;
+				log_error("EepromTest, Erase and read-back did not match!");
+			}
+		}
+		else
+		{
+			iReturn = -1;
+			log_error("EepromTest, Error calling malloc()!");
+		}
+
+		free(pbBuffer1);
+		free(pbBuffer2);
+	}
+
+	return iReturn;
+}
+
