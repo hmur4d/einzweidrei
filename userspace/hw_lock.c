@@ -187,8 +187,8 @@ int lock_init_board() {
 	load_lock_calibrations(lock_board_id);
 	lock_write_b0_gx_register();
 
-	print_lock_profil(&b0_profile, B0_PROFILE_FILENAME);
-	print_lock_profil(&gx_profile, GX_PROFILE_FILENAME);
+	print_lock_profile(&b0_profile, B0_PROFILE_FILENAME);
+	print_lock_profile(&gx_profile, GX_PROFILE_FILENAME);
 	print_lock_calib();
 
 	return 0;
