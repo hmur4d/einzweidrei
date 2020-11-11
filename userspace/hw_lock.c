@@ -176,7 +176,7 @@ int lock_write_b0_gx_register() {
 		*(mem->rams + ram_offset_byte / 4) = zeros[i+8] + LOCK_DAC_OFFSET;
 	}
 	shared_memory_release(mem);
-
+	return 0;
 }
 
 int lock_init_board() {
