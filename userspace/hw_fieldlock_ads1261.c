@@ -268,8 +268,8 @@ static BOOL 		ADS126X_IsChipUsable		(const uint8_t bChip);
 static void			ADS126X_DelayMs				(const uint32_t dwMilliseconds);
 static int 			ADS126X_SpiOpen				(const uint8_t bChip);
 static void 		ADS126X_SpiClose			(const int spi_fd);
-static uint8_t		ADS126X_SpiSendRecv			(const uint8_t bChip, uint8_t *pbBufferSend, const uint8_t bBufferSendSize, uint8_t *pbBufferRecv, const uint8_t bBufferRecvSize);
 static void 		ADS126X_SpiTransfer			(const uint8_t bChip, const struct spi_ioc_transfer * const p_transfer_array, const unsigned int num_transfers);
+static uint8_t		ADS126X_SpiSendRecv			(const uint8_t bChip, uint8_t *pbBufferSend, const uint8_t bBufferSendSize, uint8_t *pbBufferRecv, const uint8_t bBufferRecvSize);
 static BOOL 		ADS126X_SendCommand			(const uint8_t bChip, const ADS126X_COMMANDS_ENUM eCommand);
 static BOOL 		ADS126X_GetRegister			(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegister, uint8_t *pbValue);
 static BOOL 		ADS126X_SetRegister			(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegister, const uint8_t bValue);
@@ -991,12 +991,12 @@ uint8_t ADS126X_CalculateCrc(const uint8_t * const pbBuffer, const uint8_t bBuff
 
 		uint8_t bCrc = 0xFF;
 		uint32_t dwData = 0;
-		uint32_t dwMask = (0x80000000 >> (8 * (4 * bBufferSize)));
+		uint32_t dwMask = (0x80000000 >> (8 * (4 - bBufferSize)));
 
 		// Populate the working data
 		for (uint8_t i=0; i<bBufferSize; i++)
 		{
-			dwData |= (pbBuffer[i] << (8 * (4 - i - 1)));
+			dwData |= (pbBuffer[i] << (8 * (bBufferSize - i - 1)));
 		}
 
 		while (dwMask != 0)

@@ -167,7 +167,6 @@ void EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, c
 
 	if (spi_fd > 0)
 	{
-
 		shared_memory_t *p_mem = shared_memory_acquire();
 		write_property(p_mem->lock_eeprom_cs, 1);
 
