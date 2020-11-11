@@ -79,6 +79,7 @@ static void 	EepromWriteEnable(void);
 static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint8_t bBufferSize);
 static size_t 	SystemSnprintfCat(char *__restrict s, size_t n, const char *__restrict format, ...);
 
+
 /*******************************************************************************
  * Function:	EepromInitialize()
  * Parameters:	void
@@ -128,12 +129,12 @@ int EepromSpiOpen(void)
 	sprintf(dev, "/dev/spidev32765.%d", cs);
 	//log_info("open spi %s in mode %d",dev, mode);
 	int spi_fd = open(dev, O_RDWR);
-	if (spi_fd == 0) {
+	if (-1 == spi_fd) {
 		log_error("can't open spi dev");
 		return 0;
 	}
 	int ret = ioctl(spi_fd, SPI_IOC_WR_MODE, &mode);
-	if (ret == -1) {
+	if (-1 == ret) {
 		log_error("can't set spi mode");
 		return 0;
 	}
@@ -165,14 +166,14 @@ void EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, c
 {
 	const int spi_fd = EepromSpiOpen();
 
-	if (spi_fd > 0)
+	if (spi_fd >= 0)
 	{
 		shared_memory_t *p_mem = shared_memory_acquire();
 		write_property(p_mem->lock_eeprom_cs, 1);
 
 		// Perform the SPI transfers
 		const int result = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
-		if (result < 1)
+		if (-1 == result)
 		{
 			log_error("can't write to EEPROM");
 			return;

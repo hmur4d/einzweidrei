@@ -285,6 +285,7 @@ static BOOL 		ADS126X_GetReading			(const uint8_t bChip, ADS126X_ReadData_Type *
 static double 		ADS126X_GetReadingFromChip	(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, uint8_t *pbStatusByte);
 static size_t 		SystemSnprintfCat			(char *__restrict s, size_t n, const char *__restrict format, ...);
 
+
 /*******************************************************************************
  * Function:	ADS126X_Initialize()
  * Parameters:	void
@@ -509,7 +510,7 @@ int ADS126X_SpiOpen(const uint8_t bChip)
 		sprintf(dev, "/dev/spidev32765.%d", ADS126X_CHIP_ARRAY[bChip].bChipSelect);
 		//log_info("open spi %s in mode %d",dev, mode);
 		int spi_fd = open(dev, O_RDWR);
-		if (spi_fd == 0)
+		if (-1 == spi_fd)
 		{
 			log_error("can't open spi dev");
 			return 0;
@@ -553,7 +554,7 @@ void ADS126X_SpiTransfer(const uint8_t bChip, const struct spi_ioc_transfer * co
 {
 	const int spi_fd = ADS126X_SpiOpen(bChip);
 
-	if (spi_fd > 0)
+	if (spi_fd >= 0)
 	{
 		// Assert chip select
 		shared_memory_t *p_mem = shared_memory_acquire();
@@ -604,7 +605,7 @@ uint8_t ADS126X_SpiSendRecv(const uint8_t bChip, uint8_t *pbBufferSend, const ui
 			memcpy(&tx_buff[0], pbBufferSend, bBufferSendSize);
 
 			// Create SPI transfer struct array and ensure it is zeroed out
-			struct spi_ioc_transfer transfer_array[1] = { {0} };
+			struct spi_ioc_transfer transfer_array[1] = {{0}};
 
 			transfer_array[0].tx_buf = (unsigned long)tx_buff;
 			transfer_array[0].rx_buf = (unsigned long)rx_buff;
