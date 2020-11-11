@@ -21,7 +21,7 @@ float_t current_calibration;
 
 
 
-void print_lock_profil(dac_profile_t* profile, char* name) {
+void print_lock_profile(dac_profile_t* profile, char* name) {
 	printf("%s profile  { \n", name);
 	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
 		printf("%d : fullscale = %.3f, bin = %d\n", i,profile->full_scale_current[i],profile->binary[i]);
