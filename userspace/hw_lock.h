@@ -14,7 +14,7 @@
 #define LOCK_BOARD_GX_RESISTANCE_RATIO 5.6
 #define LOCK_BOARD_VREF 2.048
 #define LOCK_DAC_BIT 16
-#define LOCK_DAC_OFFSET 32768
+#define LOCK_DAC_OFFSET 0
 
 
 typedef struct {
