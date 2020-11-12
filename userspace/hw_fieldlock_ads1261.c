@@ -345,7 +345,11 @@ void ADS126X_Initialize(void)
 	if (ADS126X_IsChipUsable())
 	{
 		ADS126X_SetRegister(ADS126X_REG_STATUS, 0x00);		// Clear the RESET bit, clear CRC Error bit
+#if (1 == ADS126X_ENABLE_CRC)
 		ADS126X_SetRegister(ADS126X_REG_MODE3, 0x60);		// Enable STATUS Byte, enable CRC Data Verification
+#else
+		ADS126X_SetRegister(ADS126X_REG_MODE3, 0x40);		// Enable STATUS Byte
+#endif
 		ADS126X_SetRegister(ADS126X_REG_REF, 0x19);			// Enable internal reference, select external reference input pins
 	}
 
