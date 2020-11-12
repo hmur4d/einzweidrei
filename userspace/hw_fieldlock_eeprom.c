@@ -616,7 +616,7 @@ int EepromTestMain(void)
 			log_error("EepromTest, Error calling malloc()!");
 		}
 
-		printf("EepromTestMain, iReturn: %d\n", iReturn)
+		printf("EepromTestMain, iReturn: %d\n", iReturn);
 
 		free(pbBuffer1);
 		free(pbBuffer2);
