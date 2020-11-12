@@ -119,7 +119,7 @@ typedef struct
 	uint32_t	dwPgaOutputLowAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
 	uint32_t	dwChecksumErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
 
-} ADC126X_DIAGNOSTICS_STRUCT;
+} ADS126X_DIAGNOSTICS_STRUCT;
 
 // Status Byte bit masks (From Table 31, "STATUS Register Field Descriptions" in Datasheet)
 #define ADS126X_STATUS_BYTE_MASK_RESET			(1<<0)
@@ -150,7 +150,7 @@ void		ADS126X_GatherAll					(ADS126X_RESULT_TYPE *ptAdcExtResultStruct);
 void 		ADS126X_SetPgaGain					(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, const ADS126X_PgaGain_Enum ePgaGain);
 uint32_t 	ADS126X_ShowStatus					(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 uint32_t 	ADS126X_ShowData					(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct, char *pcWriteBuffer, uint32_t dwWriteBufferLen);
-void		ADS126X_GetDiagInfo					(ADC126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct);
+void		ADS126X_GetDiagInfo					(ADS126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct);
 uint32_t 	ADS126X_ShowDiag					(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 int			ADS126X_TestMain					(void);
 

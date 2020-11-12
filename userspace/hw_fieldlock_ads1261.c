@@ -91,7 +91,7 @@ typedef struct
 	uint8_t			bChipSelect;
 	BOOL			fCrcEnabled;	// Will be set to TRUE when CRC is enabled
 
-} ADC126X_CHIP_DESCRIPTION_STRUCT;
+} ADS126X_CHIP_DESCRIPTION_STRUCT;
 
 typedef struct
 {
@@ -99,21 +99,21 @@ typedef struct
 	ADS126X_SampleRate_Enum		eSampleRate;
 	ADS126X_PgaGain_Enum		eGain;
 	char						*pcInputName;
-} ADC126X_INPUT_MUX_STRUCT;
+} ADS126X_INPUT_MUX_STRUCT;
 
 typedef struct
 {
 	BOOL			fEnabled;
 	uint32_t		dwSettleUs;	// Analog settling time in microseconds
 	uint32_t		dwDwellUs;	// Dwell time to wait for conversion to complete in microseconds
-} ADC126X_GATHER_STRUCT;
+} ADS126X_GATHER_STRUCT;
 
 typedef struct
 {
 	 uint8_t 		bRegValue;
 	 uint32_t		dwMinUs;
 	 uint32_t		dwMaxUs;
-} ADC126X_SAMPLE_RATE_STRUCT;
+} ADS126X_SAMPLE_RATE_STRUCT;
 
 typedef struct
 {
@@ -122,7 +122,7 @@ typedef struct
 	double			dbMeasuredAvdd;
 	int32_t			idwOffsetCalValue;
 
-} ADC126X_STATUS_STRUCT;
+} ADS126X_STATUS_STRUCT;
 
 
 /* Private define ------------------------------------------------------------*/
@@ -135,17 +135,17 @@ typedef struct
 #define ADS126X_DIVISOR_32BIT			(2147483648.0)
 #define ADS126X_DIVISOR_24BIT			(8388608.0)
 
-#define ADC126X_ADC_REF_INT				(2.5)
-#define ADC126X_ADC_REF_EXT				(2.048)
+#define ADS126X_ADC_REF_INT				(2.5)
+#define ADS126X_ADC_REF_EXT				(2.048)
 
 #define	ADS126X_MAX_MEASURE_NUMBER		(1)
 
-#define ADC126X_MODEL_ADS1260			(1260)
-#define ADC126X_MODEL_ADS1261			(1261)
-#define ADC126X_MODEL_ADS1262			(1262)
-#define ADC126X_MODEL_ADS1263			(1263)
+#define ADS126X_MODEL_ADS1260			(1260)
+#define ADS126X_MODEL_ADS1261			(1261)
+#define ADS126X_MODEL_ADS1262			(1262)
+#define ADS126X_MODEL_ADS1263			(1263)
 
-#define ADC126X_DELAY_AFTER_RESET_MS	(12)
+#define ADS126X_DELAY_AFTER_RESET_MS	(12)
 
 
 /* Private macro -------------------------------------------------------------*/
@@ -153,13 +153,13 @@ typedef struct
 static const uint32_t gdwSpiSpeedHz = 1000*100;
 static const uint32_t gdwSpiBitsPerWord = 8;
 
-static const ADC126X_CHIP_DESCRIPTION_STRUCT 	ADS126X_CHIP_ARRAY[ADS126X_NUM_CHIPS] =
+static const ADS126X_CHIP_DESCRIPTION_STRUCT 	ADS126X_CHIP_ARRAY[ADS126X_NUM_CHIPS] =
 {
 	// ADC Model, Enabled
-	{	.fEnabled = TRUE,	.wModel = ADC126X_MODEL_ADS1261,	.bChipSelect = 1, 	.fCrcEnabled = FALSE	},
+	{	.fEnabled = TRUE,	.wModel = ADS126X_MODEL_ADS1261,	.bChipSelect = 1, 	.fCrcEnabled = FALSE	},
 };
 
-static const ADC126X_INPUT_MUX_STRUCT		ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUTS_NUM_TOTAL] =
+static const ADS126X_INPUT_MUX_STRUCT		ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUTS_NUM_TOTAL] =
 {
 				//  Positive	| Negative
 	{ .bInputMux = ((0x02 << 4) | (0x01)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "AG_SENSE_B0"	},	// ADS126X_INPUT_MUX_AG_SENSE_B0
@@ -175,7 +175,7 @@ static const ADC126X_INPUT_MUX_STRUCT		ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUTS_NU
 	{ .bInputMux = ((0x01 << 4) | (0x00)), 	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "EXT_VREF"		},	// ADS126X_INPUT_MUX_EXT_VREF, External reference voltage
 };
 
-static const ADC126X_GATHER_STRUCT		ADS126X_GATHER_ARRAY[ADS126X_INPUTS_NUM_TOTAL] =
+static const ADS126X_GATHER_STRUCT		ADS126X_GATHER_ARRAY[ADS126X_INPUTS_NUM_TOTAL] =
 {
 	/*
 	 * See ADS1261 Datasheet, "Table 8. Conversion Latency" for actual Conversion Latencies
@@ -205,7 +205,7 @@ static const ADC126X_GATHER_STRUCT		ADS126X_GATHER_ARRAY[ADS126X_INPUTS_NUM_TOTA
 };
 
 #if 0
-static const ADC126X_SAMPLE_RATE_STRUCT ADS126X_ADC1_SAMPLE_RATE_ARRAY[ADS126X_SPS_NUM_TOTAL] =
+static const ADS126X_SAMPLE_RATE_STRUCT ADS126X_ADC1_SAMPLE_RATE_ARRAY[ADS126X_SPS_NUM_TOTAL] =
 {
 	/* NOTE:	These numbers are for estimation purposes and may not be accurate.
 	 * 			These numbers are for *subsequent* conversions only.
@@ -256,8 +256,8 @@ typedef struct
 
 
 static ADS126X_CONTROL_STRUCT				ADS126X_ADC_CONTROL_INTERNAL;
-static ADC126X_STATUS_STRUCT				ADS126X_ADC_STATUS_ARRAY[ADS126X_NUM_CHIPS];
-static ADC126X_DIAGNOSTICS_STRUCT			ADS126X_ADC_DIAGNOSTICS;
+static ADS126X_STATUS_STRUCT				ADS126X_ADC_STATUS_ARRAY[ADS126X_NUM_CHIPS];
+static ADS126X_DIAGNOSTICS_STRUCT			ADS126X_ADC_DIAGNOSTICS;
 
 static BOOL gfGatherAllInputs = FALSE;	// Set true to force the gathering of conversion results from all inputs
 
@@ -1117,7 +1117,7 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				case ADS126X_INPUT_MUX_AG_SENSE_GX:
 				{
 					// Convert the ADC reading to Current in Amps
-					ptAdcData->dbReading *= ADC126X_ADC_REF_EXT;
+					ptAdcData->dbReading *= ADS126X_ADC_REF_EXT;
 					ptAdcData->dbReading /= 100.0;	// Gain of Current Sense chip
 					ptAdcData->dbReading /= 0.033;	// Current Sense resistor
 					break;
@@ -1126,13 +1126,13 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				case ADS126X_INPUT_MUX_AG_GX:
 				{
 					// Convert the ADC reading to Volts
-					ptAdcData->dbReading *= ADC126X_ADC_REF_EXT;
+					ptAdcData->dbReading *= ADS126X_ADC_REF_EXT;
 					break;
 				}
 				case ADS126X_INPUT_MUX_BOARD_TEMP:
 				{
 					// Convert this ADC reading to Temperature in degrees Celsius
-					ptAdcData->dbReading *= ADC126X_ADC_REF_INT;
+					ptAdcData->dbReading *= ADS126X_ADC_REF_INT;
 					ptAdcData->dbReading -= 0.5;
 					ptAdcData->dbReading /= 0.010;
 					break;
@@ -1141,7 +1141,7 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				case ADS126X_INPUT_MUX_RAIL_6V1:
 				{
 					// Convert the ADC reading to Rail Voltage
-					ptAdcData->dbReading *= ADC126X_ADC_REF_INT;
+					ptAdcData->dbReading *= ADS126X_ADC_REF_INT;
 					ptAdcData->dbReading *= (976.0 + 10e3);
 					ptAdcData->dbReading /= 976.0;
 					break;
@@ -1153,7 +1153,7 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 					// 		Temperature (°C) = [(Temperature Reading (µV) – 122,400) / 420 µV/°C] + 25°C
 					// Webpage that further describes how to convert the raw reading to a temperature value
 					// http://e2e.ti.com/support/data-converters/f/73/t/637819?ADS1262-Temperature-sensor-acquisition
-					ptAdcData->dbReading *= ADC126X_ADC_REF_INT;	// Use the voltage of the internal reference
+					ptAdcData->dbReading *= ADS126X_ADC_REF_INT;	// Use the voltage of the internal reference
 					ptAdcData->dbReading *= 1e6;					// Convert to microvolts
 					ptAdcData->dbReading -= 122400.0;
 					ptAdcData->dbReading /= 420.0;
@@ -1165,7 +1165,7 @@ BOOL ADS126X_ConvertReading(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInpu
 				case ADS126X_INPUT_MUX_DVDD_MON:
 				{
 					// Convert the ADC reading to voltage
-					ptAdcData->dbReading *= ADC126X_ADC_REF_INT;
+					ptAdcData->dbReading *= ADS126X_ADC_REF_INT;
 					ptAdcData->dbReading *= 4.0;
 
 					if (ADS126X_INPUT_MUX_AVDD_MON == eInput)
@@ -1627,7 +1627,7 @@ uint32_t ADS126X_ShowData(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct
 							"Input: %u (%-7s), Voltage (volts),     %+9.5f\r\n",
 							eInput,
 							ADS126X_INPUT_MUX_ARRAY[eInput].pcInputName,
-							(ptAdcExtResultStruct->dbResultArray[0][eInput] * ADC126X_ADC_REF_EXT)
+							(ptAdcExtResultStruct->dbResultArray[0][eInput] * ADS126X_ADC_REF_EXT)
 							);
 	}
 #endif
@@ -1719,7 +1719,7 @@ uint32_t ADS126X_Test(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 							ADS126X_ADC_STATUS_ARRAY[bChip].sgOffset,
 							ADS126X_ADC_STATUS_ARRAY[bChip].dbMeasuredAvdd,
 							ADS126X_ADC_STATUS_ARRAY[bChip].idwOffsetCalValue,
-							(tAdcData.dbReading * ADC126X_ADC_REF_EXT)
+							(tAdcData.dbReading * ADS126X_ADC_REF_EXT)
 							);
 	}
 
@@ -1767,11 +1767,11 @@ uint32_t ADS126X_Test(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 
 /*******************************************************************************
  * Function:	ADS126X_GetDiagInfo()
- * Parameters:	ADC126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct,
+ * Parameters:	ADS126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct,
  * Return:		void
  * Notes:		Copy the External ADC diagnostics info to the given struct
  ******************************************************************************/
-void ADS126X_GetDiagInfo(ADC126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct)
+void ADS126X_GetDiagInfo(ADS126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct)
 {
 	if (NULL != ptAdcDiagnosticsStruct)
 	{
@@ -1791,7 +1791,7 @@ uint32_t ADS126X_ShowDiag(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 {
 	uint32_t dwNumChars = 0;
 
-	ADC126X_DIAGNOSTICS_STRUCT	tAdcDiagnosticsStruct;
+	ADS126X_DIAGNOSTICS_STRUCT	tAdcDiagnosticsStruct;
 	ADS126X_GetDiagInfo(&tAdcDiagnosticsStruct);
 
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
@@ -1863,7 +1863,7 @@ int ADS126X_TestMain(void)
 	ADS126X_ShowData(&tAdcExtResultStruct, pcBuffer, dwBufferSize);
 	log_debug("ADS126X_TestMain, Gather All results: \r\n\r\n%s\r\n\r\n", pcBuffer);
 
-	ADC126X_DIAGNOSTICS_STRUCT tAdcDiagnosticsStruct;
+	ADS126X_DIAGNOSTICS_STRUCT tAdcDiagnosticsStruct;
 	ADS126X_GetDiagInfo(&tAdcDiagnosticsStruct);
 	ADS126X_ShowDiag(pcBuffer, dwBufferSize);
 	log_debug("ADS126X_TestMain, Diagnositcs results: \r\n\r\n%s\r\n\r\n", pcBuffer);
