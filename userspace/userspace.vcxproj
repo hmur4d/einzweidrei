@@ -124,6 +124,7 @@
     <ClInclude Include="clientgroup.h" />
     <ClInclude Include="commands.h" />
     <ClInclude Include="command_handlers.h" />
+    <ClInclude Include="common.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="generated\hps.h" />
     <ClInclude Include="generated\hps_arm_a9_0.h" />
@@ -162,6 +163,7 @@
     <ClCompile Include="clientgroup.c" />
     <ClCompile Include="commands.c" />
     <ClCompile Include="command_handlers.c" />
+    <ClCompile Include="common.c" />
     <ClCompile Include="config.c" />
     <ClCompile Include="epcq_image.c" />
     <ClCompile Include="hardware.c" />

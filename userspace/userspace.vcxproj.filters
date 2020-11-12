@@ -32,6 +32,9 @@
     <ClCompile Include="ufm.c" />
     <ClCompile Include="hw_fieldlock_ads1261.c" />
     <ClCompile Include="hw_fieldlock_eeprom.c" />
+    <ClCompile Include="hw_lock.c" />
+    <ClCompile Include="hw_pa.c" />
+    <ClCompile Include="common.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />
@@ -75,6 +78,9 @@
     <ClInclude Include="ufm.h" />
     <ClInclude Include="hw_fieldlock_ads1261.h" />
     <ClInclude Include="hw_fieldlock_eeprom.h" />
+    <ClInclude Include="hw_lock.h" />
+    <ClInclude Include="hw_pa.h" />
+    <ClInclude Include="common.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
