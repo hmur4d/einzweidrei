@@ -481,7 +481,7 @@ int ADS126X_SpiOpen(void)
 		log_error("can't open spi dev");
 		return 0;
 	}
-	int ret = ioctl(spi_fd, SPI_IOC_WR_MODE, &mode);
+	const int ret = ioctl(spi_fd, SPI_IOC_WR_MODE, &mode);
 	if (-1 == ret)
 	{
 		log_error("can't set spi mode");
@@ -525,7 +525,7 @@ void ADS126X_SpiTransfer(const struct spi_ioc_transfer * const p_transfer_array,
 		write_property(p_mem->lock_adc_cs, 1);
 
 		// Perform the SPI transfers
-		const int16_t result = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
+		const int result = ioctl(spi_fd, SPI_IOC_MESSAGE(num_transfers), p_transfer_array);
 		if (-1 == result) 
 		{
 			log_error("can't write to ADS1261");

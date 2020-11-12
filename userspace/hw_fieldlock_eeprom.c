@@ -59,6 +59,8 @@
 #define EEPROM_STATUS_BPX_DEFAULT		(0x00)
 #define EEPROM_STATUS_SRWD_MASK			(0x80)
 
+#define EEPROM_READ_BLOCK_MAX_BYTES		(4080u)	// Linux SPI Driver maximum is 4096 bytes, leave a few bytes spare for EEPROM command and address bytes
+
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -72,6 +74,7 @@ static int 		EepromSpiOpen(void);
 static void 	EepromSpiClose(const int spi_fd);
 static void 	EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, const unsigned int num_transfers);
 static uint8_t 	EepromGetStatus(void);
+static void 	EepromReadBlock(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes);
 static void 	EepromWriteEnable(void);
 static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint8_t bBufferSize);
 
@@ -124,7 +127,7 @@ int EepromSpiOpen(void)
 	// TODO: Update with actual spidev name
 	sprintf(dev, "/dev/spidev32765.%d", cs);
 	//log_info("open spi %s in mode %d",dev, mode);
-	int spi_fd = open(dev, O_RDWR);
+	const int spi_fd = open(dev, O_RDWR);
 	if (-1 == spi_fd) {
 		log_error("can't open spi dev");
 		return 0;
@@ -213,20 +216,17 @@ uint8_t EepromGetStatus(void)
 
 
 /*******************************************************************************
- * Function:	EepromReadBytes()
+ * Function:	EepromReadBlock()
  * Parameters:	const uint16_t wOffset,
  * 				uint8_t *pbBuffer,
  * 				const uint16_t wNumBytes,
  * Return:		void
- * Summary:		Read the requested bytes from the EEPROM.
+ * Summary:		Read a block of bytes from the EEPROM.
  ******************************************************************************/
 
-void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes)
+void EepromReadBlock(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes)
 {
 	uint8_t bCommandArray[3] = { EEPROM_REG_READ, ((wOffset >> 8) & 0xFF), (wOffset & 0xFF) };
-	const uint16_t wReadBytes = MINIMUM(wNumBytes, EEPROM_TOTAL_SIZE_BYTES);	// Don't try to read more than the total size
-
-	memset(&pbBuffer[0], 0, wNumBytes);
 
 	// Create SPI transfer struct array and ensure it is zeroed out
 	struct spi_ioc_transfer transfer_array[2] = {{0},{0}};
@@ -240,11 +240,39 @@ void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
 	transfer_array[0].cs_change = false;
 	transfer_array[1].tx_buf = (unsigned long) NULL;
 	transfer_array[1].rx_buf = (unsigned long) pbBuffer;
-	transfer_array[1].len = wReadBytes;
+	transfer_array[1].len = wNumBytes;
 	transfer_array[1].speed_hz = eeprom_spi_speed;
 	transfer_array[1].bits_per_word = eeprom_spi_bits;
 
 	EepromSpiTransfer(&transfer_array[0], (sizeof(transfer_array)/sizeof(struct spi_ioc_transfer)));
+}
+
+
+/*******************************************************************************
+ * Function:	EepromReadBytes()
+ * Parameters:	const uint16_t wOffset,
+ * 				uint8_t *pbBuffer,
+ * 				const uint16_t wNumBytes,
+ * Return:		void
+ * Summary:		Read the requested bytes from the EEPROM.
+ ******************************************************************************/
+
+void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes)
+{
+	const uint16_t wTotalReadBytes = MINIMUM(wNumBytes, EEPROM_TOTAL_SIZE_BYTES);	// Don't try to read more than the total size of the EEPROM
+
+	uint16_t wBytesReadSoFar = 0;
+
+	memset(&pbBuffer[0], 0, wNumBytes);
+
+	while (wBytesReadSoFar < wTotalReadBytes)
+	{
+		const uint16_t wBlockNumBytes = MINIMUM(EEPROM_READ_BLOCK_MAX_BYTES, (wTotalReadBytes - wBytesReadSoFar));
+
+		EepromReadBlock((wOffset + wBytesReadSoFar), &pbBuffer[wBytesReadSoFar], wBlockNumBytes);
+
+		wBytesReadSoFar += wBlockNumBytes;
+	}
 }
 
 
@@ -587,6 +615,8 @@ int EepromTestMain(void)
 			iReturn = -1;
 			log_error("EepromTest, Error calling malloc()!");
 		}
+
+		printf("EepromTestMain, iReturn: %d\n", iReturn)
 
 		free(pbBuffer1);
 		free(pbBuffer2);

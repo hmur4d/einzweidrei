@@ -16,7 +16,6 @@ long long monotonic_ms()
 }
 
 
-
 /*******************************************************************************
  * Function:	SystemSnprintfCat()
  * Parameters:	char *__restrict s, size_t n, const char *__restrict format, ...
