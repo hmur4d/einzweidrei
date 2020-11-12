@@ -17,7 +17,6 @@
 #define TRUE		true
 #define FALSE		false
 
-#define ADS126X_NUM_CHIPS				(1)		// Number of ADS126X chips in the system
 #define ADS126X_ENABLE_CRC				(0)		// 0 = Disable, 1 = Enable, Not complete, do not enable!
 
 
@@ -105,8 +104,8 @@ typedef struct
 
 typedef struct
 {
-	double 		dbResultArray[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint8_t		bStatusByteArray[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	double 		dbResultArray[ADS126X_INPUTS_NUM_TOTAL];
+	uint8_t		bStatusByteArray[ADS126X_INPUTS_NUM_TOTAL];
 } ADS126X_RESULT_TYPE;
 
 typedef struct
@@ -114,13 +113,13 @@ typedef struct
 	uint32_t	dwReadingCounter;
 	uint32_t	dwResponseErrorCounter;
 
-	uint32_t	dwChipResetErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwAdcClockSourceErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwNoNewDataErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwReferenceLowAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwPgaOutputHighAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwPgaOutputLowAlarmCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
-	uint32_t	dwChecksumErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwChipResetErrorCounter[ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwAdcClockSourceErrorCounter[ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwNoNewDataErrorCounter[ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwReferenceLowAlarmCounter[ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwPgaOutputHighAlarmCounter[ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwPgaOutputLowAlarmCounter[ADS126X_INPUTS_NUM_TOTAL];
+	uint32_t	dwChecksumErrorCounter[ADS126X_INPUTS_NUM_TOTAL];
 
 } ADS126X_DIAGNOSTICS_STRUCT;
 
@@ -150,7 +149,7 @@ double 		ADS126X_CalculateBoardTemperature	(const double dbRawValue);
 void 		ADS126X_Initialize					(void);
 uint32_t 	ADS126X_Test						(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 void		ADS126X_GatherAll					(ADS126X_RESULT_TYPE *ptAdcExtResultStruct);
-void 		ADS126X_SetPgaGain					(const uint8_t bChip, const ADS126X_INPUTS_ENUM eInput, const ADS126X_PgaGain_Enum ePgaGain);
+void 		ADS126X_SetPgaGain					(const ADS126X_INPUTS_ENUM eInput, const ADS126X_PgaGain_Enum ePgaGain);
 uint32_t 	ADS126X_ShowStatus					(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 uint32_t 	ADS126X_ShowData					(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct, char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 void		ADS126X_GetDiagInfo					(ADS126X_DIAGNOSTICS_STRUCT * const ptAdcDiagnosticsStruct);
