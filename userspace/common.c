@@ -1,7 +1,6 @@
 // Common support code - Benchtop spectrometer
 
 #include "std_includes.h"
-#include <time.h>
 
 
 /**

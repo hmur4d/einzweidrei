@@ -146,8 +146,6 @@ typedef struct
 #define ADS126X_MODEL_ADS1262			(1262)
 #define ADS126X_MODEL_ADS1263			(1263)
 
-#define ADS126X_DELAY_AFTER_RESET_MS	(12)
-
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -559,7 +557,7 @@ uint8_t ADS126X_SpiSendRecv(uint8_t *pbBufferSend, const uint8_t bBufferSendSize
 {
 	uint8_t bReturn = 0;
 
-	const uint8_t bBufferSizeMax = ((bBufferSendSize > bBufferRecvSize) ? bBufferSendSize : bBufferRecvSize);
+	const uint8_t bBufferSizeMax = MAXIMUM(bBufferSendSize, bBufferRecvSize);
 
 	if ((bBufferSizeMax >= 2) && (bBufferSizeMax <=9))
 	{
@@ -1456,7 +1454,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 {
 	if (NULL != ptAdcExtResultStruct)
 	{
-		memset(&ptAdcExtResultStruct->dbResultArray[0], 0, sizeof(ptAdcExtResultStruct->dbResultArray));
+		memset(&ptAdcExtResultStruct, 0, sizeof(*ptAdcExtResultStruct));
 
 		ADS126X_ADC_DIAGNOSTICS.dwReadingCounter++;
 
@@ -1672,8 +1670,6 @@ uint32_t ADS126X_Test(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 
 	ADS126X_RESULT_TYPE tAdcExtResultStruct;
 
-	memset(&tAdcExtResultStruct, 0, sizeof(tAdcExtResultStruct));
-
 	gfGatherAllInputs = TRUE;
 	ADS126X_GatherAll(&tAdcExtResultStruct);
 	gfGatherAllInputs = FALSE;
@@ -1833,7 +1829,9 @@ int ADS126X_TestMain(void)
 
 	// Determine how long it took to capture the data
 	long long start_ms = monotonic_ms();
+	gfGatherAllInputs = TRUE;
 	ADS126X_GatherAll(&tAdcExtResultStruct);
+	gfGatherAllInputs = FALSE;
 	long long stop_ms = monotonic_ms();
 
 	ADS126X_ShowData(&tAdcExtResultStruct, pcBuffer, dwBufferSize);
