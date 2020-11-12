@@ -660,6 +660,11 @@ BOOL ADS126X_SendCommand(const uint8_t bChip, const ADS126X_COMMANDS_ENUM eComma
 			fReturn = ((0xFF == bRecvBuf[0]) && (eCommand == bRecvBuf[1]));
 		}
 #endif
+
+		if (!fReturn)
+		{
+			ADS126X_ADC_DIAGNOSTICS.dwResponseErrorCounter++;
+		}
 	}
 
 	return fReturn;
@@ -711,6 +716,11 @@ BOOL ADS126X_GetRegister(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegi
 		}
 
 #endif
+
+		if (!fReturn)
+		{
+			ADS126X_ADC_DIAGNOSTICS.dwResponseErrorCounter++;
+		}
 	}
 
 	return fReturn;
@@ -746,6 +756,11 @@ BOOL ADS126X_SetRegister(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegi
 
 		fReturn = ((0xFF == bRecvBuf[0]) && (bSendBuf[0] == bRecvBuf[1]));
 #endif
+
+		if (!fReturn)
+		{
+			ADS126X_ADC_DIAGNOSTICS.dwResponseErrorCounter++;
+		}
 	}
 
 	return fReturn;
@@ -1012,6 +1027,11 @@ BOOL ADS126X_ReadRawResult(const uint8_t bChip, ADS126X_ReadData_Type * const pt
 			memcpy(&ptAdcData->tRawData.bArray[0], &bRecvBuf[2], 4);
 		}
 #endif
+
+		if (!fReturn)
+		{
+			ADS126X_ADC_DIAGNOSTICS.dwResponseErrorCounter++;
+		}
 	}
 	else
 	{
@@ -1855,6 +1875,11 @@ uint32_t ADS126X_ShowDiag(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
 			"Diag, TotalReadings: %9lu\r\n",
 			tAdcDiagnosticsStruct.dwReadingCounter
+			);
+
+	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
+			"Diag, ResponseErrors: %9lu\r\n",
+			tAdcDiagnosticsStruct.dwResponseErrorCounter
 			);
 
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars), "\r\n");

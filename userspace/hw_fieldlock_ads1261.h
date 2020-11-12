@@ -112,6 +112,7 @@ typedef struct
 typedef struct
 {
 	uint32_t	dwReadingCounter;
+	uint32_t	dwResponseErrorCounter;
 
 	uint32_t	dwChipResetErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
 	uint32_t	dwAdcClockSourceErrorCounter[ADS126X_NUM_CHIPS][ADS126X_INPUTS_NUM_TOTAL];
