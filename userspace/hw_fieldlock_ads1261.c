@@ -23,7 +23,7 @@
 #include "shared_memory.h"
 #include "hardware.h"
 #include "log.h"
-#include <time.h>
+#include "common.h"
 #else
 // Defines and includes to allow using IntelliSense with Visual Studio Code
 #define __INT8_TYPE__
@@ -473,7 +473,6 @@ int ADS126X_SpiOpen(void)
 	const uint8_t mode = 1;		// Use SPI Mode 1 (CPHA=0, CPOL=1)
 
 	char dev[64];
-	// TODO: Update with actual spidev name
 	// TODO: Verify cs value
 	sprintf(dev, "/dev/spidev32765.%d", ADS126X_CHIP_INFO.bChipSelect);
 	//log_info("open spi %s in mode %d",dev, mode);
@@ -1522,33 +1521,6 @@ void ADS126X_SetPgaGain(const ADS126X_INPUTS_ENUM eInput, const ADS126X_PgaGain_
 	{
 		ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[eInput] = ePgaGain;
 	}
-}
-
-
-/*******************************************************************************
- * Function:	SystemSnprintfCat()
- * Parameters:	char *__restrict s, size_t n, const char *__restrict format, ...
- * Return:		uint32_t, Number of chars added to the given buffer, or Zero if an error occurs
- * Notes:		Safer replacement for snprintf() to help prevent buffer overruns when concatenating buffers
- ******************************************************************************/
-size_t SystemSnprintfCat(char *__restrict s, size_t n, const char *__restrict format, ...)
-{
-	va_list 	args;
-
-	va_start(args, format);
-	int len = vsnprintf(s, n, format, args);
-	va_end(args);
-
-	if (len < 0)
-	{
-		len = 0;
-	}
-	else if (((size_t) len) > n)
-	{
-		len = n;
-	}
-
-	return len;
 }
 
 

@@ -1,12 +1,12 @@
 // PA Board - Benchtop spectrometer
 
 #include <termios.h>
-#include <time.h>
 
 #include "log.h"
 #include "hw_pa.h"
 #include "shared_memory.h"
 #include "config.h"
+#include "common.h"
 
 // The file descriptor for the PA board UART
 int pa_uart_fd = -1;
@@ -25,17 +25,6 @@ char* malloc_string(size_t size) {
 	char* new_string = malloc(size);
 	new_string[0] = 0;
 	return new_string;
-}
-
-/**
- * Get the monotonic time, in milliseconds
- */
-long long monotonic_ms()
-{
-	struct timespec ts_now = {0};
-	clock_gettime(CLOCK_MONOTONIC, &ts_now);
-	long long now = ts_now.tv_sec * 1000 + ts_now.tv_nsec / 1000000;
-	return now;
 }
 
 ///////////////
