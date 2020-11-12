@@ -1454,7 +1454,7 @@ void ADS126X_GatherAll(ADS126X_RESULT_TYPE *ptAdcExtResultStruct)
 {
 	if (NULL != ptAdcExtResultStruct)
 	{
-		memset(&ptAdcExtResultStruct, 0, sizeof(*ptAdcExtResultStruct));
+		memset(ptAdcExtResultStruct, 0, sizeof(*ptAdcExtResultStruct));
 
 		ADS126X_ADC_DIAGNOSTICS.dwReadingCounter++;
 
