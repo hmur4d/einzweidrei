@@ -129,7 +129,7 @@ typedef struct
 #define ADS126X_VERBOSE_LEVEL			(0)
 
 #define ADS126X_REG_MASK				(0x1F)
-#define ADS126X_DUMMY_BYTE				(0x00)
+#define ADS126X_ARBITRARY_BYTE			(0x00)
 #define ADS126X_DEVICE_ID_EXPECTED		(0x80)	// Will only verify upper four bits match
 
 #define ADS126X_DIVISOR_32BIT			(2147483648.0)
@@ -639,7 +639,8 @@ BOOL ADS126X_SendCommand(const uint8_t bChip, const ADS126X_COMMANDS_ENUM eComma
 
 	if (eCommand < ADS126X_CMD_NUM_TOTAL)
 	{
-		uint8_t bSendBuf[4] = {eCommand, ADS126X_DUMMY_BYTE, 0x00, 0x00 };
+#if (1 == ADS126X_ENABLE_CRC)
+		uint8_t bSendBuf[4] = {eCommand, ADS126X_ARBITRARY_BYTE, 0x00, 0x00 };
 		uint8_t bRecvBuf[4] = { 0x00 };
 
 		bSendBuf[2] = ADS126X_CalculateCrc(&bSendBuf[0], 2);
@@ -647,8 +648,18 @@ BOOL ADS126X_SendCommand(const uint8_t bChip, const ADS126X_COMMANDS_ENUM eComma
 		if (ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf)))
 		{
 			// Verify all response bytes are exactly as expected
-			fReturn = ((0xFF == bRecvBuf[0]) && (eCommand == bRecvBuf[1]) && (ADS126X_DUMMY_BYTE == bRecvBuf[2]) && (bSendBuf[2] == bRecvBuf[3]));
+			fReturn = ((0xFF == bRecvBuf[0]) && (eCommand == bRecvBuf[1]) && (ADS126X_ARBITRARY_BYTE == bRecvBuf[2]) && (bSendBuf[2] == bRecvBuf[3]));
 		}
+#else
+		uint8_t bSendBuf[2] = {eCommand, ADS126X_ARBITRARY_BYTE };
+		uint8_t bRecvBuf[2] = { 0x00 };
+
+		if (ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf)))
+		{
+			// Verify all response bytes are exactly as expected
+			fReturn = ((0xFF == bRecvBuf[0]) && (eCommand == bRecvBuf[1]));
+		}
+#endif
 	}
 
 	return fReturn;
@@ -668,7 +679,8 @@ BOOL ADS126X_GetRegister(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegi
 
 	if (eRegister < ADS126X_REG_NUM_TOTAL)
 	{
-		uint8_t bSendBuf[6] = {(ADS126X_CMD_RREG | (eRegister & ADS126X_REG_MASK)), ADS126X_DUMMY_BYTE, 0x00, 0x00 };
+#if (1 == ADS126X_ENABLE_CRC)
+		uint8_t bSendBuf[6] = {(ADS126X_CMD_RREG | (eRegister & ADS126X_REG_MASK)), ADS126X_ARBITRARY_BYTE, 0x00, 0x00, 0x00, 0x00 };
 		uint8_t bRecvBuf[6] = { 0x00 };
 
 		bSendBuf[2] = ADS126X_CalculateCrc(&bSendBuf[0], 2);
@@ -684,6 +696,21 @@ BOOL ADS126X_GetRegister(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegi
 				*pbValue = bRecvBuf[4];
 			}
 		}
+#else
+		uint8_t bSendBuf[3] = {(ADS126X_CMD_RREG | (eRegister & ADS126X_REG_MASK)), ADS126X_ARBITRARY_BYTE, 0x00 };
+		uint8_t bRecvBuf[3] = { 0x00 };
+
+		if (ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf)))
+		{
+			fReturn = ((0xFF == bRecvBuf[0]) && (bSendBuf[0] == bRecvBuf[1]));
+
+			if (NULL != pbValue)
+			{
+				*pbValue = bRecvBuf[2];
+			}
+		}
+
+#endif
 	}
 
 	return fReturn;
@@ -704,12 +731,21 @@ BOOL ADS126X_SetRegister(const uint8_t bChip, const ADS126X_REGISTERS_ENUM eRegi
 
 	if (eRegister < ADS126X_REG_NUM_TOTAL)
 	{
+#if (1 == ADS126X_ENABLE_CRC)
 		uint8_t bSendBuf[4] = {(ADS126X_CMD_WREG | (eRegister & ADS126X_REG_MASK)), bValue, 0x00, 0x00 };
 		uint8_t bRecvBuf[4] = { 0x00 };
 
 		bSendBuf[2] = ADS126X_CalculateCrc(&bSendBuf[0], 2);
 
 		ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf));
+#else
+		uint8_t bSendBuf[2] = {(ADS126X_CMD_WREG | (eRegister & ADS126X_REG_MASK)), bValue };
+		uint8_t bRecvBuf[2] = { 0x00 };
+
+		ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf));
+
+		fReturn = ((0xFF == bRecvBuf[0]) && (bSendBuf[0] == bRecvBuf[1]));
+#endif
 	}
 
 	return fReturn;
@@ -950,7 +986,8 @@ BOOL ADS126X_ReadRawResult(const uint8_t bChip, ADS126X_ReadData_Type * const pt
 
 	if ((bChip < ADS126X_NUM_CHIPS) && (NULL != ptAdcData))
 	{
-		uint8_t bSendBuf[9] = { ADS126X_CMD_RDATA, ADS126X_DUMMY_BYTE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+#if (1 == ADS126X_ENABLE_CRC)		
+		uint8_t bSendBuf[9] = { ADS126X_CMD_RDATA, ADS126X_ARBITRARY_BYTE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 		uint8_t bRecvBuf[9] = { 0x00 };
 
 		bSendBuf[2] = ADS126X_CalculateCrc(&bSendBuf[0], 2);
@@ -962,6 +999,19 @@ BOOL ADS126X_ReadRawResult(const uint8_t bChip, ADS126X_ReadData_Type * const pt
 
 			memcpy(&ptAdcData->tRawData.bArray[0], &bRecvBuf[4], sizeof(ptAdcData->tRawData.bArray));
 		}
+#else
+		uint8_t bSendBuf[6] = { ADS126X_CMD_RDATA, ADS126X_ARBITRARY_BYTE, 0x00, 0x00, 0x00, 0x00 };
+		uint8_t bRecvBuf[6] = { 0x00 };
+
+		if (ADS126X_SpiSendRecv(bChip, &bSendBuf[0], sizeof(bSendBuf), &bRecvBuf[0], sizeof(bRecvBuf)))
+		{
+			// Verify all response bytes are exactly as expected
+			fReturn = ((0xFF == bRecvBuf[0]) && (bSendBuf[0] == bRecvBuf[1]));
+
+			// Don't try to read the CRC byte
+			memcpy(&ptAdcData->tRawData.bArray[0], &bRecvBuf[2], 4);
+		}
+#endif
 	}
 	else
 	{
@@ -971,7 +1021,7 @@ BOOL ADS126X_ReadRawResult(const uint8_t bChip, ADS126X_ReadData_Type * const pt
 	return fReturn;
 }
 
-
+#if (1 == ADS126X_ENABLE_CRC)
 /*******************************************************************************
  * Function:	ADS126X_CalculateCrc()
  * Parameters:	const uint8_t * const pbBuffer,
@@ -1020,6 +1070,7 @@ uint8_t ADS126X_CalculateCrc(const uint8_t * const pbBuffer, const uint8_t bBuff
 
 	return bReturn;
 }
+#endif
 
 
 /*******************************************************************************
@@ -1046,22 +1097,25 @@ BOOL ADS126X_GetReading(const uint8_t bChip, ADS126X_ReadData_Type *ptAdcData)
 
 			if (fReadValid)
 			{
+				// The data should only be considered valid if the checksum matches, the data is new, and there are no alarm bits set
+				ptAdcData->fValid = TRUE;
+
 				// Convert the received bytes to a signed value, put in upper 24-bits and right-shift to sign-extend
 				// Data from ADC is 24-bits and must be right-shifted by 8-bits to sign-extend
 				ptAdcData->idwData = ((ptAdcData->tRawData.bDataMsb << 24) | (ptAdcData->tRawData.bDataMid << 16) | (ptAdcData->tRawData.bDataLsb << 8));
 				ptAdcData->idwData >>= 8;
 
+#if (1 == ADS126X_ENABLE_CRC)
 				// Verify the checksum matches the given value
 				ptAdcData->bChecksumCalc	= ADS126X_CalculateCrc(&ptAdcData->tRawData.bArray[0], 4);	// Calculate the checksum
 				ptAdcData->fChecksumMatch 	= (ptAdcData->bChecksumCalc == ptAdcData->tRawData.bChecksumGiven);	// Ensure the checksum matches
+				ptAdcData->fValid &= ptAdcData->fChecksumMatch;
+#endif
 
 				// Verify that we have received new data
 				ptAdcData->fNewData = ((ptAdcData->tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_DRDY) != 0);	// Check if this is a new data reading (for this ADC input)
-
-				// The data should only be considered valid if the checksum matches, the data is new, and there are no alarm bits set
-				ptAdcData->fValid = TRUE;
-				ptAdcData->fValid &= ptAdcData->fChecksumMatch;
 				ptAdcData->fValid &= ptAdcData->fNewData;
+
 				ptAdcData->fValid &= ((ptAdcData->tRawData.bStatus & 0x3F) == 0);	// Ensure there are no active alarms on the ADS126X
 
 				fIsDataOK = ptAdcData->fValid;

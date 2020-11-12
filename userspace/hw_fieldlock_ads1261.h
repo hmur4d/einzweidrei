@@ -18,6 +18,8 @@
 #define FALSE		false
 
 #define ADS126X_NUM_CHIPS				(1)		// Number of ADS126X chips in the system
+#define ADS126X_ENABLE_CRC				(0)		// 0 = Disable, 1 = Enable, Not complete, do not enable!
+
 
 typedef enum
 {
