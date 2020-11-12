@@ -6,6 +6,7 @@
 #include "config.h"
 #include "ram.h"
 #include "memory_map.h"
+#include "hw_fieldlock_ads1261.h"
 
 
 
@@ -207,6 +208,9 @@ int lock_main(int argc, char** argv) {
 	}
 
 	lock_init_board();
+
+	ADS126X_TestMain();
+
 
 
 	return 0;

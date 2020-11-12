@@ -35,4 +35,5 @@ int pa_init();
  return true if response to command "\r\n" is not NULL
 */
 bool is_pa_board_responding();
+
 #endif // _HW_PA_H
