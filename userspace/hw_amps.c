@@ -110,7 +110,7 @@ int spi_hps_open(uint8_t cs, uint8_t mode) {
 	sprintf(dev, "/dev/spidev32765.%d", cs);
 	//log_info("open spi %s in mode %d",dev, mode);
 	int spi_fd = open(dev, O_RDWR );
-	if (spi_fd == 0) {
+	if (spi_fd < 0) {
 		log_error("can't open spi dev");
 		return 0;
 	}
