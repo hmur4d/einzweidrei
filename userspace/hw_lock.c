@@ -4,6 +4,8 @@
 #include "shim_config_files.h"
 #include "shared_memory.h"
 #include "config.h"
+#include "ram.h"
+#include "memory_map.h"
 
 
 
@@ -19,12 +21,12 @@ float_t current_calibration;
 
 
 
-void print_lock_profil(dac_profile_t* profile, char* name) {
-	printf("%s profile = [", name);
-	for (int i = 0; i < DAC_CHANNEL_COUNT; i++) {
-		printf("%.3f, ", profile->coeffs[i]);
+void print_lock_profile(dac_profile_t* profile, char* name) {
+	printf("%s profile  { \n", name);
+	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
+		printf("%d : fullscale = %.3f, bin = %d\n", i,profile->full_scale_current[i],profile->binary[i]);
 	}
-	printf("]\n");
+	printf("}\n");
 }
 
 void print_lock_calib() {
@@ -70,7 +72,7 @@ int load_lock_profile(dac_profile_t* profile, char* filename) {
 		else if (strstr(line, "I_") != NULL && version_ok && cpt_conn > 0) {
 			char* str_value = substring(line, "=", ";");
 			float_t value = (float_t)atof(str_value);
-			profile->coeffs[cpt_I_global] = value;
+			profile->full_scale_current[cpt_I_global] = value;
 			//printf("coeff[%d]=%0.3f\n", cpt_I_global, value);
 			cpt_I++;
 			cpt_I_global++;
@@ -149,15 +151,44 @@ int load_lock_calibrations(int board_id) {
 	return 0;
 }
 
+int lock_write_b0_gx_register() {
+	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
+		b0_profile.binary[i] = pow(2, LOCK_DAC_BIT-1) * ( LOCK_BOARD_B0_RESISTANCE_RATIO * b0_profile.full_scale_current[i]*0.001 * gains[i] / LOCK_BOARD_VREF);
+		gx_profile.binary[i] = pow(2, LOCK_DAC_BIT-1) * ( LOCK_BOARD_GX_RESISTANCE_RATIO * gx_profile.full_scale_current[i]*0.001 * gains[i+8] / LOCK_BOARD_VREF);
+	}
+
+	shared_memory_t* mem = shared_memory_acquire();
+	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
+		int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_B0_SCALE_TRACE_0 + i);
+		printf("b0_scale trace reg 0x%x = 0x%x\n", ram_offset_byte, b0_profile.binary[i]);
+		*(mem->rams + ram_offset_byte / 4) = b0_profile.binary[i];
+
+		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_GX_SCALE_TRACE_0 + i);
+		printf("gx_scale trace reg 0x%x = 0x%x\n", ram_offset_byte, gx_profile.binary[i]);
+		*(mem->rams + ram_offset_byte / 4) = gx_profile.binary[i];
+
+		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_B0_OFFSET_0 + i);
+		printf("b0_offset reg 0x%x = 0x%x\n", ram_offset_byte, zeros[i]+LOCK_DAC_OFFSET);
+		*(mem->rams + ram_offset_byte / 4) = zeros[i] + LOCK_DAC_OFFSET;
+
+		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_GX_OFFSET_0 + i);
+		printf("gx_offset reg 0x%x = 0x%x\n", ram_offset_byte, zeros[i+8] + LOCK_DAC_OFFSET);
+		*(mem->rams + ram_offset_byte / 4) = zeros[i+8] + LOCK_DAC_OFFSET;
+	}
+	shared_memory_release(mem);
+	return 0;
+}
+
 int lock_init_board() {
 
 	load_lock_profile(&b0_profile, B0_PROFILE_FILENAME);
 	load_lock_profile(&gx_profile, GX_PROFILE_FILENAME);
 	lock_board_id = 123;
 	load_lock_calibrations(lock_board_id);
+	lock_write_b0_gx_register();
 
-	print_lock_profil(&b0_profile, B0_PROFILE_FILENAME);
-	print_lock_profil(&gx_profile, GX_PROFILE_FILENAME);
+	print_lock_profile(&b0_profile, B0_PROFILE_FILENAME);
+	print_lock_profile(&gx_profile, GX_PROFILE_FILENAME);
 	print_lock_calib();
 
 	return 0;
