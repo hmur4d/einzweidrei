@@ -17,3 +17,5 @@ kernelspace/modcameleon.ko
 kernelspace/modcameleon.mod.c
 kernelspace/modules.order
 userspace/cameleon
+/userspace/userspace.vcxproj
+/userspace/userspace.vcxproj.filters
