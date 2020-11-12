@@ -23,6 +23,7 @@
 #include "shared_memory.h"
 #include "hardware.h"
 #include "log.h"
+#include <time.h>
 #else
 // Defines and includes to allow using IntelliSense with Visual Studio Code
 #define __INT8_TYPE__
@@ -277,7 +278,9 @@ static BOOL 		ADS126X_ReadRegisterArray	(const ADS126X_REGISTERS_ENUM eRegisterS
 static void 		ADS126X_StopAll				(void);
 static void 		ADS126X_StartAll			(void);
 static BOOL 		ADS126X_ReadRawResult		(ADS126X_ReadData_Type * const ptData);
+#if (1 == ADS126X_ENABLE_CRC)
 static uint8_t		ADS126X_CalculateCrc		(const uint8_t * const pbBuffer, const uint8_t bBufferSize);
+#endif
 static void 		ADS126X_ConfigureInput		(const ADS126X_INPUTS_ENUM eInput);
 static BOOL 		ADS126X_ConvertReading		(const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_Type *ptAdcData);
 static BOOL 		ADS126X_GetReading			(ADS126X_ReadData_Type *ptAdcData);
