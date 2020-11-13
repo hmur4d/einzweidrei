@@ -167,7 +167,7 @@ static const ADS126X_INPUT_MUX_STRUCT		ADS126X_INPUT_MUX_ARRAY[ADS126X_INPUTS_NU
 	{ .bInputMux = ((0x07 << 4) | (0x00)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "AG_GX"			},	// ADS126X_INPUT_MUX_AG_GX
 	{ .bInputMux = ((0x08 << 4) | (0x00)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "BOARD_TEMP"		},	// ADS126X_INPUT_MUX_BRD_TEMP
 	{ .bInputMux = ((0x09 << 4) | (0x00)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "RAIL_4V1"		},	// ADS126X_INPUT_MUX_RAIL_4V1
-	{ .bInputMux = ((0x0A << 4) | (0x01)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "RAIL_6V1"		},	// ADS126X_INPUT_MUX_RAIL_6V1
+	{ .bInputMux = ((0x0A << 4) | (0x00)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "RAIL_6V1"		},	// ADS126X_INPUT_MUX_RAIL_6V1
 	{ .bInputMux = ((0x0B << 4) | (0x0B)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "THERMOM"		},	// ADS126X_INPUT_MUX_THERMOM, Internal Temperature Sensor (Thermometer)
 	{ .bInputMux = ((0x0C << 4) | (0x0C)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "AVDD_MON"		},	// ADS126X_INPUT_MUX_AVDD_MON, Analog Power Supply Monitor
 	{ .bInputMux = ((0x0D << 4) | (0x0D)),	.eSampleRate = ADS126X_SPS_7200,	.eGain = ADS126X_PGA_GAIN_1,	.pcInputName = "DVDD_MON"		},	// ADS126X_INPUT_MUX_DVDD_MON, Digital Power Supply Monitor
@@ -189,18 +189,19 @@ static const ADS126X_GATHER_STRUCT		ADS126X_GATHER_ARRAY[ADS126X_INPUTS_NUM_TOTA
 	 * Example:  100SPS  SINC4 	(from Table 8) => ((40.43ms + 0.605ms) * (1.02) * (1 + 200/1e6)) = 41.86407114ms => rounded up to 42300us
 	 * Example:  400SPS  SINC4 	(from Table 8) => ((10.43ms + 0.605ms) * (1.02) * (1 + 200/1e6)) = 11.25795114ms => rounded up to 11500us
 	 * Example:  7200SPS SINC1 	(from Table 8) => ((0.564ms + 0.0ms) * (1.02) * (1 + 200/1e6)) = 0.5753950566ms => rounded up to 600us
+	 * Example:  7200SPS SINC3 	(from Table 8) => ((0.841ms + 0.605ms) * (1.02) * (1 + 200/1e6)) = 1.475214984ms => rounded up to 1500us
 	 */
-	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AG_SENSE_B0
-	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AG_SENSE_GX
-	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AG_B0
-	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AG_GX
-	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_BOARD_TEMP
-	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_RAIL_4V1
-	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_RAIL_6V1
-	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_THERMOM, Internal Temperature Sensor (Thermometer)
-	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_AVDD_MON, Analog Power Supply Monitor
-	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_DVDD_MON, Digital Power Supply Monitor
-	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 600,	},	// ADS126X_INPUT_MUX_EXT_VREF, External Voltage Reference
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_AG_SENSE_B0
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_AG_SENSE_GX
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_AG_B0
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_AG_GX
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_BOARD_TEMP
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_RAIL_4V1
+	{ .fEnabled = TRUE,		.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_RAIL_6V1
+	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_THERMOM, Internal Temperature Sensor (Thermometer)
+	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_AVDD_MON, Analog Power Supply Monitor
+	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_DVDD_MON, Digital Power Supply Monitor
+	{ .fEnabled = FALSE,	.dwSettleUs = 0,		.dwDwellUs = 1500,	},	// ADS126X_INPUT_MUX_EXT_VREF, External Voltage Reference
 };
 
 #if 0
@@ -916,7 +917,7 @@ void ADS126X_ConfigureInput(const ADS126X_INPUTS_ENUM eInput)
 				ADS126X_SetRegister(ADS126X_REG_MODE0,  ((ADS126X_INPUT_MUX_ARRAY[eInput].eSampleRate & 0x0F)<<3) | 0x02);
 
 				/* *************************************************************
-				 * SSet Mode1 Register settings:
+				 * Set Mode1 Register settings:
 				 * 	- Disable chop mode
 				 * 	- Use pulse conversion (one-shot)
 				 * 	- Use a conversion start delay of 605us
