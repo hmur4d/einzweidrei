@@ -1087,7 +1087,7 @@ BOOL ADS126X_GetReading(ADS126X_ReadData_Type *ptAdcData)
 				ptAdcData->fNewData = ((ptAdcData->tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_DRDY) != 0);	// Check if this is a new data reading (for this ADC input)
 				ptAdcData->fValid &= ptAdcData->fNewData;
 
-				ptAdcData->fValid &= ((ptAdcData->tRawData.bStatus & 0x3F) == 0);	// Ensure there are no active alarms on the ADS126X
+				ptAdcData->fValid &= ((ptAdcData->tRawData.bStatus & 0xFB) == 0);	// Ensure there are no active alarms on the ADS126X
 
 				fIsDataOK = ptAdcData->fValid;
 			}
@@ -1205,7 +1205,8 @@ BOOL ADS126X_ConvertReading(const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_T
 					// Convert the ADC reading to voltage
 					// Use the previously measured latest result for A_VDD to scale this reading
 					//ptAdcData->dbReading *= 5.1;	// Use an approximate value for A_VDD as reference
-					ptAdcData->dbReading *= ADS126X_ADC_STATUS.dbMeasuredAvdd; // Use the previously cached value for A_VDD
+					//ptAdcData->dbReading *= ADS126X_ADC_STATUS.dbMeasuredAvdd; // Use the previously cached value for A_VDD
+					ptAdcData->dbReading *= ADS126X_ADC_REF_INT;
 
 					break;
 				}
@@ -1344,10 +1345,6 @@ double ADS126X_GetReadingFromChip(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbS
 	double 					dbResult = NAN;
 	BOOL					fSuccess = TRUE;
 	ADS126X_ReadData_Type 	tAdcData;
-#if 0
-	const uint8_t			bPGAL_ALM_BIT_MASK = ADS126X_STATUS_BYTE_MASK_PGAL_ALM;
-	const uint8_t 			bPGA_ALARM_ALL_MASK = (ADS126X_STATUS_BYTE_MASK_PGAL_ALM | ADS126X_STATUS_BYTE_MASK_PGAH_ALM);
-#endif
 
 	if (eInput < ADS126X_INPUTS_NUM_TOTAL)
 	{
@@ -1362,22 +1359,22 @@ double ADS126X_GetReadingFromChip(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbS
 			{
 				// The reading is known to be good
 			}
-#if 0
+#if 1
 			// Note:  The reading might still be usable!
-			// Ignore any Status byte errors when measuring the External Reference voltage
-			// Note: Measuring the External Reference will trigger a PGA alarm (as AVSS is within 0.2V of GND)
-			//			Will trigger PGAL_ALM (Bit 3)
-			else if ((ADS126X_INPUT_MUX_EXT_REF == eInput) && ((tAdcData.tRawData.bStatus & bPGAL_ALM_BIT_MASK) == bPGAL_ALM_BIT_MASK))
+			// Ignore any Status byte errors when performing a single-ended measurement
+			// Note: Measuring a single-ended input will trigger a PGA alarm (as AVSS is within 0.2V of GND)
+			//			Will trigger PGAL_ALM (Bit 5)
+			else if (	(	(ADS126X_INPUT_MUX_AG_B0 == eInput) ||
+							(ADS126X_INPUT_MUX_AG_GX == eInput) ||
+							(ADS126X_INPUT_MUX_BOARD_TEMP == eInput) ||
+							(ADS126X_INPUT_MUX_RAIL_4V1 == eInput) ||
+							(ADS126X_INPUT_MUX_RAIL_6V1 == eInput) ||
+							(ADS126X_INPUT_MUX_EXT_VREF == eInput)
+						) && ((tAdcData.tRawData.bStatus & ADS126X_STATUS_BYTE_MASK_PGAL_ALM) == ADS126X_STATUS_BYTE_MASK_PGAL_ALM)
+					)
 			{
 				// The reading is found to be good after further investigation
 			}
-			else if (/* (eInput >= ADS126X_INPUT_MUX_RTD1) && */ (eInput <= ADS126X_INPUT_MUX_RTD3) && ((tAdcData.tRawData.bStatus & ~bPGA_ALARM_ALL_MASK) == ADS126X_STATUS_BYTE_MASK_DRDY))
-			{
-				// The reading is found to be possibly usable after further investigation
-				// Only PGA alarm bits were found to be set
-				fSuccess = FALSE;	// Keep returning NAN (prevent any possibly invalid reading from being used)
-			}
-#endif
 			else
 			{
 				fSuccess = FALSE;
