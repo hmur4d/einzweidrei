@@ -1612,6 +1612,7 @@ uint32_t ADS126X_ShowData(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct
 	}
 #endif
 
+#if 0
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
 						"\r\n"
 						);
@@ -1625,6 +1626,7 @@ uint32_t ADS126X_ShowData(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct
 	dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
 						"\r\n"
 						);
+#endif
 
 	return dwNumChars;
 }
