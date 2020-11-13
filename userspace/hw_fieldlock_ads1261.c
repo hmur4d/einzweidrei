@@ -889,7 +889,7 @@ void ADS126X_ConfigureInput(const ADS126X_INPUTS_ENUM eInput)
 				 * 	- Enable PGA (do not enable PGA bypass)
 				 * 	- Set PGA gain as set in ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray array
 				 */
-				ADS126X_SetRegister(ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[eInput] & 0x7));
+				ADS126X_SetRegister(ADS126X_REG_PGA, (0x01<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[eInput] & 0x7));
 
 				break;
 			}
@@ -929,7 +929,7 @@ void ADS126X_ConfigureInput(const ADS126X_INPUTS_ENUM eInput)
 				 * 	- Enable PGA (do not enable PGA bypass)
 				 * 	- Set PGA gain as set in ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray array
 				 */
-				ADS126X_SetRegister(ADS126X_REG_PGA, (0x00<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[eInput] & 0x7));
+				ADS126X_SetRegister(ADS126X_REG_PGA, (0x01<<7) | (ADS126X_ADC_CONTROL_INTERNAL.tPgaGainArray[eInput] & 0x7));
 
 				break;
 			}
@@ -1798,7 +1798,7 @@ uint32_t ADS126X_ShowDiag(char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 	for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-				"Diag (PGA High/Low Alarm, Diff), Input: %u,  %3lu,%3lu\r\n",
+				"Diag (PGA High Alarm, PGA Low Alarm), Input: %u,  %3lu,%3lu\r\n",
 				eInput,
 				tAdcDiagnosticsStruct.dwPgaOutputHighAlarmCounter[eInput], tAdcDiagnosticsStruct.dwPgaOutputLowAlarmCounter[eInput]
 				);
