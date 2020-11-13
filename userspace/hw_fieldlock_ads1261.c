@@ -1359,7 +1359,6 @@ double ADS126X_GetReadingFromChip(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbS
 			{
 				// The reading is known to be good
 			}
-#if 1
 			// Note:  The reading might still be usable!
 			// Ignore any Status byte errors when performing a single-ended measurement
 			// Note: Measuring a single-ended input will trigger a PGA alarm (as AVSS is within 0.2V of GND)
