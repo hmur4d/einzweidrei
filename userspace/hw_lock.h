@@ -24,7 +24,13 @@ typedef struct {
 } dac_profile_t;
 
 
+int lock_write_traces(int32_t* b0_current_uamps, int32_t* gx_current_uamps);
+
 int lock_init_board();
+
+int lock_read_board_temperature();
+
+int lock_read_b0_art_ground_current(int dropCount, int numAvg);
 
 
 

@@ -12,6 +12,7 @@
 #include "shim_config_files.h"
 #include "hw_amps.h"
 #include "hw_pa.h"
+#include "hw_lock.h"
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -638,6 +639,48 @@ static void run_pa_uart_command(clientsocket_t* client, header_t* header, const 
 	free(response);
 }
 
+static void cmd_lock_read_board_temperature(clientsocket_t* client, header_t* header, const void* body) {
+
+	lock_read_board_temperature();
+
+}
+
+static void cmd_lock_read_b0_art_ground_current(clientsocket_t* client, header_t* header, const void* body) {
+	int32_t drop_count = header->param1;
+	int32_t num_averages = header->param2;
+	int current_uamp=lock_read_b0_art_ground_current(drop_count, num_averages);
+	reset_header(header);
+
+	// The result is the accumulated current divided by the number of averages
+	header->param1 = current_uamp;
+
+	log_info("commande lock_read_b0_art_ground_current : %.3f mA", (header->param1 / 1000.0));
+
+	int8_t  data[0];
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
+static void cmd_lock_write_traces(clientsocket_t* client, header_t* header, const void* body) {
+	if (header->param1 == 1) {// 1-> body contains currents in uA
+
+		// Write trace current in micro amps
+		int32_t gx_traces_to_zero[LOCK_DAC_CHANNEL_COUNT];
+		log_info("lock_write_b0_trace in micro amps");
+		lock_write_traces((int32_t*)body, gx_traces_to_zero);
+
+	}
+
+	reset_header(header);
+
+	header->body_size = 0;
+	int8_t  data[0];
+
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+
+}
 //--
 
 bool register_all_commands() {
@@ -673,6 +716,10 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_WRITE_TRACE, write_traces);
 	success &= register_command_handler(CMD_READ_TRACE, read_traces);
 	success &= register_command_handler(CMD_PA_UART_COMMAND, run_pa_uart_command);
+
+	success &= register_command_handler(CMD_LOCK_READ_BOARD_TEMPERATURE, cmd_lock_read_board_temperature);
+	success &= register_command_handler(CMD_LOCK_READ_B0_ART_GROUND_CURRENT, cmd_lock_read_b0_art_ground_current);
+	success &= register_command_handler(CMD_LOCK_WRITE_B0_TRACES, cmd_lock_write_traces);
 
 
 	return success;

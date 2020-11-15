@@ -7,6 +7,7 @@
 #include "ram.h"
 #include "memory_map.h"
 #include "hw_fieldlock_ads1261.h"
+#include "hw_fieldlock_eeprom.h"
 
 
 
@@ -154,8 +155,8 @@ int load_lock_calibrations(int board_id) {
 
 int lock_write_b0_gx_register() {
 	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
-		b0_profile.binary[i] = pow(2, LOCK_DAC_BIT-1) * ( LOCK_BOARD_B0_RESISTANCE_RATIO * b0_profile.full_scale_current[i]*0.001 * gains[i] / LOCK_BOARD_VREF);
-		gx_profile.binary[i] = pow(2, LOCK_DAC_BIT-1) * ( LOCK_BOARD_GX_RESISTANCE_RATIO * gx_profile.full_scale_current[i]*0.001 * gains[i+8] / LOCK_BOARD_VREF);
+		b0_profile.binary[i] = (int)(pow(2, LOCK_DAC_BIT-1) * ( LOCK_BOARD_B0_RESISTANCE_RATIO * b0_profile.full_scale_current[i]*0.001 * gains[i] / LOCK_BOARD_VREF)+0.5);
+		gx_profile.binary[i] = (int)(pow(2, LOCK_DAC_BIT-1) * ( LOCK_BOARD_GX_RESISTANCE_RATIO * gx_profile.full_scale_current[i]*0.001 * gains[i+8] / LOCK_BOARD_VREF)+0.5);
 	}
 
 	shared_memory_t* mem = shared_memory_acquire();
@@ -180,6 +181,44 @@ int lock_write_b0_gx_register() {
 	return 0;
 }
 
+
+/*
+* function lock_write_traces
+* set the scale register to 0 to cut data comming from FPGA 
+* use the zero register to write to the DAC directly
+* currents are convert to DAC value without applying gain correction from calibration
+*/
+int lock_write_traces(int32_t* b0_current_uamps, int32_t* gx_current_uamps) {
+	int32_t b0_offset[LOCK_DAC_CHANNEL_COUNT];
+	int32_t gx_offset[LOCK_DAC_CHANNEL_COUNT];
+
+	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
+		b0_offset[i] = (int32_t)(pow(2, LOCK_DAC_BIT - 1) * (LOCK_BOARD_B0_RESISTANCE_RATIO * b0_current_uamps[i]* 1e-6  / LOCK_BOARD_VREF)+0.5);
+		gx_offset[i] = (int32_t)(pow(2, LOCK_DAC_BIT - 1) * (LOCK_BOARD_GX_RESISTANCE_RATIO * gx_current_uamps[i] * 1e-6 / LOCK_BOARD_VREF)+0.5);
+	}
+
+	shared_memory_t* mem = shared_memory_acquire();
+	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
+		int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_B0_SCALE_TRACE_0 + i);
+		printf("b0_scale trace reg 0x%x = 0x%x\n", ram_offset_byte, 0);
+		*(mem->rams + ram_offset_byte / 4) = 0;
+
+		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_GX_SCALE_TRACE_0 + i);
+		printf("gx_scale trace reg 0x%x = 0x%x\n", ram_offset_byte, 0);
+		*(mem->rams + ram_offset_byte / 4) = 0;
+
+		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_B0_OFFSET_0 + i);
+		printf("b0_offset reg 0x%x = 0x%x\n", ram_offset_byte, b0_offset[i] + LOCK_DAC_OFFSET);
+		*(mem->rams + ram_offset_byte / 4) = b0_offset[i] ;
+
+		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_GX_OFFSET_0 + i);
+		printf("gx_offset reg 0x%x = 0x%x\n", ram_offset_byte, gx_offset[i] + LOCK_DAC_OFFSET);
+		*(mem->rams + ram_offset_byte / 4) = gx_offset[i];
+	}
+	shared_memory_release(mem);
+	return 0;
+}
+
 int lock_init_board() {
 
 	load_lock_profile(&b0_profile, B0_PROFILE_FILENAME);
@@ -194,6 +233,19 @@ int lock_init_board() {
 
 	return 0;
 }
+
+
+int lock_read_board_temperature() {
+	//TODO Read board temp with the adc
+	return 5000;
+}
+
+int lock_read_b0_art_ground_current(int dropCount, int numAvg) {
+	//TODO Read board b0 art ground current
+	return 1111;
+}
+
+
 
 int lock_main(int argc, char** argv) {
 	if (argc < 3) {

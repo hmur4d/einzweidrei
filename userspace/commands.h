@@ -79,6 +79,13 @@ Command handlers: command id and implementation.
 // PA Board
 #define CMD_PA_UART_COMMAND							10000 + 0x0		// Arbitrary PA UART command
 
+// LOCK Board
+#define CMD_LOCK_READ_B0_ART_GROUND_CURRENT			11000 + 0x0		// LOCK board feature
+#define CMD_LOCK_READ_BOARD_TEMPERATURE				11000 + 0x1
+#define CMD_LOCK_READ_EEPROM						11000 + 0x2
+#define CMD_LOCK_WRITE_EEPROM						11000 + 0x3
+#define CMD_LOCK_WRITE_B0_TRACES					11000 + 0x4
+
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message
 #define PROBE_CHANGED                               0x20000 + 0x1
