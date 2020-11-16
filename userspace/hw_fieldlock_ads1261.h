@@ -149,7 +149,7 @@ double 		ADS126X_CalculateBoardTemperature	(const double dbRawValue);
 void 		ADS126X_Initialize					(void);
 uint32_t 	ADS126X_Test						(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 void		ADS126X_GatherAll					(ADS126X_RESULT_TYPE *ptAdcExtResultStruct);
-double		ADS126X_GatherSingle				(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbStatusByte);
+double		ADS126X_GatherSingle				(const ADS126X_INPUTS_ENUM eInput, const uint8_t bNumConversions, uint8_t *pbStatusByte);
 void 		ADS126X_SetPgaGain					(const ADS126X_INPUTS_ENUM eInput, const ADS126X_PgaGain_Enum ePgaGain);
 uint32_t 	ADS126X_ShowStatus					(char *pcWriteBuffer, uint32_t dwWriteBufferLen);
 uint32_t 	ADS126X_ShowData					(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct, char *pcWriteBuffer, uint32_t dwWriteBufferLen);

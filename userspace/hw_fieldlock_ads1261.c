@@ -1443,12 +1443,13 @@ double ADS126X_GetReadingFromChip(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbS
 
 /*******************************************************************************
  * Function:	ADS126X_GatherSingle()
- * Parameters:	const ADS126X_INPUTS_ENUM eInput, 
- * 				uint8_t *pbStatusByte,
+ * Parameters:	const ADS126X_INPUTS_ENUM eInput, Input channel to gather data for
+ * 				uint8_t *pbStatusByte, ADC status byte, use NULL to ignore
+ * 				const uint8_t bNumConversions, Number of conversions to use in average
  * Return:		double
  * Notes:		High-level function to gather data from a single input (blocking until complete)
  ******************************************************************************/
-double ADS126X_GatherSingle(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbStatusByte)
+double ADS126X_GatherSingle(const ADS126X_INPUTS_ENUM eInput, const uint8_t bNumConversions, uint8_t *pbStatusByte)
 {
 	double dbResult = NAN;
 
@@ -1467,10 +1468,7 @@ double ADS126X_GatherSingle(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbStatusB
 			usleep(ADS126X_GATHER_ARRAY[eInput].dwSettleUs);
 		}
 
-		//const uint8_t bConversionsTotal = ((eInput >= ADS126X_INPUT_MUX_RTD1) && (eInput <= ADS126X_INPUT_MUX_RTD3)) ? 4 : 1;
-		const uint8_t bConversionsTotal = 1;
-
-		for (uint8_t bConversions=0; bConversions<bConversionsTotal; bConversions++)
+		for (uint32_t dwConversions=0; dwConversions<bNumConversions; dwConversions++)
 		{
 			ADS126X_StartAll();
 
@@ -1481,9 +1479,9 @@ double ADS126X_GatherSingle(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbStatusB
 		}
 
 		// Only average the result sum if more than one conversion was gathered
-		if (bConversionsTotal > 1)
+		if (bNumConversions > 1)
 		{
-			dbResult /= ((double) bConversionsTotal);
+			dbResult /= ((double) bNumConversions);
 		}
 	}
 
