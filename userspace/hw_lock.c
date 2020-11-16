@@ -10,7 +10,6 @@
 #include "hw_fieldlock_eeprom.h"
 
 
-
 dac_profile_t b0_profile;
 dac_profile_t gx_profile;
 int lock_board_id;
@@ -231,18 +230,28 @@ int lock_init_board() {
 	print_lock_profile(&gx_profile, GX_PROFILE_FILENAME);
 	print_lock_calib();
 
+	//ADC init
+	ADS126X_Initialize();
+
+
 	return 0;
 }
 
-
-int lock_read_board_temperature() {
-	//TODO Read board temp with the adc
-	return 5000;
+/*
+	Board temperature is ADC input 4
+*/
+double lock_read_board_temperature() {
+	ADS126X_RESULT_TYPE		tAdcExtResultStruct;
+	ADS126X_GatherAll(&tAdcExtResultStruct);
+	return tAdcExtResultStruct.dbResultArray[4];
 }
-
-int lock_read_b0_art_ground_current(int dropCount, int numAvg) {
-	//TODO Read board b0 art ground current
-	return 1111;
+/*
+	B0 art gound is ADC input 0 (SENS_B0) 
+*/
+double lock_read_b0_art_ground_current(int dropCount, int numAvg) {
+	ADS126X_RESULT_TYPE		tAdcExtResultStruct;
+	ADS126X_GatherAll(&tAdcExtResultStruct);
+	return tAdcExtResultStruct.dbResultArray[0];
 }
 
 

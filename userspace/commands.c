@@ -641,18 +641,26 @@ static void run_pa_uart_command(clientsocket_t* client, header_t* header, const 
 
 static void cmd_lock_read_board_temperature(clientsocket_t* client, header_t* header, const void* body) {
 
-	lock_read_board_temperature();
+	double temperature=lock_read_board_temperature();
 
+	reset_header(header);
+	header->param1 = (int)(temperature*1000);
+	header->body_size = 0;
+	int8_t  data[0];
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+	log_info("commande cmd_lock_read_board_temperature : %.3f degree celsius", (header->param1 / 1000.0));
 }
 
 static void cmd_lock_read_b0_art_ground_current(clientsocket_t* client, header_t* header, const void* body) {
 	int32_t drop_count = header->param1;
 	int32_t num_averages = header->param2;
-	int current_uamp=lock_read_b0_art_ground_current(drop_count, num_averages);
+	double current=lock_read_b0_art_ground_current(drop_count, num_averages);
 	reset_header(header);
 
 	// The result is the accumulated current divided by the number of averages
-	header->param1 = current_uamp;
+	header->param1 = (int)(current*1000.0);
 
 	log_info("commande lock_read_b0_art_ground_current : %.3f mA", (header->param1 / 1000.0));
 
@@ -665,7 +673,7 @@ static void cmd_lock_write_traces(clientsocket_t* client, header_t* header, cons
 	if (header->param1 == 1) {// 1-> body contains currents in uA
 
 		// Write trace current in micro amps
-		int32_t gx_traces_to_zero[LOCK_DAC_CHANNEL_COUNT];
+		int32_t gx_traces_to_zero[LOCK_DAC_CHANNEL_COUNT] = {0};
 		log_info("lock_write_b0_trace in micro amps");
 		lock_write_traces((int32_t*)body, gx_traces_to_zero);
 
