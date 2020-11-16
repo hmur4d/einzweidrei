@@ -1442,6 +1442,56 @@ double ADS126X_GetReadingFromChip(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbS
 
 
 /*******************************************************************************
+ * Function:	ADS126X_GatherSingle()
+ * Parameters:	const ADS126X_INPUTS_ENUM eInput, 
+ * 				uint8_t *pbStatusByte,
+ * Return:		double
+ * Notes:		High-level function to gather data from a single input (blocking until complete)
+ ******************************************************************************/
+double ADS126X_GatherSingle(const ADS126X_INPUTS_ENUM eInput, uint8_t *pbStatusByte)
+{
+	double dbResult = NAN;
+
+	if (ADS126X_IsInputUsable(eInput))
+	{
+		// Ensure conversion is stopped
+		ADS126X_StopAll();
+
+		// Configure chip to get the requested type of reading
+		ADS126X_ConfigureInput(eInput);
+
+		// Wait for analog circuits to settle before starting RTD conversions
+		// Only request any delay if the given value is greater than zero
+		if (ADS126X_GATHER_ARRAY[eInput].dwSettleUs > 0)
+		{
+			usleep(ADS126X_GATHER_ARRAY[eInput].dwSettleUs);
+		}
+
+		//const uint8_t bConversionsTotal = ((eInput >= ADS126X_INPUT_MUX_RTD1) && (eInput <= ADS126X_INPUT_MUX_RTD3)) ? 4 : 1;
+		const uint8_t bConversionsTotal = 1;
+
+		for (uint8_t bConversions=0; bConversions<bConversionsTotal; bConversions++)
+		{
+			ADS126X_StartAll();
+
+			usleep(ADS126X_GATHER_ARRAY[eInput].dwDwellUs);
+
+			// Get the conversion results
+			dbResult += ADS126X_GetReadingFromChip(eInput, pbStatusByte);
+		}
+
+		// Only average the result sum if more than one conversion was gathered
+		if (bConversionsTotal > 1)
+		{
+			dbResult /= ((double) bConversionsTotal);
+		}
+	}
+
+	return dbResult;
+}
+
+
+/*******************************************************************************
  * Function:	ADS126X_GatherAll()
  * Parameters:	ADS126X_RESULT_TYPE *ptResult,
  * Return:		void
@@ -1589,7 +1639,7 @@ uint32_t ADS126X_ShowData(const ADS126X_RESULT_TYPE * const ptAdcExtResultStruct
 	for (ADS126X_INPUTS_ENUM eInput=0; eInput<ADS126X_INPUTS_NUM_TOTAL; eInput++)
 	{
 		dwNumChars += SystemSnprintfCat((char*)&pcWriteBuffer[dwNumChars], (dwWriteBufferLen - dwNumChars),
-							"Input: %u (%-7s),   %+9.4f (0x%02X)\r\n",
+							"Input: %u (%-11s),   %+9.4f (0x%02X)\r\n",
 							eInput,
 							ADS126X_INPUT_MUX_ARRAY[eInput].pcInputName,
 							ptAdcExtResultStruct->dbResultArray[eInput],
