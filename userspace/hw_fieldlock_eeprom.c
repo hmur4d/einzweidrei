@@ -555,11 +555,27 @@ int EepromTestMain(void)
 			EepromReadBytes(0x0000, &pbBuffer1[0], EEPROM_WRITABLE_SIZE_BYTES);
 			EepromReadBytes(0x0000, &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES);
 
+#if 0
 			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
 			{
 				iReturn = -1;
 				log_error("EepromTest, Consecutive reads do not match!");
 			}
+#else
+			for (int i=0; i<EEPROM_WRITABLE_SIZE_BYTES; i++)
+			{
+				if (pbBuffer1[i] != pbBuffer2[i])
+				{
+					iReturn = -1;
+					log_error("EepromTest, Consecutive reads do not match!, Address of mismatch: %d, 0x%02X != 0x%02X", 
+								i,
+								pbBuffer1[i],
+								pbBuffer2[i]
+								);
+					break;
+				}
+			}
+#endif
 
 			// Write a known pattern to the EEPROM and verify it matches what is read back
 			memset(&pbBuffer1[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
