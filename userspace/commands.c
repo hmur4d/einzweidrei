@@ -656,13 +656,17 @@ static void cmd_lock_read_board_temperature(clientsocket_t* client, header_t* he
 static void cmd_lock_read_b0_art_ground_current(clientsocket_t* client, header_t* header, const void* body) {
 	int32_t drop_count = header->param1;
 	int32_t num_averages = header->param2;
-	double current=lock_read_b0_art_ground_current(drop_count, num_averages);
+	double current = 0;
+	double gxCurrent = 0;
+	lock_read_art_ground_currents(drop_count, num_averages, &current, &gxCurrent);
 	reset_header(header);
 
 	// The result is the accumulated current divided by the number of averages
-	header->param1 = (int)(current*1000.0);
+	header->param1 = (int)(current * 1000000.0);
+	// Also include the gx current, since
+	header->param2 = (int)(gxCurrent * 1000000.0);
 
-	log_info("commande lock_read_b0_art_ground_current : %.3f mA", (header->param1 / 1000.0));
+	log_info("commande lock_read_b0_art_ground_current : B0=%d uA, GX=%d uA", header->param1, (int)(gxCurrent * 1000000.0));
 
 	int8_t  data[0];
 	if (!send_message(client, header, data)) {
@@ -671,12 +675,11 @@ static void cmd_lock_read_b0_art_ground_current(clientsocket_t* client, header_t
 }
 static void cmd_lock_write_traces(clientsocket_t* client, header_t* header, const void* body) {
 	if (header->param1 == 1) {// 1-> body contains currents in uA
-
 		// Write trace current in micro amps
-		int32_t gx_traces_to_zero[LOCK_DAC_CHANNEL_COUNT] = {0};
-		log_info("lock_write_b0_trace in micro amps");
-		lock_write_traces((int32_t*)body, gx_traces_to_zero);
-
+		int32_t gx_traces_currents[LOCK_DAC_CHANNEL_COUNT] = {0};
+		if (header->body_size >= sizeof(gx_traces_currents))
+			memcpy(gx_traces_currents, (int32_t*)body, sizeof(gx_traces_currents));
+		lock_write_traces((int32_t*)body, gx_traces_currents);
 	}
 
 	reset_header(header);
