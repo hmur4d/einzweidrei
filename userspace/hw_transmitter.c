@@ -13,7 +13,7 @@ uint32_t CF1[4] = { 0x0001010A,0x0001010A,0x0001010A,0x0001010A };		// set 3wire
 uint32_t CF2[4] = { 0x00408000,0x00408000,0x00408000,0x00808000 };		// set SYNC_CLK and SYNC_OUT disable, Matched latency ENABLE, parallel_data_port_enable for DDS0-3 and 
 uint32_t CF4[4] = { 0x00052120,0x00052120,0x00052120,0x00052120 };		// Default value required
 uint32_t USR0[4] = { 0x00000840 ,0x00000840 ,0x00000840 ,0x00000840 };	// set CAL_W_SYNC=1 and SYNC IN DELAY
-uint32_t DIG_RAMP[4] = { 0x2048 ,0x2048 ,0x2048 ,0x2048 };				// value of B for 64 when AB is used B=64
+uint32_t DIG_RAMP[4] = { 2048 ,2048 ,2048 ,2048 };				// value of B for 64 when AB is used B=64
 
 float last_sync_temperature = 0;
 
@@ -145,7 +145,9 @@ void init_DDS() {
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x1, CF2[i]);
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x3, CF4[i]);
 		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x5, DIG_RAMP[i]);
+		ret += dds_write_n_verify(i + 1, mem->dds_ioupdate, 0x14, 0);
 		ret += dds_write_n_verify_mask(i + 1, mem->dds_ioupdate, 0x1B, USR0[i],0xFFFFFF);
+		
 	}
 	write_property(mem->dds_sel, 0);
 	usleep(2);
