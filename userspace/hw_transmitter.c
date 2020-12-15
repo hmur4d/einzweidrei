@@ -96,7 +96,7 @@ void change_DDS_delays(uint8_t *delays) {
 		uint32_t value = USR0[i];
 		value &= 0xFFFFFFF8; // force bit 0-1-2 to 0
 		value |= delays[i]; // set the new delay
-		ret += dds_write_n_verify_mask(i + 1, mem->dds_ioupdate, 0x1B, value,0x3);
+		ret += dds_write_n_verify_mask(i + 1, mem->dds_ioupdate, 0x1B, value, 0x7);
 	}
 
 	spi_close(&spi_dds);
