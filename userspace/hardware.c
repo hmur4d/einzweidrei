@@ -158,6 +158,29 @@ void init_lock() {
 
 	write_property(mem->lock_dds_reset_en, 0);
 	write_property(mem->lock_nco_reset_en, 1);
+	write_property(mem->lock_nco_reset_once_en, 1);
+	write_property(mem->lock_dds_reset_once_en, 1);
+
+	/* lock hold option
+		0 = hold the regul value
+		1 = hold regul, stop TR switching, stays in TX mode, continues to transmit Tx pulses
+		2 = hold regul, no TR switching, stays in RX mode, no TX pulses
+	*/
+	int lock_hold_option = config_lock_hold_option();
+	if (lock_hold_option == 0) {
+		log_info("lock option 0 = hold the regul value");
+		write_property(mem->lock_hold_always_tx_option, 0);
+		write_property(mem->lock_hold_always_rx_option, 0);
+	}else if (lock_hold_option == 1) {
+		log_info("lock option 1 = hold regul, stop TR switching, stays in TX mode, continues to transmit Tx pulses");
+		write_property(mem->lock_hold_always_tx_option, 1);
+		write_property(mem->lock_hold_always_rx_option, 0);
+	}else if (lock_hold_option == 2) {
+		log_info("lock option 2 = hold regul, no TR switching, stays in RX mode, no TX pulses");
+		write_property(mem->lock_hold_always_tx_option, 0);
+		write_property(mem->lock_hold_always_rx_option, 1);
+	}
+
 
 	shared_memory_release(mem);
 }

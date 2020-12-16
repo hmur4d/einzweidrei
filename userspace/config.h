@@ -50,4 +50,6 @@ bool config_hardware_sync_on_temp_change();
 int config_DDS_delay(int index);
 int config_upd_port();
 
+int config_lock_hold_option();
+
 #endif

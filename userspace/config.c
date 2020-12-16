@@ -18,6 +18,7 @@
 #define ENV_HW_QTH_CLK_ACTIVATED "HARDWARE_QTH_CLK_ACTIVATED"
 #define ENV_HW_I2S_OUTPUT_ACTIVATED "HARDWARE_I2S_OUTPUT_ACTIVATED"
 #define ENV_HW_SYNC_ON_TEMP_CHANGE "HARDWARE_SYNC_ON_TEMP_CHANGE"
+#define ENV_HW_LOCK_HOLD_OPTION "HARDWARE_LOCK_HOLD_OPTION"
 
 #define ENV_HW_DDS_DELAY_0 "DDS_DELAY_0"
 #define ENV_HW_DDS_DELAY_1 "DDS_DELAY_1"
@@ -105,4 +106,9 @@ int config_DDS_delay(int index) {
 int config_upd_port() {
 	char* udp_port = getenv(ENV_HW_UPD_PORT);
 	return udp_port == NULL ? 70 : atoi(udp_port);
+}
+
+int config_lock_hold_option() {
+	char* hoption = getenv(ENV_HW_LOCK_HOLD_OPTION);
+	return hoption == NULL ? 0 : atoi(hoption);
 }
