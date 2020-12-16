@@ -175,6 +175,8 @@ void hw_gradient_init() {
 			write_wm_i2c(i2c_fd, 0x3A, 0x12, 6); // not audio no copyright
 			write_wm_i2c(i2c_fd, 0x3A, 0x1C, 0xA); // mode i2s 24bit
 			write_wm_i2c(i2c_fd, 0x3A, 0x08, 0x38); // for the RX : no hold
+
+			write_wm_i2c(i2c_fd, 0x3B, 0x1E, 0x2); //power up
 			//write_wm_i2c(i2c_fd, 0x3B, 0x1B, 2);
 			write_wm_i2c(i2c_fd, 0x3B, 0x12, 6); // not audio no copyright
 			write_wm_i2c(i2c_fd, 0x3B, 0x1C, 0xA); // mode i2s 24bit
