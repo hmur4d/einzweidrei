@@ -135,16 +135,46 @@ bool shared_memory_init(const char* memory_file) {
 		.read_ptr = NULL,
 		.write_ptr = sharedmem.lwbridge + 16378,
 		.bit_size = 1,
-		.bit_offset = 8,
+		.bit_offset = 7,
 		.name = "lock_dds_reset_en",
 	};
+
 	sharedmem.lock_nco_reset_en = (property_t){
 		.read_ptr = NULL,
 		.write_ptr = sharedmem.lwbridge + 16378,
 		.bit_size = 1,
-		.bit_offset = 4,
+		.bit_offset = 6,
 		.name = "lock_nco_reset_en",
 	};
+	sharedmem.lock_dds_reset_once_en = (property_t){
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16378,
+		.bit_size = 1,
+		.bit_offset = 5,
+		.name = "lock_dds_reset_once_en",
+	};
+	sharedmem.lock_nco_reset_once_en = (property_t){
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16378,
+		.bit_size = 1,
+		.bit_offset = 4,
+		.name = "lock_nco_reset_once_en",
+	};
+	sharedmem.lock_hold_always_tx_option = (property_t){
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16378,
+		.bit_size = 1,
+		.bit_offset = 8,
+		.name = "lock_hold_always_tx_option",
+	};
+	sharedmem.lock_hold_always_rx_option = (property_t){
+		.read_ptr = NULL,
+		.write_ptr = sharedmem.lwbridge + 16378,
+		.bit_size = 1,
+		.bit_offset = 9,
+		.name = "lock_hold_always_rx_option",
+	};
+
 	sharedmem.rxext_bitsleep_ctr = (property_t) {
 		.read_ptr = NULL,
 			.write_ptr = sharedmem.lwbridge + 16371,

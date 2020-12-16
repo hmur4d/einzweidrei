@@ -35,6 +35,10 @@ typedef struct {
 	property_t lock_sequence_on_off;
 	property_t lock_nco_reset_en;
 	property_t lock_dds_reset_en;
+	property_t lock_dds_reset_once_en;
+	property_t lock_nco_reset_once_en;
+	property_t lock_hold_always_tx_option;
+	property_t lock_hold_always_rx_option;
 	property_t lock_on_off;
 	property_t control;
 	property_t dds_sel;
