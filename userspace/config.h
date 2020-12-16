@@ -13,6 +13,16 @@
 #define SHIM_PROFIL_DIR	"/opt/RS2D/shim_profils/"
 #define SHIM_BOARD_FILE	"/opt/RS2D/amps_board.txt/"
 
+
+/**
+LOCK_HOLD_NORMAL = hold the regul value
+LOCK_HOLD_NO_TR_ALWAYS_TX = hold regul, stop TR switching, stays in TX mode, continues to transmit Tx pulses
+LOCK_HOLD_NO_TR_ALWAYS_RX = hold regul, no TR switching, stays in RX mode, no TX pulses
+*/
+#define LOCK_HOLD_NORMAL 0
+#define LOCK_HOLD_NO_TR_ALWAYS_TX 1
+#define LOCK_HOLD_NO_TR_ALWAYS_RX 2
+
 #define HPS_REVISION		10
 // HPS_REVISION		1 : base
 // HPS_REVISION		2 : delay (1,1,1,1) pour cam4 2.0 
