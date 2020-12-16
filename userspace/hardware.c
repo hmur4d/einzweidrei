@@ -161,7 +161,7 @@ void init_lock() {
 	write_property(mem->lock_nco_reset_once_en, 1);
 	write_property(mem->lock_dds_reset_once_en, 1);
 
-*
+
 	int lock_hold_option = config_lock_hold_option();
 	if (lock_hold_option == LOCK_HOLD_NORMAL) {
 		log_info("lock option 0 = hold the regul value");
