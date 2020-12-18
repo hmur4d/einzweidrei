@@ -238,32 +238,48 @@ int lock_init_board() {
 }
 
 /*
-	Board temperature is ADC input 4
+	PCB Board temperature is ADC input 4
 */
-double lock_read_board_temperature() {
-	ADS126X_RESULT_TYPE		tAdcExtResultStruct;
-	ADS126X_GatherAll(&tAdcExtResultStruct);
-	return tAdcExtResultStruct.dbResultArray[4];
+double lock_read_board_temperature(void) {
+	return ADS126X_GatherSingle(ADS126X_INPUT_MUX_BOARD_TEMP, 1, NULL);
 }
+
 /*
-	B0 art gound is ADC input 0 (SENS_B0) 
+	ADC internal temperature is ADC input 7
+*/
+double lock_read_adc_int_temperature(void) {
+	return ADS126X_GatherSingle(ADS126X_INPUT_MUX_THERMOM, 1, NULL);
+}
+
+/*
+	B0 art ground is ADC input 0 (SENSE_B0) 
 */
 double lock_read_b0_art_ground_current(int dropCount, int numAvg) {
-	ADS126X_RESULT_TYPE		tAdcExtResultStruct;
-	ADS126X_GatherAll(&tAdcExtResultStruct);
-	return tAdcExtResultStruct.dbResultArray[ADS126X_INPUT_MUX_AG_SENSE_B0];
+	return ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_B0, numAvg, NULL);
 }
+
 /*
-	B0 art gound is ADC input 0 (SENS_B0)
+	GX art ground is ADC input 1 (SENSE_GX) 
 */
-void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current_uA, double *gx_current_uA) {
-	ADS126X_RESULT_TYPE		tAdcExtResultStruct;
-	ADS126X_GatherAll(&tAdcExtResultStruct);
-	*b0_current_uA = tAdcExtResultStruct.dbResultArray[ADS126X_INPUT_MUX_AG_SENSE_B0];
-	*gx_current_uA = tAdcExtResultStruct.dbResultArray[ADS126X_INPUT_MUX_AG_SENSE_GX];
+double lock_read_gx_art_ground_current(int dropCount, int numAvg) {
+	return ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_GX, numAvg, NULL);
 }
 
+/*
+	B0 art ground is ADC input 0 (SENSE_B0), GX art ground is ADC input 1 (SENSE_GX) 
+*/
+void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current_A, double *gx_current_A) {
+	*b0_current_A = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_B0, numAvg, NULL);
+	*gx_current_A = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_GX, numAvg, NULL);
+}
 
+/*
+	Get artificial ground voltages B0 and GX
+*/
+void lock_read_art_ground_voltages(int dropCount, int numAvg, double *b0_voltage_V, double *gx_voltage_V) {
+	*b0_voltage_V = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_B0, numAvg, NULL);
+	*gx_voltage_V = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_GX, numAvg, NULL);
+}
 
 int lock_main(int argc, char** argv) {
 	if (argc < 3) {

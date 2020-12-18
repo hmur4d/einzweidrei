@@ -28,11 +28,14 @@ int lock_write_traces(int32_t* b0_current_uamps, int32_t* gx_current_uamps);
 
 int lock_init_board();
 
-double lock_read_board_temperature();
+double lock_read_board_temperature(void);
+
+double lock_read_adc_int_temperature(void);
 
 double lock_read_b0_art_ground_current(int dropCount, int numAvg);
+double lock_read_gx_art_ground_current(int dropCount, int numAvg);
 
-void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current_uA, double *gx_current_uA);
-
+void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current_A, double *gx_current_A);
+void lock_read_art_ground_voltages(int dropCount, int numAvg, double *b0_voltage_V, double *gx_voltage_V);
 
 #endif

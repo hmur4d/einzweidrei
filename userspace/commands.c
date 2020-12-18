@@ -641,23 +641,25 @@ static void run_pa_uart_command(clientsocket_t* client, header_t* header, const 
 
 static void cmd_lock_read_board_temperature(clientsocket_t* client, header_t* header, const void* body) {
 
-	double temperature=lock_read_board_temperature();
+	double temperature_pcb = lock_read_board_temperature();
+	double temperature_adc = lock_read_adc_int_temperature();
 
 	reset_header(header);
-	header->param1 = (int)(temperature*1000);
+	header->param1 = (int)(temperature_pcb*1000);
+	header->param2 = (int)(temperature_adc*1000);
 	header->body_size = 0;
 	int8_t  data[0];
 	if (!send_message(client, header, data)) {
 		log_error("Unable to send response!");
 	}
-	log_info("commande cmd_lock_read_board_temperature : %.3f degree celsius", (header->param1 / 1000.0));
+	log_info("commande cmd_lock_read_board_temperature : PCB: %.3f degree celsius, ADC: %.3f degree celsius", (header->param1 / 1000.0), (header->param2 / 1000.0));
 }
 
 static void cmd_lock_read_b0_art_ground_current(clientsocket_t* client, header_t* header, const void* body) {
 	int32_t drop_count = header->param1;
 	int32_t num_averages = header->param2;
-	double current = 0;
-	double gxCurrent = 0;
+	double current = 0.0;
+	double gxCurrent = 0.0;
 	lock_read_art_ground_currents(drop_count, num_averages, &current, &gxCurrent);
 	reset_header(header);
 

@@ -1478,7 +1478,13 @@ double ADS126X_GatherSingle(const ADS126X_INPUTS_ENUM eInput, const uint8_t bNum
 			usleep(ADS126X_GATHER_ARRAY[eInput].dwDwellUs);
 
 			// Get the conversion results
-			dbResult += ADS126X_GetReadingFromChip(eInput, pbStatusByte);
+			uint8_t bStatusByte = 0x00;
+			dbResult += ADS126X_GetReadingFromChip(eInput, &bStatusByte);
+
+			if (NULL != pbStatusByte)
+			{
+				*pbStatusByte |= bStatusByte;
+			}
 		}
 
 		// Only average the result sum if more than one conversion was gathered
