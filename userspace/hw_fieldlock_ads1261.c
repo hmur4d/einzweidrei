@@ -1471,6 +1471,13 @@ double ADS126X_GatherSingle(const ADS126X_INPUTS_ENUM eInput, const uint8_t bNum
 			usleep(ADS126X_GATHER_ARRAY[eInput].dwSettleUs);
 		}
 
+		// Ensure the variables are initialized
+		dbResult = 0.0;
+		if (NULL != pbStatusByte)
+		{
+			*pbStatusByte = 0x00;
+		}
+
 		for (uint32_t dwConversions=0; dwConversions<bNumConversions; dwConversions++)
 		{
 			ADS126X_StartAll();
