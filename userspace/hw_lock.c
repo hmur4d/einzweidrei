@@ -251,7 +251,16 @@ double lock_read_board_temperature() {
 double lock_read_b0_art_ground_current(int dropCount, int numAvg) {
 	ADS126X_RESULT_TYPE		tAdcExtResultStruct;
 	ADS126X_GatherAll(&tAdcExtResultStruct);
-	return tAdcExtResultStruct.dbResultArray[0];
+	return tAdcExtResultStruct.dbResultArray[ADS126X_INPUT_MUX_AG_SENSE_B0];
+}
+/*
+	B0 art gound is ADC input 0 (SENS_B0)
+*/
+void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current_uA, double *gx_current_uA) {
+	ADS126X_RESULT_TYPE		tAdcExtResultStruct;
+	ADS126X_GatherAll(&tAdcExtResultStruct);
+	*b0_current_uA = tAdcExtResultStruct.dbResultArray[ADS126X_INPUT_MUX_AG_SENSE_B0];
+	*gx_current_uA = tAdcExtResultStruct.dbResultArray[ADS126X_INPUT_MUX_AG_SENSE_GX];
 }
 
 

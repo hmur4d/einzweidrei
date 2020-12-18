@@ -32,7 +32,7 @@ double lock_read_board_temperature();
 
 double lock_read_b0_art_ground_current(int dropCount, int numAvg);
 
-
+void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current_uA, double *gx_current_uA);
 
 
 #endif

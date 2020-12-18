@@ -1141,7 +1141,10 @@ BOOL ADS126X_ConvertReading(const ADS126X_INPUTS_ENUM eInput, ADS126X_ReadData_T
 				case ADS126X_INPUT_MUX_AG_SENSE_B0:
 				case ADS126X_INPUT_MUX_AG_SENSE_GX:
 				{
-					// Convert the ADC reading to Current in Amps
+					// Convert the ADC reading to Current in Amps.
+					// The sign needs to be flipped, based on observations when
+					// running the shim current self test.
+					ptAdcData->dbReading *= -1.0;
 					ptAdcData->dbReading *= ADS126X_ADC_REF_EXT;
 					ptAdcData->dbReading /= 100.0;	// Gain of Current Sense chip
 					ptAdcData->dbReading /= 0.033;	// Current Sense resistor
