@@ -76,7 +76,7 @@ static void 	EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_
 static uint8_t 	EepromGetStatus(void);
 static void 	EepromReadBlock(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes);
 static void 	EepromWriteEnable(void);
-static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint8_t bBufferSize);
+static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint16_t wBufferSize);
 
 
 /*******************************************************************************
@@ -304,20 +304,20 @@ void EepromWriteEnable(void)
  * Function:	EepromWritePage()
  * Parameters:	const uint16_t wOffset,
  * 				uint8_t *pbBuffer,
- * 				const uint16_t wNumBytes,
+ * 				const uint16_t wBufferSize,
  * Return:		uint8_t, Number of bytes actually written into page
  * Summary:		Write the given bytes to the EEPROM (will write a maximum of one page (64 bytes)).
  * 				May write less if the given offset is not at the start of a page.
  ******************************************************************************/
 
-uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint8_t bBufferSize)
+uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wBufferSize)
 {
 	////////////////////////////////////////////////////////////////////////////
 	// Calculate how many bytes we can write at this offset to remain in the given page
 	// Note:  Writes cannot span EEPROM pages.  If bytes are written past the end of a page,
 	//			they will wrap and be written to the start of the same page.
 	const uint8_t bBytesToWriteMax = (EEPROM_PAGE_SIZE_BYTES - (wOffset % EEPROM_PAGE_SIZE_BYTES));
-	const uint8_t bBytesToWrite = MINIMUM(bBytesToWriteMax, bBufferSize);
+	const uint8_t bBytesToWrite = MINIMUM(bBytesToWriteMax, wBufferSize);
 
 	// Prepare to send Page Write command
 	uint8_t bCommandArray[3] = { EEPROM_REG_WRITE, ((wOffset >> 8) & 0xFF), (wOffset & 0xFF) };
@@ -360,7 +360,7 @@ uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint8_t
  * Function:	EepromWriteBytes()
  * Parameters:	const uint16_t wOffset,
  * 				uint8_t *pbBuffer,
- * 				const uint16_t wNumBytes,
+ * 				const uint16_t wBufferSize,
  * Return:		uint16_t, Number of bytes actually written into EEPROM
  * Summary:		Write the given bytes to the EEPROM without wrapping (can span multiple pages).
  ******************************************************************************/
