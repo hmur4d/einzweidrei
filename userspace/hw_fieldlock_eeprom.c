@@ -75,7 +75,7 @@ static void 	EepromSpiClose(const int spi_fd);
 static void 	EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, const unsigned int num_transfers);
 static uint8_t 	EepromGetStatus(void);
 static void 	EepromReadBlock(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes);
-static void 	EepromWriteEnable(void);
+static void 	EepromWriteEnable(const bool fEnable);
 static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint16_t wBufferSize);
 
 
@@ -94,17 +94,14 @@ bool EepromInitialize(void)
 	// Ensure the Status byte has the expected mask in it
 	if ((bStatus & EEPROM_STATUS_WIP_MASK) != 0x00)
 	{
-		fSuccess = false;
+		// Ensure any write in progress has been completed
+		usleep(eeprom_write_time_us);
 	}
 
 	if ((bStatus & EEPROM_STATUS_WEL_MASK) != 0x00)
 	{
-		fSuccess = false;
-	}
-
-	if ((bStatus & EEPROM_STATUS_BPX_MASK) != EEPROM_STATUS_BPX_DEFAULT)
-	{
-		fSuccess = false;
+		// Send the Write Disable instruction
+		EepromWriteEnable(false);
 	}
 
 	return fSuccess;
@@ -278,14 +275,14 @@ void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
 
 /*******************************************************************************
  * Function:	EepromWriteEnable()
- * Parameters:	Send Write Enable command
+ * Parameters:	bool fEnable, true to Send Write Enable command, false to send Write Disable command
  * Return:		void
  * Summary:		Send the Write Enable command to the EEPROM
  ******************************************************************************/
 
-void EepromWriteEnable(void)
+void EepromWriteEnable(const bool fEnable)
 {
-	uint8_t bWriteEnable = EEPROM_REG_WREN;
+	uint8_t bWriteEnable = fEnable ? EEPROM_REG_WREN : EEPROM_REG_WRDI;
 
 	// Create SPI transfer struct array and ensure it is zeroed out
 	struct spi_ioc_transfer transfer_array[1] = {{0}};
@@ -384,7 +381,7 @@ uint16_t EepromWriteBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint1
 		while (wBytesWritten < wAllowedBytes)
 		{
 			// Send Write Enable command
-			EepromWriteEnable();
+			EepromWriteEnable(true);
 
 			// Send data using Page Write command
 			const uint16_t wBytesToWrite = (wAllowedBytes - wBytesWritten);
@@ -542,6 +539,30 @@ int EepromTestMain(void)
 	}
 	else
 	{
+		uint16_t wWriteSize = EEPROM_WRITABLE_SIZE_BYTES;
+
+		// Only use the writeable portion of EEPROM for the write tests (read tests can still use full size)
+		// Do not disable write protection (do not risk erasing the serial number and mfg data)
+		const uint8_t bStatus = EepromGetStatus();
+		const uint8_t bWriteProtect = ((bStatus & EEPROM_STATUS_BPX_MASK) >> 2);
+		if (0x01 == bWriteProtect)
+		{
+			wWriteSize = 0x6000;
+		}
+		else if (0x02 == bWriteProtect)
+		{
+			wWriteSize = 0x4000;
+		}
+		else if (0x03 == bWriteProtect)
+		{
+			wWriteSize = 0x0000;
+			log_error("EepromTest, Entire EEPROM Write Protected, cannot perform all tests!");
+		}
+		else
+		{
+			wWriteSize = EEPROM_WRITABLE_SIZE_BYTES;
+		}
+
 		// Allocate buffers that are the full size of the EEPROM
 		uint8_t *pbBuffer1 = (uint8_t*) malloc(EEPROM_WRITABLE_SIZE_BYTES);
 		uint8_t *pbBuffer2 = (uint8_t*) malloc(EEPROM_WRITABLE_SIZE_BYTES);
@@ -585,10 +606,10 @@ int EepromTestMain(void)
 				pbBuffer1[i] = ((i + 0x19) & 0xFF);
 			}
 
-			EepromWriteBytes(0x0000, &pbBuffer1[0], EEPROM_WRITABLE_SIZE_BYTES);
-			EepromReadBytes(0x0000, &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES);
+			EepromWriteBytes(0x0000, &pbBuffer1[0], wWriteSize);
+			EepromReadBytes(0x0000, &pbBuffer2[0], wWriteSize);
 
-			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], wWriteSize))
 			{
 				iReturn = -1;
 				log_error("EepromTest, Write and read-back does not match!");
@@ -598,21 +619,24 @@ int EepromTestMain(void)
 			memset(&pbBuffer1[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
 			memset(&pbBuffer2[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
 
-			pbBuffer1[0] = 0x17;
-			EepromWriteBytes(0x1111, &pbBuffer1[0], 1);
-			pbBuffer1[1] = 0x35;
-			EepromWriteBytes(0x3333, &pbBuffer1[1], 1);
-			pbBuffer1[2] = 0x79;
-			EepromWriteBytes(0x7777, &pbBuffer1[2], 1);
-
-			EepromReadBytes(0x1111, &pbBuffer2[0], 1);
-			EepromReadBytes(0x3333, &pbBuffer2[1], 1);
-			EepromReadBytes(0x7777, &pbBuffer2[2], 1);
-
-			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			if (0x03 != bWriteProtect)
 			{
-				iReturn = -1;
-				log_error("EepromTest, Random access write and read-back does not match!");
+				pbBuffer1[0] = 0x17;
+				EepromWriteBytes(0x1111, &pbBuffer1[0], 1);
+				pbBuffer1[1] = 0x35;
+				EepromWriteBytes(0x2222, &pbBuffer1[1], 1);
+				pbBuffer1[2] = 0x79;
+				EepromWriteBytes(0x3333, &pbBuffer1[2], 1);
+
+				EepromReadBytes(0x1111, &pbBuffer2[0], 1);
+				EepromReadBytes(0x2222, &pbBuffer2[1], 1);
+				EepromReadBytes(0x3333, &pbBuffer2[2], 1);
+
+				if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+				{
+					iReturn = -1;
+					log_error("EepromTest, Random access write and read-back does not match!");
+				}
 			}
 
 			// Verify erase operation works as expected
@@ -620,7 +644,7 @@ int EepromTestMain(void)
 			memset(&pbBuffer1[0], 0xFF, EEPROM_WRITABLE_SIZE_BYTES);
 			EepromReadBytes(0x0000, &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES);
 
-			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], wWriteSize))
 			{
 				iReturn = -1;
 				log_error("EepromTest, Erase and read-back did not match!");
