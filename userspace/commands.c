@@ -694,6 +694,39 @@ static void cmd_lock_write_traces(clientsocket_t* client, header_t* header, cons
 	}
 
 }
+
+static void cmd_lock_read_eeprom_data(clientsocket_t* client, header_t* header, const void* body) {
+	const uint8_t data_type = header->param1;	// 0 = Unknown/Error, 1 = MFG blob data, 2 = CAL blob data
+	int32_t data_error = 0;						// 0 = Success, <0 = Error Code
+	uint32_t data_size = 0;						// Number of bytes in returned data blob
+	uint32_t data_checksum = 0;					// Checksum value (CRC32 (Ethernet polynomial))
+
+	const uint8_t * const data_buffer = lock_read_eeprom_data(data_type, &data_error, &data_size, &data_checksum);
+
+	reset_header(header);
+	header->param1 = data_type;
+	header->param2 = data_error;
+
+	if (NULL == data_buffer)
+	{
+		log_error("cmd_lock_read_eeprom_data() failed, data_type: %u, data_error: %d", data_type, data_error);
+	}
+	else
+	{
+		// Only populate these fields if returned pointer was not NULL
+		header->param3 = (uint32_t) data_checksum;
+		header->body_size = (uint32_t) data_size;
+		
+		log_info("cmd_lock_read_eeprom_data() succeeded, data_type: %u, data_error: %d, data_size: %u, data_checksum: 0x%08X", data_type, data_error, data_size, data_checksum);
+	}
+
+	if (!send_message(client, header, data_buffer)) {
+		log_error("Unable to send response!");
+	}
+
+	free(data_buffer);
+}
+
 //--
 
 bool register_all_commands() {
@@ -732,6 +765,7 @@ bool register_all_commands() {
 
 	success &= register_command_handler(CMD_LOCK_READ_BOARD_TEMPERATURE, cmd_lock_read_board_temperature);
 	success &= register_command_handler(CMD_LOCK_READ_B0_ART_GROUND_CURRENT, cmd_lock_read_b0_art_ground_current);
+	success &= register_command_handler(CMD_LOCK_READ_EEPROM, cmd_lock_read_eeprom_data);
 	success &= register_command_handler(CMD_LOCK_WRITE_B0_TRACES, cmd_lock_write_traces);
 
 

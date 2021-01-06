@@ -230,9 +230,11 @@ int lock_init_board() {
 	print_lock_profile(&gx_profile, GX_PROFILE_FILENAME);
 	print_lock_calib();
 
-	//ADC init
-	ADS126X_Initialize();
+	// EEPROM Init
+	EepromInitialize();
 
+	//ADC Init
+	ADS126X_Initialize();
 
 	return 0;
 }
@@ -279,6 +281,46 @@ void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current
 void lock_read_art_ground_voltages(int dropCount, int numAvg, double *b0_voltage_V, double *gx_voltage_V) {
 	*b0_voltage_V = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_B0, numAvg, NULL);
 	*gx_voltage_V = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_GX, numAvg, NULL);
+}
+
+/*
+	Read the requested eeprom data
+	data_type, 1 = request MFG data, 2 = request CAL data
+	p_data_error, error code, 0 if successful, <0 otherwise
+	Return: pointer to buffer, or NULL if error allocating buffer occurred
+*/
+void *lock_read_eeprom_data(const uint8_t data_type, int32_t *p_data_error, uint32_t *p_data_size, uint32_t *p_data_checksum)
+{
+	const uint32_t data_buffer_size = (EEPROM_TOTAL_SIZE_BYTES + 1);	// Ensure there is space for a trailing null
+	int32_t error = 0;
+	uint32_t buffer_fill = 0;
+	uint32_t checksum = 0x00;
+	
+	void *data_buffer = malloc(data_buffer_size);
+
+	if (NULL == data_buffer)
+	{
+		error = -1;
+	}
+	else
+	{
+		error = EepromReadData(data_type, data_buffer, data_buffer_size, &buffer_fill, &checksum);
+	}
+
+	if (NULL != p_data_error)
+	{
+		*p_data_error = error;
+	}
+	if (NULL != p_data_size)
+	{
+		*p_data_size = buffer_fill;
+	}
+	if (NULL != p_data_checksum)
+	{
+		*p_data_checksum = checksum;
+	}
+
+	return data_buffer;
 }
 
 int lock_main(int argc, char** argv) {

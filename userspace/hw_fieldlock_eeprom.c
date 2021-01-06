@@ -250,11 +250,11 @@ void EepromReadBlock(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
  * Parameters:	const uint16_t wOffset,
  * 				uint8_t *pbBuffer,
  * 				const uint16_t wNumBytes,
- * Return:		void
+ * Return:		uint16_t, Number of bytes actually read
  * Summary:		Read the requested bytes from the EEPROM.
  ******************************************************************************/
 
-void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes)
+uint16_t EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes)
 {
 	const uint16_t wTotalReadBytes = MINIMUM(wNumBytes, EEPROM_TOTAL_SIZE_BYTES);	// Don't try to read more than the total size of the EEPROM
 
@@ -270,6 +270,8 @@ void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
 
 		wBytesReadSoFar += wBlockNumBytes;
 	}
+
+	return wTotalReadBytes;
 }
 
 
@@ -463,6 +465,7 @@ void EepromEraseAll(void)
  * 				uint32_t dwWriteBufferLen
  * Return:		uint32_t, Number of chars written to buffer
  ******************************************************************************/
+
 uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 {
 	uint32_t dwNumChars = 0;
@@ -523,12 +526,187 @@ uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char 
 
 
 /*******************************************************************************
+ * Function:	EepromReadData()
+ * Parameters:	const uint8_t bType, 0 = Unknown, 1 = MFG data, 2 = CAL data
+ * 				uint8_t *pbBuffer, 
+ * 				const uint32_t dwBufferSize, 
+ * 				uint32_t *pdwBufferFill, 
+ * 				uint32_t *pdwChecksum,
+ * Return:		int32_t, 0 = Success, <0 = Error occurred
+ * Summary:		Read the requested data blob from the EEPROM and fill the given buffer with the blob
+ ******************************************************************************/
+
+int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dwBufferSize, uint32_t *pdwBufferFill, uint32_t *pdwChecksum)
+{
+	const char * const p_eeprom_prefix_string_mfg_data = "\x02MANUFACTURING_DATA\x03";
+	const char * const p_eeprom_prefix_string_cal_data = "\x02CALIBRATION_DATA\x03";
+	const uint16_t wReadSize = EEPROM_READ_BLOCK_MAX_BYTES;
+	
+	int iReturn = 0;
+	uint16_t wStartAddress = 0x0000;
+	uint16_t wOffset = 0;
+	uint32_t dwBufferFill = 0;
+	uint32_t dwChecksum = 0x00;
+	char *pcPrefixString = NULL;
+	char *pcFoundPrefix = NULL;
+	char *pcFoundNull = NULL;
+	char *pcFoundErased = NULL;
+	char *pcFoundBlobEnd = NULL;
+
+	// Ensure the buffer is zeroed
+	memset(&pbBuffer[0], 0x00, dwBufferSize);
+
+	if (EEPROM_READ_TYPE_MFG == bType)
+	{
+		wStartAddress = 0x0000;
+		pcPrefixString = p_eeprom_prefix_string_mfg_data;
+	}
+	else if (EEPROM_READ_TYPE_CAL == bType)
+	{
+		wStartAddress = 0x6000;
+		pcPrefixString = p_eeprom_prefix_string_cal_data;
+	}
+	else
+	{
+		iReturn = -10;
+	}
+
+	const uint16_t wPrefixLength = strlen(pcPrefixString);
+
+	// Ensure the given buffer is large enough
+	if (dwBufferSize < EEPROM_TOTAL_SIZE_BYTES)
+	{
+		iReturn = -11;
+	}
+
+	// Read in the data from the EEPROM (search for each component in the same loop)
+	uint8_t bSearchPhase = 0;
+	while (0 == iReturn)
+	{
+		const uint16_t wAddress = wStartAddress + wOffset;
+		const uint16_t wBytesRead = EepromReadBytes(wAddress, &pbBuffer[wOffset], MINIMUM(wReadSize, (EEPROM_TOTAL_SIZE_BYTES - wAddress)));
+		wOffset += wBytesRead;
+
+		// Search for the prefix
+		if (0 == bSearchPhase)
+		{
+			if (0 == wBytesRead)
+			{
+				iReturn = -20;
+				break;
+			}
+			else
+			{
+				pcFoundPrefix = strstr(&pbBuffer[0], pcPrefixString);
+
+				// Advance the search phase if the prefix was found
+				if (NULL != pcFoundPrefix)
+				{
+					bSearchPhase = 1;
+				}
+			}
+		}
+		// Search for the trailing null
+		else if (1 == bSearchPhase)
+		{
+			if (0 == wBytesRead)
+			{
+				iReturn = -21;
+				break;
+			}
+			else
+			{
+				pcFoundNull = memchr(&pbBuffer[pcFoundPrefix - pbBuffer], '\0x00', wOffset);
+				pcFoundErased = memchr(&pbBuffer[pcFoundPrefix - pbBuffer], '\0xFF', wOffset);
+
+				// Check if a NULL was found
+				if (NULL != pcFoundNull)
+				{
+					// Check if an erased byte (0xFF) was found
+					// An erased byte (0xFF) should never be found before the NULL
+					if ((NULL != pcFoundErased) && (pcFoundErased < pcFoundNull))
+					{
+						iReturn = -22;
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// Sanity check the search results
+	if (0 == iReturn)
+	{
+		// Ensure that at least some characters were found
+		if (wPrefixLength == (pcFoundNull - pbBuffer))
+		{
+			iReturn = -30;
+		}
+	}
+
+	// Search for the checksum string
+	if (0 == iReturn)
+	{
+		// Maximum length of a 32-bit ASCII hex string with "0x" prefix is 10 chars
+		if ((pcFoundNull - pbBuffer) >= 11)
+		{
+			// Find the last occurance of '}' in the blob string (start search near the end)
+			// Checksum may not be present or may be shorter than 10 chars (e.g. "0x5")
+			pcFoundBlobEnd = strrchr(&pbBuffer[(pcFoundNull - pbBuffer) - 11], '}');
+			if (NULL == pcFoundBlobEnd)
+			{
+				iReturn = -40;
+			}
+			else if (('0' == toupper(pbBuffer[(pcFoundBlobEnd - pbBuffer) + 1])) && ('X' == toupper(pbBuffer[(pcFoundBlobEnd - pbBuffer) + 2])))
+			{
+				dwChecksum = strtoul(&pbBuffer[(pcFoundBlobEnd - pbBuffer) + 1], NULL, 16);
+			}
+			else
+			{
+				iReturn = -41;
+			}
+		}
+		else
+		{
+			iReturn = -42;
+		}
+	}
+
+	// Move the found blob to the start of the given buffer
+	if (0 == iReturn)
+	{
+		// Copy the JSON blob to the start of the provided buffer
+		// Use memmove() to copy data as this function allows destination and source to overlap
+		const uint32_t dwLengthPrefix = strlen(pcPrefixString);
+		dwBufferFill = ((pcFoundBlobEnd - pcFoundPrefix) - dwLengthPrefix + 1);
+		memmove(&pbBuffer[0], &pbBuffer[dwLengthPrefix], dwBufferFill);
+		pbBuffer[dwBufferFill] = '\0x00';	// Ensure the returned data buffer is null terminated
+	}
+
+	if (NULL != pdwBufferFill)
+	{
+		*pdwBufferFill = dwBufferFill;
+	}
+
+	if (NULL != pdwChecksum)
+	{
+		*pdwChecksum = dwChecksum;
+	}
+
+	return iReturn;
+}
+
+
+/*******************************************************************************
  * Function:	EepromTestMain()
  * Parameters:	void
- * Return:		int, -1 if error, 0 otherwise
+ * Return:		int32_t, -1 if error, 0 otherwise
  * Notes:		Wrapper for test functions
  ******************************************************************************/
-int EepromTestMain(void)
+int32_t EepromTestMain(void)
 {
 	int iReturn = 0;
 
