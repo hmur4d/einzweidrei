@@ -701,7 +701,7 @@ static void cmd_lock_read_eeprom_data(clientsocket_t* client, header_t* header, 
 	uint32_t data_size = 0;						// Number of bytes in returned data blob
 	uint32_t data_checksum = 0;					// Checksum value (CRC32 (Ethernet polynomial))
 
-	void *data_buffer = lock_read_eeprom_data(data_type, &data_error, &data_size, &data_checksum);
+	uint8_t *data_buffer = lock_read_eeprom_data(data_type, &data_error, &data_size, &data_checksum);
 
 	reset_header(header);
 	header->param1 = data_type;
