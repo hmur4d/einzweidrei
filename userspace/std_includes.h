@@ -13,6 +13,7 @@ Project includes should not be added here, only unmodifiable system includes.
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <libgen.h>
 #include <time.h>
 #include <math.h>

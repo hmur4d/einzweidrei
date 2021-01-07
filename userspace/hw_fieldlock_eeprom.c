@@ -528,7 +528,7 @@ uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char 
 /*******************************************************************************
  * Function:	EepromReadData()
  * Parameters:	const uint8_t bType, 0 = Unknown, 1 = MFG data, 2 = CAL data
- * 				uint8_t *pbBuffer, 
+ * 				char *pcBuffer, 
  * 				const uint32_t dwBufferSize, 
  * 				uint32_t *pdwBufferFill, 
  * 				uint32_t *pdwChecksum,
@@ -536,10 +536,10 @@ uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char 
  * Summary:		Read the requested data blob from the EEPROM and fill the given buffer with the blob
  ******************************************************************************/
 
-int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dwBufferSize, uint32_t *pdwBufferFill, uint32_t *pdwChecksum)
+int32_t EepromReadData(const uint8_t bType, char *pcBuffer, const uint32_t dwBufferSize, uint32_t *pdwBufferFill, uint32_t *pdwChecksum)
 {
-	const char * const p_eeprom_prefix_string_mfg_data = "\x02MANUFACTURING_DATA\x03";
-	const char * const p_eeprom_prefix_string_cal_data = "\x02CALIBRATION_DATA\x03";
+	char *p_eeprom_prefix_string_mfg_data = "\x02MANUFACTURING_DATA\x03";
+	char *p_eeprom_prefix_string_cal_data = "\x02CALIBRATION_DATA\x03";
 	const uint16_t wReadSize = EEPROM_READ_BLOCK_MAX_BYTES;
 	
 	int iReturn = 0;
@@ -554,7 +554,7 @@ int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dw
 	char *pcFoundBlobEnd = NULL;
 
 	// Ensure the buffer is zeroed
-	memset(&pbBuffer[0], 0x00, dwBufferSize);
+	memset(&pcBuffer[0], 0x00, dwBufferSize);
 
 	if (EEPROM_READ_TYPE_MFG == bType)
 	{
@@ -584,7 +584,7 @@ int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dw
 	while (0 == iReturn)
 	{
 		const uint16_t wAddress = wStartAddress + wOffset;
-		const uint16_t wBytesRead = EepromReadBytes(wAddress, &pbBuffer[wOffset], MINIMUM(wReadSize, (EEPROM_TOTAL_SIZE_BYTES - wAddress)));
+		const uint16_t wBytesRead = EepromReadBytes(wAddress, &pcBuffer[wOffset], MINIMUM(wReadSize, (EEPROM_TOTAL_SIZE_BYTES - wAddress)));
 		wOffset += wBytesRead;
 
 		// Search for the prefix
@@ -597,7 +597,7 @@ int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dw
 			}
 			else
 			{
-				pcFoundPrefix = strstr(&pbBuffer[0], pcPrefixString);
+				pcFoundPrefix = strstr(&pcBuffer[0], pcPrefixString);
 
 				// Advance the search phase if the prefix was found
 				if (NULL != pcFoundPrefix)
@@ -616,8 +616,8 @@ int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dw
 			}
 			else
 			{
-				pcFoundNull = memchr(&pbBuffer[pcFoundPrefix - pbBuffer], '\0x00', wOffset);
-				pcFoundErased = memchr(&pbBuffer[pcFoundPrefix - pbBuffer], '\0xFF', wOffset);
+				pcFoundNull = memchr(&pcBuffer[pcFoundPrefix - pcBuffer], '\x00', wOffset);
+				pcFoundErased = memchr(&pcBuffer[pcFoundPrefix - pcBuffer], '\xFF', wOffset);
 
 				// Check if a NULL was found
 				if (NULL != pcFoundNull)
@@ -641,7 +641,7 @@ int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dw
 	if (0 == iReturn)
 	{
 		// Ensure that at least some characters were found
-		if (wPrefixLength == (pcFoundNull - pbBuffer))
+		if (wPrefixLength == (pcFoundNull - pcBuffer))
 		{
 			iReturn = -30;
 		}
@@ -651,18 +651,18 @@ int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dw
 	if (0 == iReturn)
 	{
 		// Maximum length of a 32-bit ASCII hex string with "0x" prefix is 10 chars
-		if ((pcFoundNull - pbBuffer) >= 11)
+		if ((pcFoundNull - pcBuffer) >= 11)
 		{
 			// Find the last occurance of '}' in the blob string (start search near the end)
 			// Checksum may not be present or may be shorter than 10 chars (e.g. "0x5")
-			pcFoundBlobEnd = strrchr(&pbBuffer[(pcFoundNull - pbBuffer) - 11], '}');
+			pcFoundBlobEnd = strrchr(&pcBuffer[(pcFoundNull - pcBuffer) - 11], '}');
 			if (NULL == pcFoundBlobEnd)
 			{
 				iReturn = -40;
 			}
-			else if (('0' == toupper(pbBuffer[(pcFoundBlobEnd - pbBuffer) + 1])) && ('X' == toupper(pbBuffer[(pcFoundBlobEnd - pbBuffer) + 2])))
+			else if (('0' == toupper(pcBuffer[(pcFoundBlobEnd - pcBuffer) + 1])) && ('X' == toupper(pcBuffer[(pcFoundBlobEnd - pcBuffer) + 2])))
 			{
-				dwChecksum = strtoul(&pbBuffer[(pcFoundBlobEnd - pbBuffer) + 1], NULL, 16);
+				dwChecksum = strtoul(&pcBuffer[(pcFoundBlobEnd - pcBuffer) + 1], NULL, 16);
 			}
 			else
 			{
@@ -682,8 +682,8 @@ int32_t EepromReadData(const uint8_t bType, uint8_t *pbBuffer, const uint32_t dw
 		// Use memmove() to copy data as this function allows destination and source to overlap
 		const uint32_t dwLengthPrefix = strlen(pcPrefixString);
 		dwBufferFill = ((pcFoundBlobEnd - pcFoundPrefix) - dwLengthPrefix + 1);
-		memmove(&pbBuffer[0], &pbBuffer[dwLengthPrefix], dwBufferFill);
-		pbBuffer[dwBufferFill] = '\0x00';	// Ensure the returned data buffer is null terminated
+		memmove(&pcBuffer[0], &pcBuffer[dwLengthPrefix], dwBufferFill);
+		pcBuffer[dwBufferFill] = '\x00';	// Ensure the returned data buffer is null terminated
 	}
 
 	if (NULL != pdwBufferFill)

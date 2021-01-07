@@ -35,7 +35,7 @@ uint16_t	EepromWriteBytes		(const uint16_t wOffset, uint8_t *pbBuffer, const uin
 uint8_t		EepromWriteHexString	(const uint16_t wOffset, const char * const pcHexString, const uint16_t wHexStringLength);
 void		EepromEraseAll			(void);
 uint32_t 	EepromShowMemory		(const uint32_t dwStart, const uint32_t dwLength, char *pcWriteBuffer, uint32_t dwWriteBufferLen);
-int32_t     EepromReadData          (const uint8_t bType, uint8_t *pbBuffer, const uint32_t dwBufferSize, uint32_t *pdwBufferFill, uint32_t *pdwChecksum);
+int32_t     EepromReadData          (const uint8_t bType, char *pcBuffer, const uint32_t dwBufferSize, uint32_t *pdwBufferFill, uint32_t *pdwChecksum);
 int32_t     EepromTestMain          (void);
 
 
