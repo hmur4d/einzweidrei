@@ -38,4 +38,6 @@ double lock_read_gx_art_ground_current(int dropCount, int numAvg);
 void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current_A, double *gx_current_A);
 void lock_read_art_ground_voltages(int dropCount, int numAvg, double *b0_voltage_V, double *gx_voltage_V);
 
+uint8_t *lock_read_eeprom_data(const uint8_t data_type, int32_t *p_data_error, uint32_t *p_data_size, uint32_t *p_data_checksum);
+
 #endif

@@ -289,14 +289,14 @@ void lock_read_art_ground_voltages(int dropCount, int numAvg, double *b0_voltage
 	p_data_error, error code, 0 if successful, <0 otherwise
 	Return: pointer to buffer, or NULL if error allocating buffer occurred
 */
-void *lock_read_eeprom_data(const uint8_t data_type, int32_t *p_data_error, uint32_t *p_data_size, uint32_t *p_data_checksum)
+uint8_t *lock_read_eeprom_data(const uint8_t data_type, int32_t *p_data_error, uint32_t *p_data_size, uint32_t *p_data_checksum)
 {
 	const uint32_t data_buffer_size = (EEPROM_TOTAL_SIZE_BYTES + 1);	// Ensure there is space for a trailing null
 	int32_t error = 0;
 	uint32_t buffer_fill = 0;
 	uint32_t checksum = 0x00;
 	
-	void *data_buffer = malloc(data_buffer_size);
+	uint8_t *data_buffer = malloc(data_buffer_size);
 
 	if (NULL == data_buffer)
 	{
