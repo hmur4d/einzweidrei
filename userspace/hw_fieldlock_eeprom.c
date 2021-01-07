@@ -558,12 +558,12 @@ int32_t EepromReadData(const uint8_t bType, char *pcBuffer, const uint32_t dwBuf
 
 	if (EEPROM_READ_TYPE_MFG == bType)
 	{
-		wStartAddress = 0x0000;
+		wStartAddress = 0x6000;
 		pcPrefixString = p_eeprom_prefix_string_mfg_data;
 	}
 	else if (EEPROM_READ_TYPE_CAL == bType)
 	{
-		wStartAddress = 0x6000;
+		wStartAddress = 0x0000;
 		pcPrefixString = p_eeprom_prefix_string_cal_data;
 	}
 	else
