@@ -538,8 +538,8 @@ uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char 
 
 int32_t EepromReadData(const uint8_t bType, char *pcBuffer, const uint32_t dwBufferSize, uint32_t *pdwBufferFill, uint32_t *pdwChecksum)
 {
-	char *p_eeprom_prefix_string_mfg_data = "\x02MANUFACTURING_DATA\x03";
-	char *p_eeprom_prefix_string_cal_data = "\x02CALIBRATION_DATA\x03";
+	char *p_eeprom_prefix_string_mfg_data = "\x02" "MANUFACTURING_DATA" "\x03";
+	char *p_eeprom_prefix_string_cal_data = "\x02" "CALIBRATION_DATA" "\x03";
 	const uint16_t wReadSize = EEPROM_READ_BLOCK_MAX_BYTES;
 	
 	int iReturn = 0;
@@ -584,7 +584,7 @@ int32_t EepromReadData(const uint8_t bType, char *pcBuffer, const uint32_t dwBuf
 	while (0 == iReturn)
 	{
 		const uint16_t wAddress = wStartAddress + wOffset;
-		const uint16_t wBytesRead = EepromReadBytes(wAddress, &pcBuffer[wOffset], MINIMUM(wReadSize, (EEPROM_TOTAL_SIZE_BYTES - wAddress)));
+		const uint16_t wBytesRead = EepromReadBytes(wAddress, (uint8_t*) &pcBuffer[wOffset], MINIMUM(wReadSize, (EEPROM_TOTAL_SIZE_BYTES - wAddress)));
 		wOffset += wBytesRead;
 
 		// Search for the prefix
