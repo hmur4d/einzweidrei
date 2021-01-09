@@ -75,8 +75,8 @@ static void 	EepromSpiClose(const int spi_fd);
 static void 	EepromSpiTransfer(const struct spi_ioc_transfer * const p_transfer_array, const unsigned int num_transfers);
 static uint8_t 	EepromGetStatus(void);
 static void 	EepromReadBlock(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes);
-static void 	EepromWriteEnable(void);
-static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint8_t bBufferSize);
+static void 	EepromWriteEnable(const bool fEnable);
+static uint8_t 	EepromWritePage(const uint16_t bOffset, uint8_t *pbBuffer, const uint16_t wBufferSize);
 
 
 /*******************************************************************************
@@ -94,17 +94,14 @@ bool EepromInitialize(void)
 	// Ensure the Status byte has the expected mask in it
 	if ((bStatus & EEPROM_STATUS_WIP_MASK) != 0x00)
 	{
-		fSuccess = false;
+		// Ensure any write in progress has been completed
+		usleep(eeprom_write_time_us);
 	}
 
 	if ((bStatus & EEPROM_STATUS_WEL_MASK) != 0x00)
 	{
-		fSuccess = false;
-	}
-
-	if ((bStatus & EEPROM_STATUS_BPX_MASK) != EEPROM_STATUS_BPX_DEFAULT)
-	{
-		fSuccess = false;
+		// Send the Write Disable instruction
+		EepromWriteEnable(false);
 	}
 
 	return fSuccess;
@@ -253,11 +250,11 @@ void EepromReadBlock(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
  * Parameters:	const uint16_t wOffset,
  * 				uint8_t *pbBuffer,
  * 				const uint16_t wNumBytes,
- * Return:		void
+ * Return:		uint16_t, Number of bytes actually read
  * Summary:		Read the requested bytes from the EEPROM.
  ******************************************************************************/
 
-void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes)
+uint16_t EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wNumBytes)
 {
 	const uint16_t wTotalReadBytes = MINIMUM(wNumBytes, EEPROM_TOTAL_SIZE_BYTES);	// Don't try to read more than the total size of the EEPROM
 
@@ -273,19 +270,21 @@ void EepromReadBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t w
 
 		wBytesReadSoFar += wBlockNumBytes;
 	}
+
+	return wTotalReadBytes;
 }
 
 
 /*******************************************************************************
  * Function:	EepromWriteEnable()
- * Parameters:	Send Write Enable command
+ * Parameters:	bool fEnable, true to Send Write Enable command, false to send Write Disable command
  * Return:		void
  * Summary:		Send the Write Enable command to the EEPROM
  ******************************************************************************/
 
-void EepromWriteEnable(void)
+void EepromWriteEnable(const bool fEnable)
 {
-	uint8_t bWriteEnable = EEPROM_REG_WREN;
+	uint8_t bWriteEnable = fEnable ? EEPROM_REG_WREN : EEPROM_REG_WRDI;
 
 	// Create SPI transfer struct array and ensure it is zeroed out
 	struct spi_ioc_transfer transfer_array[1] = {{0}};
@@ -304,20 +303,20 @@ void EepromWriteEnable(void)
  * Function:	EepromWritePage()
  * Parameters:	const uint16_t wOffset,
  * 				uint8_t *pbBuffer,
- * 				const uint16_t wNumBytes,
+ * 				const uint16_t wBufferSize,
  * Return:		uint8_t, Number of bytes actually written into page
  * Summary:		Write the given bytes to the EEPROM (will write a maximum of one page (64 bytes)).
  * 				May write less if the given offset is not at the start of a page.
  ******************************************************************************/
 
-uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint8_t bBufferSize)
+uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint16_t wBufferSize)
 {
 	////////////////////////////////////////////////////////////////////////////
 	// Calculate how many bytes we can write at this offset to remain in the given page
 	// Note:  Writes cannot span EEPROM pages.  If bytes are written past the end of a page,
 	//			they will wrap and be written to the start of the same page.
 	const uint8_t bBytesToWriteMax = (EEPROM_PAGE_SIZE_BYTES - (wOffset % EEPROM_PAGE_SIZE_BYTES));
-	const uint8_t bBytesToWrite = MINIMUM(bBytesToWriteMax, bBufferSize);
+	const uint8_t bBytesToWrite = MINIMUM(bBytesToWriteMax, wBufferSize);
 
 	// Prepare to send Page Write command
 	uint8_t bCommandArray[3] = { EEPROM_REG_WRITE, ((wOffset >> 8) & 0xFF), (wOffset & 0xFF) };
@@ -360,7 +359,7 @@ uint8_t EepromWritePage(const uint16_t wOffset, uint8_t *pbBuffer, const uint8_t
  * Function:	EepromWriteBytes()
  * Parameters:	const uint16_t wOffset,
  * 				uint8_t *pbBuffer,
- * 				const uint16_t wNumBytes,
+ * 				const uint16_t wBufferSize,
  * Return:		uint16_t, Number of bytes actually written into EEPROM
  * Summary:		Write the given bytes to the EEPROM without wrapping (can span multiple pages).
  ******************************************************************************/
@@ -384,7 +383,7 @@ uint16_t EepromWriteBytes(const uint16_t wOffset, uint8_t *pbBuffer, const uint1
 		while (wBytesWritten < wAllowedBytes)
 		{
 			// Send Write Enable command
-			EepromWriteEnable();
+			EepromWriteEnable(true);
 
 			// Send data using Page Write command
 			const uint16_t wBytesToWrite = (wAllowedBytes - wBytesWritten);
@@ -466,6 +465,7 @@ void EepromEraseAll(void)
  * 				uint32_t dwWriteBufferLen
  * Return:		uint32_t, Number of chars written to buffer
  ******************************************************************************/
+
 uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char *pcWriteBuffer, uint32_t dwWriteBufferLen)
 {
 	uint32_t dwNumChars = 0;
@@ -526,12 +526,188 @@ uint32_t EepromShowMemory(const uint32_t dwStart, const uint32_t dwLength, char 
 
 
 /*******************************************************************************
+ * Function:	EepromReadData()
+ * Parameters:	const uint8_t bType, 0 = Unknown, 1 = MFG data, 2 = CAL data
+ * 				char *pcBuffer, 
+ * 				const uint32_t dwBufferSize, 
+ * 				uint32_t *pdwBufferFill, 
+ * 				uint32_t *pdwChecksum,
+ * Return:		int32_t, 0 = Success, <0 = Error occurred
+ * Summary:		Read the requested data blob from the EEPROM and fill the given buffer with the blob
+ ******************************************************************************/
+
+int32_t EepromReadData(const uint8_t bType, char *pcBuffer, const uint32_t dwBufferSize, uint32_t *pdwBufferFill, uint32_t *pdwChecksum)
+{
+	char *p_eeprom_prefix_string_mfg_data = "\x02" "MANUFACTURING_DATA" "\x03";
+	char *p_eeprom_prefix_string_cal_data = "\x02" "CALIBRATION_DATA" "\x03";
+	const uint16_t wReadSize = EEPROM_READ_BLOCK_MAX_BYTES;
+	
+	int iReturn = 0;
+	uint16_t wStartAddress = 0x0000;
+	uint16_t wOffset = 0;
+	uint32_t dwBufferFill = 0;
+	uint32_t dwChecksum = 0x00;
+	char *pcPrefixString = NULL;
+	char *pcFoundPrefix = NULL;
+	char *pcFoundNull = NULL;
+	char *pcFoundErased = NULL;
+	char *pcFoundBlobEnd = NULL;
+
+	// Ensure the buffer is zeroed
+	memset(&pcBuffer[0], 0x00, dwBufferSize);
+
+	if (EEPROM_READ_TYPE_MFG == bType)
+	{
+		wStartAddress = 0x6000;
+		pcPrefixString = p_eeprom_prefix_string_mfg_data;
+	}
+	else if (EEPROM_READ_TYPE_CAL == bType)
+	{
+		wStartAddress = 0x0000;
+		pcPrefixString = p_eeprom_prefix_string_cal_data;
+	}
+	else
+	{
+		iReturn = -10;
+	}
+
+	const uint16_t wPrefixLength = strlen(pcPrefixString);
+
+	// Ensure the given buffer is large enough
+	if (dwBufferSize < EEPROM_TOTAL_SIZE_BYTES)
+	{
+		iReturn = -11;
+	}
+
+	// Read in the data from the EEPROM (search for each component in the same loop)
+	uint8_t bSearchPhase = 0;
+	while (0 == iReturn)
+	{
+		const uint16_t wAddress = wStartAddress + wOffset;
+		const uint16_t wBytesRead = EepromReadBytes(wAddress, (uint8_t*) &pcBuffer[wOffset], MINIMUM(wReadSize, (EEPROM_TOTAL_SIZE_BYTES - wAddress)));
+		wOffset += wBytesRead;
+
+		// Search for the prefix
+		if (0 == bSearchPhase)
+		{
+			if (0 == wBytesRead)
+			{
+				iReturn = -20;
+				break;
+			}
+			else
+			{
+				pcFoundPrefix = strstr(&pcBuffer[0], pcPrefixString);
+
+				// Advance the search phase if the prefix was found
+				if (NULL != pcFoundPrefix)
+				{
+					bSearchPhase = 1;
+				}
+			}
+		}
+		// Search for the trailing null
+		else if (1 == bSearchPhase)
+		{
+			if (0 == wBytesRead)
+			{
+				iReturn = -21;
+				break;
+			}
+			else
+			{
+				pcFoundNull = memchr(&pcBuffer[pcFoundPrefix - pcBuffer], '\x00', wOffset);
+				pcFoundErased = memchr(&pcBuffer[pcFoundPrefix - pcBuffer], '\xFF', wOffset);
+
+				// Check if a NULL was found
+				if (NULL != pcFoundNull)
+				{
+					// Check if an erased byte (0xFF) was found
+					// An erased byte (0xFF) should never be found before the NULL
+					if ((NULL != pcFoundErased) && (pcFoundErased < pcFoundNull))
+					{
+						iReturn = -22;
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// Sanity check the search results
+	if (0 == iReturn)
+	{
+		// Ensure that at least some characters were found
+		if (wPrefixLength == (pcFoundNull - pcBuffer))
+		{
+			iReturn = -30;
+		}
+	}
+
+	// Search for the checksum string
+	if (0 == iReturn)
+	{
+		// Maximum length of a 32-bit ASCII hex string with "0x" prefix is 10 chars
+		if ((pcFoundNull - pcBuffer) >= 11)
+		{
+			// Find the last occurance of '}' in the blob string (start search near the end)
+			// Checksum may not be present or may be shorter than 10 chars (e.g. "0x5")
+			pcFoundBlobEnd = strrchr(&pcBuffer[(pcFoundNull - pcBuffer) - 11], '}');
+			if (NULL == pcFoundBlobEnd)
+			{
+				iReturn = -40;
+			}
+			else if (('0' == toupper(pcBuffer[(pcFoundBlobEnd - pcBuffer) + 1])) && ('X' == toupper(pcBuffer[(pcFoundBlobEnd - pcBuffer) + 2])))
+			{
+				dwChecksum = strtoul(&pcBuffer[(pcFoundBlobEnd - pcBuffer) + 1], NULL, 16);
+			}
+			else
+			{
+				iReturn = -41;
+			}
+		}
+		else
+		{
+			iReturn = -42;
+		}
+	}
+
+	// Move the found blob to the start of the given buffer
+	if (0 == iReturn)
+	{
+		// Copy the JSON blob to the start of the provided buffer
+		// Use memmove() to copy data as this function allows destination and source to overlap
+		const uint32_t dwLengthPrefix = strlen(pcPrefixString);
+		dwBufferFill = ((pcFoundBlobEnd - pcFoundPrefix) - dwLengthPrefix + 1);
+		memmove(pcBuffer, (pcFoundPrefix + dwLengthPrefix), dwBufferFill);
+		pcBuffer[dwBufferFill] = '\x00';	// Ensure the returned data buffer is null terminated
+		dwBufferFill++;	// Increment the filled size to include the null
+	}
+
+	if (NULL != pdwBufferFill)
+	{
+		*pdwBufferFill = dwBufferFill;
+	}
+
+	if (NULL != pdwChecksum)
+	{
+		*pdwChecksum = dwChecksum;
+	}
+
+	return iReturn;
+}
+
+
+/*******************************************************************************
  * Function:	EepromTestMain()
  * Parameters:	void
- * Return:		int, -1 if error, 0 otherwise
+ * Return:		int32_t, -1 if error, 0 otherwise
  * Notes:		Wrapper for test functions
  ******************************************************************************/
-int EepromTestMain(void)
+int32_t EepromTestMain(void)
 {
 	int iReturn = 0;
 
@@ -542,6 +718,30 @@ int EepromTestMain(void)
 	}
 	else
 	{
+		uint16_t wWriteSize = EEPROM_WRITABLE_SIZE_BYTES;
+
+		// Only use the writeable portion of EEPROM for the write tests (read tests can still use full size)
+		// Do not disable write protection (do not risk erasing the serial number and mfg data)
+		const uint8_t bStatus = EepromGetStatus();
+		const uint8_t bWriteProtect = ((bStatus & EEPROM_STATUS_BPX_MASK) >> 2);
+		if (0x01 == bWriteProtect)
+		{
+			wWriteSize = 0x6000;
+		}
+		else if (0x02 == bWriteProtect)
+		{
+			wWriteSize = 0x4000;
+		}
+		else if (0x03 == bWriteProtect)
+		{
+			wWriteSize = 0x0000;
+			log_error("EepromTest, Entire EEPROM Write Protected, cannot perform all tests!");
+		}
+		else
+		{
+			wWriteSize = EEPROM_WRITABLE_SIZE_BYTES;
+		}
+
 		// Allocate buffers that are the full size of the EEPROM
 		uint8_t *pbBuffer1 = (uint8_t*) malloc(EEPROM_WRITABLE_SIZE_BYTES);
 		uint8_t *pbBuffer2 = (uint8_t*) malloc(EEPROM_WRITABLE_SIZE_BYTES);
@@ -585,10 +785,10 @@ int EepromTestMain(void)
 				pbBuffer1[i] = ((i + 0x19) & 0xFF);
 			}
 
-			EepromWriteBytes(0x0000, &pbBuffer1[0], EEPROM_WRITABLE_SIZE_BYTES);
-			EepromReadBytes(0x0000, &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES);
+			EepromWriteBytes(0x0000, &pbBuffer1[0], wWriteSize);
+			EepromReadBytes(0x0000, &pbBuffer2[0], wWriteSize);
 
-			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], wWriteSize))
 			{
 				iReturn = -1;
 				log_error("EepromTest, Write and read-back does not match!");
@@ -598,21 +798,24 @@ int EepromTestMain(void)
 			memset(&pbBuffer1[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
 			memset(&pbBuffer2[0], 0x00, EEPROM_WRITABLE_SIZE_BYTES);
 
-			pbBuffer1[0] = 0x17;
-			EepromWriteBytes(0x1111, &pbBuffer1[0], 1);
-			pbBuffer1[1] = 0x35;
-			EepromWriteBytes(0x3333, &pbBuffer1[1], 1);
-			pbBuffer1[2] = 0x79;
-			EepromWriteBytes(0x7777, &pbBuffer1[2], 1);
-
-			EepromReadBytes(0x1111, &pbBuffer2[0], 1);
-			EepromReadBytes(0x3333, &pbBuffer2[1], 1);
-			EepromReadBytes(0x7777, &pbBuffer2[2], 1);
-
-			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			if (0x03 != bWriteProtect)
 			{
-				iReturn = -1;
-				log_error("EepromTest, Random access write and read-back does not match!");
+				pbBuffer1[0] = 0x17;
+				EepromWriteBytes(0x1111, &pbBuffer1[0], 1);
+				pbBuffer1[1] = 0x35;
+				EepromWriteBytes(0x2222, &pbBuffer1[1], 1);
+				pbBuffer1[2] = 0x79;
+				EepromWriteBytes(0x3333, &pbBuffer1[2], 1);
+
+				EepromReadBytes(0x1111, &pbBuffer2[0], 1);
+				EepromReadBytes(0x2222, &pbBuffer2[1], 1);
+				EepromReadBytes(0x3333, &pbBuffer2[2], 1);
+
+				if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+				{
+					iReturn = -1;
+					log_error("EepromTest, Random access write and read-back does not match!");
+				}
 			}
 
 			// Verify erase operation works as expected
@@ -620,7 +823,7 @@ int EepromTestMain(void)
 			memset(&pbBuffer1[0], 0xFF, EEPROM_WRITABLE_SIZE_BYTES);
 			EepromReadBytes(0x0000, &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES);
 
-			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], EEPROM_WRITABLE_SIZE_BYTES))
+			if (0 != memcmp(&pbBuffer1[0], &pbBuffer2[0], wWriteSize))
 			{
 				iReturn = -1;
 				log_error("EepromTest, Erase and read-back did not match!");
