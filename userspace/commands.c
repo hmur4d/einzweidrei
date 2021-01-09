@@ -658,17 +658,13 @@ static void cmd_lock_read_board_temperature(clientsocket_t* client, header_t* he
 static void cmd_lock_read_b0_art_ground_current(clientsocket_t* client, header_t* header, const void* body) {
 	int32_t drop_count = header->param1;
 	int32_t num_averages = header->param2;
-	double current = 0.0;
-	double gxCurrent = 0.0;
-	lock_read_art_ground_currents(drop_count, num_averages, &current, &gxCurrent);
+	double current = lock_read_b0_art_ground_current(drop_count, num_averages);
 	reset_header(header);
 
 	// The result is the accumulated current divided by the number of averages
 	header->param1 = (int)(current * 1000000.0);
-	// Also include the gx current, since
-	header->param2 = (int)(gxCurrent * 1000000.0);
 
-	log_info("commande lock_read_b0_art_ground_current : B0=%d uA, GX=%d uA", header->param1, (int)(gxCurrent * 1000000.0));
+	log_info("command lock_read_b0_art_ground_current : B0=%d uA", header->param1);
 
 	int8_t  data[0];
 	if (!send_message(client, header, data)) {
@@ -677,11 +673,7 @@ static void cmd_lock_read_b0_art_ground_current(clientsocket_t* client, header_t
 }
 static void cmd_lock_write_traces(clientsocket_t* client, header_t* header, const void* body) {
 	if (header->param1 == 1) {// 1-> body contains currents in uA
-		// Write trace current in micro amps
-		int32_t gx_traces_currents[LOCK_DAC_CHANNEL_COUNT] = {0};
-		if (header->body_size >= sizeof(gx_traces_currents))
-			memcpy(gx_traces_currents, (int32_t*)body, sizeof(gx_traces_currents));
-		lock_write_traces((int32_t*)body, gx_traces_currents);
+		lock_write_b0_traces((int32_t *) body);
 	}
 
 	reset_header(header);
@@ -727,6 +719,23 @@ static void cmd_lock_read_eeprom_data(clientsocket_t* client, header_t* header, 
 	free(data_buffer);
 }
 
+static void cmd_gradient_read_art_ground_current(clientsocket_t* client, header_t* header, const void* body) {
+	int32_t drop_count = header->param1;
+	int32_t num_averages = header->param2;
+	double current = lock_read_gx_art_ground_current(drop_count, num_averages);
+	reset_header(header);
+
+	// The result is the accumulated current divided by the number of averages
+	header->param1 = (int)(current * 1000000.0);
+
+	log_info("command cmd_gradient_read_art_ground_current : GX=%d uA", header->param1);
+
+	int8_t  data[0];
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
+
 //--
 
 bool register_all_commands() {
@@ -767,6 +776,8 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_LOCK_READ_B0_ART_GROUND_CURRENT, cmd_lock_read_b0_art_ground_current);
 	success &= register_command_handler(CMD_LOCK_READ_EEPROM, cmd_lock_read_eeprom_data);
 	success &= register_command_handler(CMD_LOCK_WRITE_B0_TRACES, cmd_lock_write_traces);
+
+	success &= register_command_handler(CMD_GRADIENT_READ_ART_GROUND_CURRENT, cmd_gradient_read_art_ground_current);
 
 
 	return success;
