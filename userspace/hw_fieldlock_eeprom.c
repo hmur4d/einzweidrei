@@ -682,8 +682,9 @@ int32_t EepromReadData(const uint8_t bType, char *pcBuffer, const uint32_t dwBuf
 		// Use memmove() to copy data as this function allows destination and source to overlap
 		const uint32_t dwLengthPrefix = strlen(pcPrefixString);
 		dwBufferFill = ((pcFoundBlobEnd - pcFoundPrefix) - dwLengthPrefix + 1);
-		memmove(&pcBuffer[0], &pcBuffer[dwLengthPrefix], dwBufferFill);
+		memmove(pcBuffer, (pcFoundPrefix + dwLengthPrefix), dwBufferFill);
 		pcBuffer[dwBufferFill] = '\x00';	// Ensure the returned data buffer is null terminated
+		dwBufferFill++;	// Increment the filled size to include the null
 	}
 
 	if (NULL != pdwBufferFill)
