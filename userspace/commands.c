@@ -736,6 +736,21 @@ static void cmd_gradient_read_art_ground_current(clientsocket_t* client, header_
 	}
 }
 
+static void cmd_gradient_write_gx_traces(clientsocket_t* client, header_t* header, const void* body) {
+	if (header->param1 == 1) {// 1-> body contains currents in uA
+		lock_write_gx_traces((int32_t *) body);
+	}
+
+	reset_header(header);
+
+	header->body_size = 0;
+	int8_t  data[0];
+
+	if (!send_message(client, header, data)) {
+		log_error("Unable to send response!");
+	}
+}
+
 //--
 
 bool register_all_commands() {
@@ -778,6 +793,7 @@ bool register_all_commands() {
 	success &= register_command_handler(CMD_LOCK_WRITE_B0_TRACES, cmd_lock_write_traces);
 
 	success &= register_command_handler(CMD_GRADIENT_READ_ART_GROUND_CURRENT, cmd_gradient_read_art_ground_current);
+	success &= register_command_handler(CMD_GRADIENT_WRITE_GX_TRACES, cmd_gradient_write_gx_traces);
 
 
 	return success;

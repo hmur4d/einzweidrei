@@ -88,6 +88,7 @@ Command handlers: command id and implementation.
 
 // Gradient Board
 #define CMD_GRADIENT_READ_ART_GROUND_CURRENT		12000 + 0x0
+#define CMD_GRADIENT_WRITE_GX_TRACES				12000 + 0x1
 
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message
