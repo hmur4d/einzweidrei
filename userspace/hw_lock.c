@@ -181,35 +181,50 @@ int lock_write_b0_gx_register() {
 }
 
 
-/*
-* function lock_write_traces
-* set the scale register to 0 to cut data comming from FPGA 
-* use the zero register to write to the DAC directly
-* currents are convert to DAC value without applying gain correction from calibration
-*/
-int lock_write_traces(int32_t* b0_current_uamps, int32_t* gx_current_uamps) {
+int lock_write_b0_traces(int32_t* b0_current_uamps) {
 	int32_t b0_offset[LOCK_DAC_CHANNEL_COUNT];
-	int32_t gx_offset[LOCK_DAC_CHANNEL_COUNT];
 
 	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
+		// Create an "offset" value, which applies the current directly.
+		// Todo: Currents are convert to DAC value without applying gain correction from calibration.
+		//       The calibration should be used.
 		b0_offset[i] = (int32_t)(pow(2, LOCK_DAC_BIT - 1) * (LOCK_BOARD_B0_RESISTANCE_RATIO * b0_current_uamps[i]* 1e-6  / LOCK_BOARD_VREF)+0.5);
-		gx_offset[i] = (int32_t)(pow(2, LOCK_DAC_BIT - 1) * (LOCK_BOARD_GX_RESISTANCE_RATIO * gx_current_uamps[i] * 1e-6 / LOCK_BOARD_VREF)+0.5);
 	}
 
 	shared_memory_t* mem = shared_memory_acquire();
 	for (int i = 0; i < LOCK_DAC_CHANNEL_COUNT; i++) {
+		// Set the scale to 0 so the FPGA is not able to change the currents
 		int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_B0_SCALE_TRACE_0 + i);
 		printf("b0_scale trace reg 0x%x = 0x%x\n", ram_offset_byte, 0);
 		*(mem->rams + ram_offset_byte / 4) = 0;
 
-		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_GX_SCALE_TRACE_0 + i);
-		printf("gx_scale trace reg 0x%x = 0x%x\n", ram_offset_byte, 0);
-		*(mem->rams + ram_offset_byte / 4) = 0;
-
+		// Set the offset, which sets the currents directly
 		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_B0_OFFSET_0 + i);
 		printf("b0_offset reg 0x%x = 0x%x\n", ram_offset_byte, b0_offset[i] + LOCK_DAC_OFFSET);
 		*(mem->rams + ram_offset_byte / 4) = b0_offset[i] ;
+	}
+	shared_memory_release(mem);
+	return 0;
+}
 
+int lock_write_gx_traces(int32_t* gx_current_uamps) {
+	int32_t gx_offset[LOCK_GX_TRACE_COUNT];
+
+	for (int i = 0; i < LOCK_GX_TRACE_COUNT; i++) {
+		// Create an "offset" value, which applies the current directly
+		// Todo: Currents are convert to DAC value without applying gain correction from calibration.
+		//       The calibration should be used.
+		gx_offset[i] = (int32_t)(pow(2, LOCK_DAC_BIT - 1) * (LOCK_BOARD_GX_RESISTANCE_RATIO * gx_current_uamps[i] * 1e-6 / LOCK_BOARD_VREF)+0.5);
+	}
+
+	shared_memory_t* mem = shared_memory_acquire();
+	for (int i = 0; i < LOCK_GX_TRACE_COUNT; i++) {
+		// Set the scale to 0 so the FPGA is not able to change the currents
+		int ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_GX_SCALE_TRACE_0 + i);
+		printf("gx_scale trace reg 0x%x = 0x%x\n", ram_offset_byte, 0);
+		*(mem->rams + ram_offset_byte / 4) = 0;
+
+		// Set the offset, which sets the currents directly
 		ram_offset_byte = get_offset_byte(RAM_REGISTERS_INDEX, RAM_REGISTER_GX_OFFSET_0 + i);
 		printf("gx_offset reg 0x%x = 0x%x\n", ram_offset_byte, gx_offset[i] + LOCK_DAC_OFFSET);
 		*(mem->rams + ram_offset_byte / 4) = gx_offset[i];
@@ -257,6 +272,8 @@ double lock_read_adc_int_temperature(void) {
 	B0 art ground is ADC input 0 (SENSE_B0) 
 */
 double lock_read_b0_art_ground_current(int dropCount, int numAvg) {
+	// Read "dropCount" number of points first
+	ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_B0, dropCount, NULL);
 	return ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_B0, numAvg, NULL);
 }
 
@@ -264,23 +281,9 @@ double lock_read_b0_art_ground_current(int dropCount, int numAvg) {
 	GX art ground is ADC input 1 (SENSE_GX) 
 */
 double lock_read_gx_art_ground_current(int dropCount, int numAvg) {
+	// Read "dropCount" number of points first
+	ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_GX, dropCount, NULL);
 	return ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_GX, numAvg, NULL);
-}
-
-/*
-	B0 art ground is ADC input 0 (SENSE_B0), GX art ground is ADC input 1 (SENSE_GX) 
-*/
-void lock_read_art_ground_currents(int dropCount, int numAvg, double *b0_current_A, double *gx_current_A) {
-	*b0_current_A = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_B0, numAvg, NULL);
-	*gx_current_A = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_SENSE_GX, numAvg, NULL);
-}
-
-/*
-	Get artificial ground voltages B0 and GX
-*/
-void lock_read_art_ground_voltages(int dropCount, int numAvg, double *b0_voltage_V, double *gx_voltage_V) {
-	*b0_voltage_V = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_B0, numAvg, NULL);
-	*gx_voltage_V = ADS126X_GatherSingle(ADS126X_INPUT_MUX_AG_GX, numAvg, NULL);
 }
 
 /*

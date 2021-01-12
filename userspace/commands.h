@@ -86,6 +86,9 @@ Command handlers: command id and implementation.
 #define CMD_LOCK_WRITE_EEPROM						11000 + 0x3
 #define CMD_LOCK_WRITE_B0_TRACES					11000 + 0x4
 
+// Gradient Board
+#define CMD_GRADIENT_READ_ART_GROUND_CURRENT		12000 + 0x0
+
 //not commands, notification from hardware
 #define HARDWARE_STATUS                             0x20000 + 0x0	//monitoring message
 #define PROBE_CHANGED                               0x20000 + 0x1
