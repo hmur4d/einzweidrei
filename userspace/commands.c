@@ -17,6 +17,16 @@
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
 
+/*
+#define HPS_OCR_ADDRESS 0xFFE00000 
+#define HPS_OCR_SPAN    0x400      //span in bytes
+*/
+#define HPS_OCR_ADDRESS 0x00000000 
+#define HPS_OCR_SPAN    0x40000000      //span in bytes
+
+
+
+
 extern shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
 extern shim_value_t shim_values[SHIM_PROFILES_COUNT];
 extern int amps_board_id;
@@ -37,9 +47,52 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
 	if (device_address != MOTHER_BOARD_ADDRESS) {
 		//TODO implement for devices I2C
-		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// à voir le cas ou monitoring temperature du cameleon et ecriture des threshold
+		log_warning("Received cmd_write for unknown address 0x%x :: 0x%x, ignoring.", device_address, ram_id);	// Ã  voir le cas ou monitoring temperature du cameleon et ecriture des threshold
 		return;
 	}
+ 
+ 
+ 	if (ram_id == 0  ||     //func
+      ram_id == 49 ||    //timer
+      ram_id == 1  ||      //ttl
+      ram_id == 28       //tx_shape1
+   
+   ) {
+    void *reserved_mem_base;
+    int fd;
+    if( ( fd = open( "/dev/mem", ( O_RDWR | O_SYNC ) ) ) == -1 ) {
+  	  printf( "ERROR: could not open \"/dev/mem\"...\n" );
+  	  return;
+    }
+     
+     //use reserved mem
+     reserved_mem_base = mmap( NULL, HPS_OCR_SPAN, ( PROT_READ | PROT_WRITE ),
+                               MAP_SHARED, fd, HPS_OCR_ADDRESS );
+   
+   
+     uint32_t steps_of_ram = ram_id * 524288; //2^17*4
+     uint8_t* base_of_ram= (uint8_t*)reserved_mem_base + steps_of_ram;
+     
+     printf("\n\n write ram %d , %d bytes to  %p mem base \n\n",ram_id, nbytes, base_of_ram );
+		 memcpy(base_of_ram, body, nbytes);
+     
+     
+      if( munmap( reserved_mem_base, HPS_OCR_SPAN ) != 0 ) {
+  		printf( "ERROR: munmap() failed...\n" );
+  		close( fd );
+  		return;
+  	}
+  
+  	close( fd );
+     
+     
+	}
+ 
+ 
+ 
+ 
+ 
+ 
 	if (ram_id == RAM_DDR_GRAD) {
 		
 		shared_memory_t* mem = shared_memory_acquire();
