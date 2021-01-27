@@ -19,6 +19,7 @@ TARGET := cameleon
 CFLAGS += -static -Wall -Werror
 LDFLAGS += -pthread -lm -Wall 
 
+#C_SRCS := $(filter-out main.c, $(wildcard *.c))
 C_SRCS := $(wildcard *.c)
 C_OBJS := ${C_SRCS:.c=.o}
 

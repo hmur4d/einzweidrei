@@ -126,11 +126,14 @@
     <ClInclude Include="command_handlers.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="fpga_dma.h" />
+    <ClInclude Include="fpga_dmac_api.h" />
     <ClInclude Include="generated\hps.h" />
     <ClInclude Include="generated\hps_arm_a9_0.h" />
     <ClInclude Include="generated\hps_arm_a9_1.h" />
     <ClInclude Include="generated\hps_bridges.h" />
     <ClInclude Include="hardware.h" />
+    <ClInclude Include="hps_sequence.h" />
     <ClInclude Include="hw_amps.h" />
     <ClInclude Include="hw_clock.h" />
     <ClInclude Include="hw_fieldlock_ads1261.h" />
@@ -166,7 +169,10 @@
     <ClCompile Include="common.c" />
     <ClCompile Include="config.c" />
     <ClCompile Include="epcq_image.c" />
+    <ClCompile Include="fpga_dma.c" />
+    <ClCompile Include="fpga_dmac_api.c" />
     <ClCompile Include="hardware.c" />
+    <ClCompile Include="hps_sequence.c" />
     <ClCompile Include="hw_amps.c" />
     <ClCompile Include="hw_clock.c" />
     <ClCompile Include="hw_fieldlock_ads1261.c" />
