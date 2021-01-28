@@ -117,12 +117,20 @@ uint32_t create_events(void) {
                         //printf(" %x ", event_buffer[1]);
 
 
-                        //save the event in the onchip              
+                        //save the event in the onchip 
+                        
                         *ocr_base_ptr = event_buffer[0];
                         ocr_base_ptr++;
                         *ocr_base_ptr = event_buffer[1];
                         ocr_base_ptr++;
-
+                        
+                        /*
+                        *ocr_base_ptr = event_buffer[0];
+                        *ocr_base_ptr = nb_of_all_events;
+                        ocr_base_ptr += 1;
+                        *ocr_base_ptr = 0;
+                        ocr_base_ptr += 1;
+                        */
                         //printf("event %p : %lx \n", current_event_ptr, *ocr_base_ptr);
                         //prepare to the next addr in the ocr
 

@@ -24,9 +24,10 @@
 #define HPS_OCR_ADDRESS 0xFFE00000 
 #define HPS_OCR_SPAN    0x400      //span in bytes
 */
+/*
 #define HPS_RESERVED_ADDRESS 0x00000000 
 #define HPS_RESERVED_SPAN    0x40000000      //span in bytes
-
+*/
 
 
 
@@ -398,7 +399,7 @@ static void read_pio(clientsocket_t* client, header_t* header, const void* body)
 
 static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 	transfer_to_fpga(create_events());
-	start_sequence(false);
+	//start_sequence(false);
 }
 
 static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {

@@ -62,7 +62,8 @@ int transfer_to_fpga(uint32_t nb_of_events) {
     fpga_dma_write_reg(FPGA_DMA_vaddr_void,
         FPGA_DMA_CONTROL,
         FPGA_DMA_DOUBLEWORD_TRANSFERS |
-        FPGA_DMA_END_WHEN_LENGHT_ZERO
+        FPGA_DMA_END_WHEN_LENGHT_ZERO |
+        FPGA_DMA_WRITE_CONSTANT_ADDR
     );
     fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
         FPGA_DMA_READADDRESS,
@@ -88,12 +89,12 @@ int transfer_to_fpga(uint32_t nb_of_events) {
         FPGA_DMA_GO,
         1);
     printf("DMA Transfer Started\n");
-    /*
+    
     while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS,
         FPGA_DMA_DONE) == 0) {
     }
     printf("DMA Transfer Finished\n");
-    */
+    
 
     // --------------clean up our memory mapping and exit -----------------//
     if (munmap(lw_vaddr, LW_SPAN) != 0) {
