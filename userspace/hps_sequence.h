@@ -16,12 +16,7 @@
 
 #define STEP_32b_RAM            131072
 
-#define _PS 0
-#define _DS 1
-#define _1D 2
-#define _2D 3
-#define _3D 4
-#define _4D 5
+
 
 #define NB_PS     0
 #define NB_DS     0

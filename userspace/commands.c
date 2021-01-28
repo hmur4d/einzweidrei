@@ -54,6 +54,47 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		return;
 	}
  
+	//stupid registers......
+	if (ram_id >= 100 && ram_id <= 100+299) {
+		//reg offset 
+		uint32_t regs_offset = 131072 * 87;
+		uint32_t current_reg = ram_id - 100;
+
+		//printf("reg value : %x \n\n", *(uint32_t*)body);
+
+		void* reserved_mem_base;
+		int fd;
+		if ((fd = open("/dev/mem", (O_RDWR | O_SYNC))) == -1) {
+			printf("ERROR: could not open \"/dev/mem\"...\n");
+			return;
+		}
+
+		//use reserved mem
+		reserved_mem_base = mmap(NULL, HPS_RESERVED_SPAN, (PROT_READ | PROT_WRITE),
+			MAP_SHARED, fd, HPS_RESERVED_ADDRESS);
+
+		uint32_t* base_of_regs = (uint32_t*)reserved_mem_base + regs_offset+ current_reg;
+
+		//printf("\n\n write ram %d , %d bytes to  %p mem base \n\n", ram_id, nbytes, base_of_regs);
+
+		memcpy(base_of_regs, body, nbytes);
+
+
+		if (munmap(reserved_mem_base, HPS_RESERVED_SPAN) != 0) {
+			printf("ERROR: munmap() failed...\n");
+			close(fd);
+			return;
+		}
+
+		close(fd);
+
+
+
+
+
+
+	}
+
  
  	if (  ram_id == 0  ||     //func
 		  ram_id == 49 ||    //timer
@@ -76,7 +117,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		uint32_t steps_of_ram = ram_id * 524288; //2^17*4
 		uint8_t* base_of_ram= (uint8_t*)reserved_mem_base + steps_of_ram;
      
-		printf("\n\n write ram %d , %d bytes to  %p mem base \n\n",ram_id, nbytes, base_of_ram );
+		//printf("\n\n write ram %d , %d bytes to  %p mem base \n\n",ram_id, nbytes, base_of_ram );
 		memcpy(base_of_ram, body, nbytes);
      
      
@@ -356,9 +397,7 @@ static void read_pio(clientsocket_t* client, header_t* header, const void* body)
 }
 
 static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
-	create_events();
-	transfer_to_fpga(30);
-
+	transfer_to_fpga(create_events());
 	start_sequence(false);
 }
 

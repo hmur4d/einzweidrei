@@ -70,9 +70,13 @@ int transfer_to_fpga(uint32_t nb_of_events) {
     fpga_dma_write_reg(FPGA_DMA_vaddr_void,  //set destiny address
         FPGA_DMA_WRITEADDRESS,
         (uint32_t)DMA_TRANSFER_DST_DMAC);
+
+    uint32_t nb_bytes_to_send = nb_of_events*8;
+    printf("sending %d byte length \n", nb_bytes_to_send);
+
     fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
         FPGA_DMA_LENGTH,
-        DMA_TRANSFER_SIZE);
+        nb_bytes_to_send);
     fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
         FPGA_DMA_STATUS,
         FPGA_DMA_DONE,
@@ -84,11 +88,12 @@ int transfer_to_fpga(uint32_t nb_of_events) {
         FPGA_DMA_GO,
         1);
     printf("DMA Transfer Started\n");
+    /*
     while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS,
         FPGA_DMA_DONE) == 0) {
     }
     printf("DMA Transfer Finished\n");
-
+    */
 
     // --------------clean up our memory mapping and exit -----------------//
     if (munmap(lw_vaddr, LW_SPAN) != 0) {
