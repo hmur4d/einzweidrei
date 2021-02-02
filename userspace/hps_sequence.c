@@ -29,7 +29,7 @@ uint32_t create_events(void) {
         printf("ERROR: could not open \"/dev/mem\"...\n");
         return(1);
     }
-
+    
     //access onchip hps
     void* ocr_base;
     //mmap from HPS OCR to end HPS OCR
@@ -43,7 +43,7 @@ uint32_t create_events(void) {
     }
 
     uint32_t* ocr_base_ptr = (uint32_t*)ocr_base;
-
+    
 
     //access reserved ddr
     void* reserved_mem_base;
@@ -123,6 +123,9 @@ uint32_t create_events(void) {
                         ocr_base_ptr++;
                         *ocr_base_ptr = event_buffer[1];
                         ocr_base_ptr++;
+
+                        //next place is byte 128 (80h)
+                        ocr_base_ptr += 30;
                         
                         /*
                         *ocr_base_ptr = event_buffer[0];

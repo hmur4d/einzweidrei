@@ -9,19 +9,15 @@
 #define FPGA_DMAC_QSYS_ADDRESS 0x00020080
 #define FPGA_DMAC_ADDRESS ((uint8_t*)LW_BASE+FPGA_DMAC_QSYS_ADDRESS)
 
+#define HPS_OCR_ADDRESS			0x20000000 
+#define HPS_OCR_SPAN			0x20000000     //span in bytes
 
-#define HPS_OCR_ADDRESS 0xFFE00000
+
+//#define HPS_OCR_ADDRESS 0xFFE00000
 #define DMA_TRANSFER_SRC_DMAC HPS_OCR_ADDRESS
 
 //fifo is connected directly to dma
 #define DMA_TRANSFER_DST_DMAC 0x0
-
-
-
-
-
-
-
 
 int transfer_to_fpga(uint32_t nb_of_events) {
     //open dev mem
@@ -61,9 +57,8 @@ int transfer_to_fpga(uint32_t nb_of_events) {
     printf("Initializing DMA Controller\n");
     fpga_dma_write_reg(FPGA_DMA_vaddr_void,
         FPGA_DMA_CONTROL,
-        FPGA_DMA_DOUBLEWORD_TRANSFERS |
-        FPGA_DMA_END_WHEN_LENGHT_ZERO |
-        FPGA_DMA_WRITE_CONSTANT_ADDR
+        FPGA_DMA_QUADWORD_TRANSFERS |
+        FPGA_DMA_END_WHEN_LENGHT_ZERO
     );
     fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
         FPGA_DMA_READADDRESS,
@@ -72,7 +67,7 @@ int transfer_to_fpga(uint32_t nb_of_events) {
         FPGA_DMA_WRITEADDRESS,
         (uint32_t)DMA_TRANSFER_DST_DMAC);
 
-    uint32_t nb_bytes_to_send = nb_of_events*8;
+    uint32_t nb_bytes_to_send = nb_of_events*128;
     printf("sending %d byte length \n", nb_bytes_to_send);
 
     fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
@@ -90,11 +85,12 @@ int transfer_to_fpga(uint32_t nb_of_events) {
         1);
     printf("DMA Transfer Started\n");
     
+    /*
     while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS,
         FPGA_DMA_DONE) == 0) {
     }
     printf("DMA Transfer Finished\n");
-    
+    */
 
     // --------------clean up our memory mapping and exit -----------------//
     if (munmap(lw_vaddr, LW_SPAN) != 0) {

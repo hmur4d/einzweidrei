@@ -7,12 +7,15 @@
 #include <unistd.h>   //close()
 #include <fcntl.h>    //open()
 #include <sys/mman.h> //mmap()
-
+/*
 #define HPS_OCR_ADDRESS         0xFFE00000 
 #define HPS_OCR_SPAN            0x200000            //span in bytes
-
+*/
 #define HPS_RESERVED_ADDRESS    0x00000000 
-#define HPS_RESERVED_SPAN       0x4000000     //span in bytes
+#define HPS_RESERVED_SPAN       0x20000000     //span in bytes
+
+#define HPS_OCR_ADDRESS			0x20000000 
+#define HPS_OCR_SPAN			0x20000000     //span in bytes
 
 #define STEP_32b_RAM            131072
 

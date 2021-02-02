@@ -399,7 +399,7 @@ static void read_pio(clientsocket_t* client, header_t* header, const void* body)
 
 static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 	transfer_to_fpga(create_events());
-	//start_sequence(false);
+	start_sequence(false);
 }
 
 static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
