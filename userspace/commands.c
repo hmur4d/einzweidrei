@@ -399,6 +399,8 @@ static void read_pio(clientsocket_t* client, header_t* header, const void* body)
 
 static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
 	transfer_to_fpga(create_events());
+	//wait until fifo is written
+	usleep(1000);
 	start_sequence(false);
 }
 
