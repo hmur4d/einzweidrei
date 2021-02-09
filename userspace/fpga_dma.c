@@ -68,30 +68,42 @@ int transfer_to_fpga(uint32_t nb_of_events) {
         (uint32_t)DMA_TRANSFER_DST_DMAC);
 
     uint32_t nb_bytes_to_send = nb_of_events*128;
+    //uint32_t nb_bytes_to_send = 2 * 128;
     printf("sending %d byte length \n", nb_bytes_to_send);
 
-    fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
-        FPGA_DMA_LENGTH,
-        nb_bytes_to_send);
-    fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
-        FPGA_DMA_STATUS,
-        FPGA_DMA_DONE,
-        0);
 
-    //printf("Start DMA Transfer\n");
-    fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
-        FPGA_DMA_CONTROL,
-        FPGA_DMA_GO,
-        1);
-    printf("DMA Transfer Started\n");
-    
-    /*
-    while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS,
-        FPGA_DMA_DONE) == 0) {
-    }
-    printf("DMA Transfer Finished\n");
-    */
 
+    //int i = 0; 
+    //while (1) {
+        fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+            FPGA_DMA_LENGTH,
+            nb_bytes_to_send);
+
+        //printf("Start DMA Transfer\n");
+        fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+            FPGA_DMA_CONTROL,
+            FPGA_DMA_GO,
+            1);
+        printf("DMA Transfer Started\n");
+        //i++;
+        /*
+        while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS,
+            FPGA_DMA_DONE) == 0) {
+        }
+        fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+            FPGA_DMA_CONTROL,
+            FPGA_DMA_GO,
+            0);
+        fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
+            FPGA_DMA_STATUS,
+            FPGA_DMA_DONE,
+            0);
+        printf("DMA Transfer Finished\n");
+        */
+
+        //if (i == 4) break;
+
+    //}
     // --------------clean up our memory mapping and exit -----------------//
     if (munmap(lw_vaddr, LW_SPAN) != 0) {
         printf("ERROR: munmap() failed...\n");
