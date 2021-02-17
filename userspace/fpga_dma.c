@@ -67,30 +67,41 @@ int transfer_to_fpga(uint32_t nb_of_events) {
         FPGA_DMA_WRITEADDRESS,
         (uint32_t)DMA_TRANSFER_DST_DMAC);
 
-    uint32_t nb_bytes_to_send = nb_of_events*128;
-    //uint32_t nb_bytes_to_send = 2 * 128;
-    printf("sending %d byte length \n", nb_bytes_to_send);
 
+    uint32_t nb_bytes_to_send = 0;
+    uint32_t nb_dma_transfer = 0;
+    uint32_t nb_remainder = 0; 
+    //the burst can only handle up to 1024 quadwords 18bytes so only 128 events
+    if (nb_of_events <= 128) {
+        nb_bytes_to_send = nb_of_events * 128;
+        nb_dma_transfer = 1; 
+    }
+    else{
+        nb_dma_transfer = nb_of_events / 128;
+        nb_bytes_to_send = 128*128;
+        nb_remainder = nb_of_events % 128;
+    }
 
+    //uint32_t nb_bytes_to_send = nb_of_events*128;
+    //uint32_t nb_bytes_to_send = 1024 * 128;
+    printf(" %d events so sending %d bytes %d times \n", nb_of_events, nb_bytes_to_send, nb_dma_transfer);
 
-    //int i = 0; 
-    //while (1) {
+    int i = 0; 
+    while (1) {
         fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
             FPGA_DMA_LENGTH,
             nb_bytes_to_send);
 
-        //printf("Start DMA Transfer\n");
         fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
             FPGA_DMA_CONTROL,
             FPGA_DMA_GO,
             1);
-        printf("DMA Transfer Started\n");
-        //i++;
-        /*
+        i++;
+        
         while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS,
             FPGA_DMA_DONE) == 0) {
         }
-        fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+        fpga_dma_write_bit(FPGA_DMA_vaddr_void,
             FPGA_DMA_CONTROL,
             FPGA_DMA_GO,
             0);
@@ -98,12 +109,22 @@ int transfer_to_fpga(uint32_t nb_of_events) {
             FPGA_DMA_STATUS,
             FPGA_DMA_DONE,
             0);
-        printf("DMA Transfer Finished\n");
-        */
+        printf("sending 128 blocks. %d : %d / %d \n",nb_remainder,i, nb_dma_transfer);
 
-        //if (i == 4) break;
+        if (i >= nb_dma_transfer) {
+            if (nb_remainder == 0) break;
+            else {
+                printf("sending remainder \n");
+                nb_bytes_to_send = 128 * nb_remainder;
+                fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                                    FPGA_DMA_LENGTH,
+                                    nb_bytes_to_send);
+                nb_remainder = 0;
+                
+            }
+        }
 
-    //}
+    }
     // --------------clean up our memory mapping and exit -----------------//
     if (munmap(lw_vaddr, LW_SPAN) != 0) {
         printf("ERROR: munmap() failed...\n");
