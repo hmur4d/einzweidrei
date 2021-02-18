@@ -86,6 +86,12 @@ int transfer_to_fpga(uint32_t nb_of_events) {
     //uint32_t nb_bytes_to_send = 1024 * 128;
     printf(" %d events so sending %d bytes %d times \n", nb_of_events, nb_bytes_to_send, nb_dma_transfer);
 
+    //fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+    //    FPGA_DMA_LENGTH,
+    //    nb_bytes_to_send);
+
+
+
     int i = 0; 
     while (1) {
         fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
