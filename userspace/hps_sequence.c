@@ -1,6 +1,17 @@
 #include "hps_sequence.h"
 #include "fpga_dmac_api.h"
 
+
+
+
+//#define HPS_OCR_ADDRESS         0xFFE00000 
+//#define HPS_OCR_SPAN            0x200000            //span in bytes
+
+
+
+#define HPS_OCR_ADDRESS			0x20000000 
+#define HPS_OCR_SPAN			0x20000000     //span in bytes
+
 #define DMA_TRANSFER_WORDS 	31 //in 64bits word
 #define DMA_TRANSFER_SIZE 	DMA_TRANSFER_WORDS*8 //in bvtes
 
@@ -24,6 +35,7 @@
 #define DMA_TRANSFER_1_SRC_DMAC (HPS_OCR_ADDRESS)
 #define DMA_TRANSFER_2_SRC_DMAC (HPS_OCR_ADDRESS+DMA_FULL_BURST_IN_BYTES)
 
+//counters
 #define _PS 0
 #define _DS 1
 #define _1D 2
@@ -31,19 +43,22 @@
 #define _3D 4
 #define _4D 5
 
+
 uint32_t scan_counters[6] = { 0,0,0,0,0,0 };
 uint32_t loopa_counters[2] = { 0,0 };
 
 // nb of elements per counter to be used for the modulus
-uint32_t nb_elements_per_counter[16] = { 0,
-                                      0,0,0,0,
-                                      0,0,0,0,0,
-                                      0,0,0,0,0
-};
+#define O_0  0
+#define O_1D 1
+#define O_2D 2
+#define O_3D 3
+#define O_4D 4
 
+
+uint32_t nb_elements_per_counter[16]; 
 
 uint32_t static get_addr(uint32_t* scan_counter, uint32_t base_address, uint32_t order, uint32_t nb_of_values) {
-    return (scan_counter[order] + base_address);//%nb_of_values;
+    return (scan_counter[(order==0? 0:order+1)] % nb_of_values) + base_address ;
 }
 
 uint32_t create_events(void) {
@@ -129,6 +144,13 @@ uint32_t create_events(void) {
     nb_dimensions[_4D] = *(base_of_regs + 11);
     nb_dimensions[_PS] = *(base_of_regs + 93);
 
+    nb_elements_per_counter[O_0]  = 1+0;
+    nb_elements_per_counter[O_1D] = 1+*(base_of_regs + 12);
+    nb_elements_per_counter[O_2D] = 1+*(base_of_regs + 13);
+    nb_elements_per_counter[O_3D] = 1+*(base_of_regs + 14);
+    nb_elements_per_counter[O_4D] = 1+*(base_of_regs + 15);
+
+
     uint32_t nb_of_all_events = 0;
     uint32_t event_buffer[2] = { 0,0 };
     
@@ -137,9 +159,15 @@ uint32_t create_events(void) {
         printf("ram ttl %d at %x \n", i, ram_ttl_ptr[i]);
     }
     */
+    
     for (int i = 0; i < _4D; i++) {
         printf("NB scans %d at %x \n", i, nb_dimensions[i]);
     }
+    
+    for (int i = 0; i < O_4D; i++) {
+        printf("NB elements %d at %x \n", i, nb_elements_per_counter[i]);
+    }
+
 
 
     uint32_t nb_of_events_treated = 0; 
@@ -161,7 +189,7 @@ uint32_t create_events(void) {
                         uint32_t timer_base_addr = ((0x3FF << 22) & current_event) >> 22;
                         uint32_t timer_order = ((0xF << 18) & current_event) >> 18;
 
-                        uint32_t timer_addr = get_addr(scan_counters, timer_base_addr, timer_order, 10);
+                        uint32_t timer_addr = get_addr(scan_counters, timer_base_addr, timer_order, nb_elements_per_counter[timer_order]);
                         //printf("timer_base_addr: %d , timer_order: %d, timer_addr: %d \n", timer_base_addr, timer_order, timer_addr);
 
                         //buffer the event
