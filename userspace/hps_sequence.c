@@ -2,38 +2,22 @@
 #include "fpga_dmac_api.h"
 
 
+//#define HPS_OCR_ADDRESS           0xFFE00000 
+//#define HPS_OCR_SPAN              0x200000            //span in bytes
 
+#define HPS_OCR_ADDRESS			    0x20000000 
+#define HPS_OCR_SPAN			    0x20000000     //span in bytes
 
-//#define HPS_OCR_ADDRESS         0xFFE00000 
-//#define HPS_OCR_SPAN            0x200000            //span in bytes
-
-
-
-#define HPS_OCR_ADDRESS			0x20000000 
-#define HPS_OCR_SPAN			0x20000000     //span in bytes
-
-#define DMA_TRANSFER_WORDS 	31 //in 64bits word
-#define DMA_TRANSFER_SIZE 	DMA_TRANSFER_WORDS*8 //in bvtes
-
-#define LW_BASE 0xff200000
-#define LW_SPAN  1048576
-#define FPGA_DMAC_QSYS_ADDRESS 0x00020080
-#define FPGA_DMAC_ADDRESS ((uint8_t*)LW_BASE+FPGA_DMAC_QSYS_ADDRESS)
-
-#define HPS_OCR_ADDRESS			0x20000000 
-#define HPS_OCR_SPAN			0x20000000     //span in bytes
-
-
-//#define HPS_OCR_ADDRESS 0xFFE00000
-
+#define LW_BASE                     0xff200000
+#define LW_SPAN                     1048576
+#define FPGA_DMAC_QSYS_ADDRESS      0x00020080
+#define FPGA_DMAC_ADDRESS           ((uint8_t*)LW_BASE+FPGA_DMAC_QSYS_ADDRESS)
 
 //fifo is connected directly to dma
-#define DMA_TRANSFER_DST_DMAC 0x0
-
-#define DMA_FULL_BURST_IN_BYTES  16384 //1024*16 this is 128 event
-
-#define DMA_TRANSFER_1_SRC_DMAC (HPS_OCR_ADDRESS)
-#define DMA_TRANSFER_2_SRC_DMAC (HPS_OCR_ADDRESS+DMA_FULL_BURST_IN_BYTES)
+#define DMA_TRANSFER_DST_DMAC       0x0
+#define DMA_FULL_BURST_IN_BYTES     16384 //1024*16 this is 128 event
+#define DMA_TRANSFER_1_SRC_DMAC     (HPS_OCR_ADDRESS)
+#define DMA_TRANSFER_2_SRC_DMAC     (HPS_OCR_ADDRESS+DMA_FULL_BURST_IN_BYTES)
 
 //counters
 #define _PS 0
@@ -120,39 +104,55 @@ uint32_t create_events(void) {
         (uint32_t)DMA_TRANSFER_DST_DMAC);
 
 
-    //uint32_t nb_bytes_to_send = 0;
-   //uint32_t nb_dma_transfer = 0;
-    //uint32_t nb_remainder = 0;
-
-
     //RAMS
-    uint32_t* base_rams = (uint32_t*)reserved_mem_base;
-    uint32_t offset_ram_func = 0 * STEP_32b_RAM;
-    uint32_t offset_ram_ttl = 1 * STEP_32b_RAM;
-    uint32_t offset_ram_timer = 49 * STEP_32b_RAM;
+    uint32_t* base_rams         = (uint32_t*)reserved_mem_base;
+    //event ram
+    uint32_t* ram_func_ptr      = base_rams + 0  * STEP_32b_RAM;
+    uint32_t* ram_ttl_ptr       = base_rams + 1  * STEP_32b_RAM;
+    //uint32_t* ram_orders_ptr    = base_rams + 3  * STEP_32b_RAM;
+    //uint32_t* ram_adr_c1_ptr    = base_rams + 4  * STEP_32b_RAM;
+    //uint32_t* ram_adr_c2_ptr    = base_rams + 5  * STEP_32b_RAM;
+    //uint32_t* ram_adr_c3_ptr    = base_rams + 6  * STEP_32b_RAM;
+    //uint32_t* ram_adr_c4_ptr    = base_rams + 7  * STEP_32b_RAM;
 
-    uint32_t* current_event_ptr = base_rams + offset_ram_func;
-    uint32_t* ram_timer_ptr = base_rams + offset_ram_timer;
-    uint32_t* ram_ttl_ptr = base_rams + offset_ram_ttl;
+    //element ram
+    uint32_t* ram_timer_ptr     = base_rams + 49 * STEP_32b_RAM;
+
+    //uint32_t* ram_freq1_ptr     = base_rams + 25 * STEP_32b_RAM;
+    //uint32_t* ram_phase1_ptr    = base_rams + 26 * STEP_32b_RAM;
+    //uint32_t* ram_amp1_ptr      = base_rams + 27 * STEP_32b_RAM;
+    //uint32_t* ram_tx_shape1_ptr = base_rams + 28 * STEP_32b_RAM;
+    //uint32_t* ram_freq2_ptr     = base_rams + 29 * STEP_32b_RAM;
+    //uint32_t* ram_phase2_ptr    = base_rams + 30 * STEP_32b_RAM;
+    //uint32_t* ram_amp2_ptr      = base_rams + 31 * STEP_32b_RAM;
+    //uint32_t* ram_tx_shape2_ptr = base_rams + 32 * STEP_32b_RAM;
+    //uint32_t* ram_freq3_ptr     = base_rams + 33 * STEP_32b_RAM;
+    //uint32_t* ram_phase3_ptr    = base_rams + 34 * STEP_32b_RAM;
+    //uint32_t* ram_amp3_ptr      = base_rams + 35 * STEP_32b_RAM;
+    //uint32_t* ram_tx_shape3_ptr = base_rams + 36 * STEP_32b_RAM;
+    //uint32_t* ram_freq4_ptr     = base_rams + 37 * STEP_32b_RAM;
+    //uint32_t* ram_phase4_ptr    = base_rams + 38 * STEP_32b_RAM;
+    //uint32_t* ram_amp4_ptr      = base_rams + 39 * STEP_32b_RAM;
+
+
 
     uint32_t* base_of_regs = (uint32_t*)reserved_mem_base + (131072 * 87);
     uint32_t  nb_dimensions[6];
-    nb_dimensions[_DS] = *(base_of_regs + 7);
-    nb_dimensions[_1D] = *(base_of_regs + 8);
-    nb_dimensions[_2D] = *(base_of_regs + 9);
-    nb_dimensions[_3D] = *(base_of_regs + 10);
-    nb_dimensions[_4D] = *(base_of_regs + 11);
-    nb_dimensions[_PS] = *(base_of_regs + 93);
+    nb_dimensions[_DS]            = *(base_of_regs + 7);
+    nb_dimensions[_1D]            = *(base_of_regs + 8);
+    nb_dimensions[_2D]            = *(base_of_regs + 9);
+    nb_dimensions[_3D]            = *(base_of_regs + 10);
+    nb_dimensions[_4D]            = *(base_of_regs + 11);
+    nb_dimensions[_PS]            = *(base_of_regs + 93);
 
-    nb_elements_per_counter[O_0]  = 1+0;
-    nb_elements_per_counter[O_1D] = 1+*(base_of_regs + 12);
-    nb_elements_per_counter[O_2D] = 1+*(base_of_regs + 13);
-    nb_elements_per_counter[O_3D] = 1+*(base_of_regs + 14);
-    nb_elements_per_counter[O_4D] = 1+*(base_of_regs + 15);
+    nb_elements_per_counter[O_0]  = 1+ 0;
+    nb_elements_per_counter[O_1D] = 1+ *(base_of_regs + 12);
+    nb_elements_per_counter[O_2D] = 1+ *(base_of_regs + 13);
+    nb_elements_per_counter[O_3D] = 1+ *(base_of_regs + 14);
+    nb_elements_per_counter[O_4D] = 1+ *(base_of_regs + 15);
 
 
     uint32_t nb_of_all_events = 0;
-    uint32_t event_buffer[2] = { 0,0 };
     
     /*
     for (int i = 0; i < 5; i++) {
@@ -168,62 +168,78 @@ uint32_t create_events(void) {
         printf("NB elements %d at %x \n", i, nb_elements_per_counter[i]);
     }
 
-
-
     uint32_t nb_of_events_treated = 0; 
-
     bool is_second_trans = false;
 
     for (scan_counters[_4D] = 0; scan_counters[_4D] <= nb_dimensions[_4D]; scan_counters[_4D]++) {
         for (scan_counters[_3D] = 0; scan_counters[_3D] <= nb_dimensions[_3D]; scan_counters[_3D]++) {
             for (scan_counters[_2D] = 0; scan_counters[_2D] <= nb_dimensions[_2D]; scan_counters[_2D]++) {
-                //printf("\n\n");
                 for (scan_counters[_1D] = 0; scan_counters[_1D] <= nb_dimensions[_1D]; scan_counters[_1D]++) {
                     while (true) {
 
                         //get the current event
-                        uint32_t current_event = *current_event_ptr;
-                        //printf( "%x \n", current_event);
+                        //get the timer address : look at the timer addr and timer order
+                        uint32_t timer_base_addr    = ((0x3FF   << 22) & *ram_func_ptr) >> 22;
+                        uint32_t timer_order        = ((0xF     << 18) & *ram_func_ptr) >> 18;
 
-                        //look at the timer addr and timer order
-                        uint32_t timer_base_addr = ((0x3FF << 22) & current_event) >> 22;
-                        uint32_t timer_order = ((0xF << 18) & current_event) >> 18;
+                        uint32_t timer_addr         = get_addr(scan_counters, timer_base_addr, timer_order, nb_elements_per_counter[timer_order]);
 
-                        uint32_t timer_addr = get_addr(scan_counters, timer_base_addr, timer_order, nb_elements_per_counter[timer_order]);
-                        //printf("timer_base_addr: %d , timer_order: %d, timer_addr: %d \n", timer_base_addr, timer_order, timer_addr);
+                        //get the tx address
+                        //freq
+                        //uint32_t  tx1_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c1_ptr) >> 0;
+                        //uint32_t  tx1_freq_order         = ((0xF   << 0 ) & *ram_orders_ptr) >> 0;
+                        //uint32_t  tx1_freq_addr          = get_addr(scan_counters, tx1_freq_base_addr, tx1_freq_order, nb_elements_per_counter[tx1_freq_order]);
 
-                        //buffer the event
-                        event_buffer[0] = (0xFFFFFFFF & ram_timer_ptr[timer_addr]) << 0; //timer
+                        /*
+                        //phase
+                        uint32_t  tx1_phase_base_addr = ((0x3FF << 0) & *ram_adr_c1_ptr) >> 0;
+                        uint32_t  tx1_phase_order = ((0xF << 0) & *ram_orders_ptr) >> 0;
+                        uint32_t  tx1_phase_addr = get_addr(scan_counters, tx1_freq_base_addr, tx1_freq_order, nb_elements_per_counter[tx1_freq_order]);
+                        //amp
+                        */
+                        //uint32_t  tx2_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c2_ptr) >> 0;
+                        //uint32_t  tx2_freq_order         = ((0xF   << 4 ) & *ram_orders_ptr) >> 4;
+                        //uint32_t  tx2_freq_addr          = get_addr(scan_counters, tx2_freq_base_addr, tx2_freq_order, nb_elements_per_counter[tx2_freq_order]);
+                        //    
+                        //uint32_t  tx3_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c3_ptr) >> 0;
+                        //uint32_t  tx3_freq_order         = ((0xF   << 8 ) & *ram_orders_ptr) >> 8;
+                        //uint32_t  tx3_freq_addr          = get_addr(scan_counters, tx3_freq_base_addr, tx3_freq_order, nb_elements_per_counter[tx3_freq_order]);
+                        //    
+                        //uint32_t  tx4_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c4_ptr) >> 0;
+                        //uint32_t  tx4_freq_order         = ((0xF   << 12) & *ram_orders_ptr) >> 12;
+                        //uint32_t  tx4_freq_addr          = get_addr(scan_counters, tx4_freq_base_addr, tx4_freq_order, nb_elements_per_counter[tx4_freq_order]);
 
 
-                        //look at the ttl
-                        uint16_t rxtx_ttl = 0xFFFF & *ram_ttl_ptr;
-                        event_buffer[1] = rxtx_ttl;
-                        //printf(" %x ", event_buffer[1]);
+                        //save the event
+                        //save the timer
+                        *ocr_base_ptr = ram_timer_ptr[timer_addr];
+                        ocr_base_ptr++;
+                        //the ttl
+                        *ocr_base_ptr = 0xFFFF & *ram_ttl_ptr;
+                        ocr_base_ptr++;
+                        //TX1
+                        //freq
+                        *ocr_base_ptr = 0;//ram_freq1_ptr[tx1_freq_addr];
+                        ocr_base_ptr++;
+                        //phase + amplitude
+                        *ocr_base_ptr = nb_of_all_events;
+                        ocr_base_ptr++;
+                        //TX2
+                        *ocr_base_ptr = 0;//ram_freq2_ptr[tx2_freq_addr];
+                        ocr_base_ptr++;
+                        *ocr_base_ptr = nb_of_all_events;
+                        ocr_base_ptr++;
+                        //TX3
+                        *ocr_base_ptr = 0;//ram_freq3_ptr[tx3_freq_addr];
+                        ocr_base_ptr++;
+                        *ocr_base_ptr = nb_of_all_events;
+                        ocr_base_ptr++;
+                        //TX4
+                        *ocr_base_ptr = 0;//ram_freq4_ptr[tx4_freq_addr];
+                        ocr_base_ptr++;
+                        *ocr_base_ptr = nb_of_all_events;
+                        ocr_base_ptr++;
 
-
-                        //save the event in the onchip 
-                        
-                        *ocr_base_ptr = event_buffer[0];
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = event_buffer[1];
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
                         *ocr_base_ptr = nb_of_all_events;
                         ocr_base_ptr++;
                         *ocr_base_ptr = nb_of_all_events;
@@ -279,7 +295,7 @@ uint32_t create_events(void) {
                         *ocr_base_ptr = 0;
                         ocr_base_ptr += 1;
                         */
-                        //printf("event %p : %lx \n", current_event_ptr, *ocr_base_ptr);
+                        //printf("event %p : %lx \n", ram_func_ptr, *ocr_base_ptr);
                         //prepare to the next addr in the ocr
 
 
@@ -377,13 +393,13 @@ uint32_t create_events(void) {
 
                         
 
-                        if ((current_event & 0xff) == 0x08) {
-                            current_event_ptr = base_rams + offset_ram_func;
-                            ram_ttl_ptr = base_rams + offset_ram_ttl;
+                        if ((*ram_func_ptr & 0xff) == 0x08) {
+                            ram_func_ptr = base_rams + 0  * STEP_32b_RAM;
+                            ram_ttl_ptr  = base_rams + 1  * STEP_32b_RAM;
                             break;
                         }
                         else {
-                            current_event_ptr++;
+                            ram_func_ptr++;
                             ram_ttl_ptr++;
                         }
 
