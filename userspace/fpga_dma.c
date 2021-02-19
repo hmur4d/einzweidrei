@@ -131,6 +131,7 @@ int transfer_to_fpga(uint32_t nb_of_events) {
         }
 
     }
+    printf("done sending \n");
     // --------------clean up our memory mapping and exit -----------------//
     if (munmap(lw_vaddr, LW_SPAN) != 0) {
         printf("ERROR: munmap() failed...\n");
