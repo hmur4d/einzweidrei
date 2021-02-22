@@ -276,7 +276,7 @@ uint32_t create_events(void) {
                         *events_base_ptr = ram_freq1_ptr[tx1_freq_addr];
                         events_base_ptr++;
                         //phase + amplitude
-                        *events_base_ptr = tx1_en << 28 | (ram_amp1_ptr[tx1_amp_addr]&0xfff)<<16 | (ram_phase1_ptr[tx1_phase_addr]&0xffff);
+                        *events_base_ptr = 1 << 29 |tx1_en << 28 | (ram_amp1_ptr[tx1_amp_addr]&0xfff)<<16 | (ram_phase1_ptr[tx1_phase_addr]&0xffff);
                         events_base_ptr++;
                         //TX2
                         *events_base_ptr = ram_freq2_ptr[tx2_freq_addr];
@@ -451,6 +451,15 @@ uint32_t create_events(void) {
                         if ((*ram_func_ptr & 0xff) == 0x08) {
                             ram_func_ptr          = base_rams + 0  * STEP_32b_RAM;
                             ram_ttl_ptr           = base_rams + 1  * STEP_32b_RAM;
+                            ram_orders_ptr        = base_rams + 3  * STEP_32b_RAM;
+                            ram_adr_c1_ptr        = base_rams + 4  * STEP_32b_RAM;
+                            ram_adr_c2_ptr        = base_rams + 5  * STEP_32b_RAM;
+                            ram_adr_c3_ptr        = base_rams + 6  * STEP_32b_RAM;
+                            ram_adr_c4_ptr        = base_rams + 7  * STEP_32b_RAM;
+                            ram_adr_c1b_ptr       = base_rams + 111 * STEP_32b_RAM;
+                            ram_adr_c2b_ptr       = base_rams + 112 * STEP_32b_RAM;
+                            ram_adr_c3b_ptr       = base_rams + 113 * STEP_32b_RAM;
+                            ram_adr_c4b_ptr       = base_rams + 114 * STEP_32b_RAM;
                             ram_nb_of_points0_ptr = base_rams + 41  * STEP_32b_RAM;
                             ram_nb_of_points1_ptr = base_rams + 42  * STEP_32b_RAM;
                             ram_nb_of_points2_ptr = base_rams + 43  * STEP_32b_RAM;
@@ -459,11 +468,22 @@ uint32_t create_events(void) {
                             ram_nb_of_points5_ptr = base_rams + 46  * STEP_32b_RAM;
                             ram_nb_of_points6_ptr = base_rams + 47  * STEP_32b_RAM;
                             ram_nb_of_points7_ptr = base_rams + 48  * STEP_32b_RAM;
+                            
+                            
                             break;
                         }
                         else {
                             ram_func_ptr++;
                             ram_ttl_ptr++;
+                            ram_orders_ptr++; 
+                            ram_adr_c1_ptr++; 
+                            ram_adr_c2_ptr++; 
+                            ram_adr_c3_ptr++; 
+                            ram_adr_c4_ptr++; 
+                            ram_adr_c1b_ptr++; 
+                            ram_adr_c2b_ptr++; 
+                            ram_adr_c3b_ptr++; 
+                            ram_adr_c4b_ptr++; 
                             ram_nb_of_points0_ptr++;
                             ram_nb_of_points1_ptr++;
                             ram_nb_of_points2_ptr++;
