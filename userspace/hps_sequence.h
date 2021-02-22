@@ -8,7 +8,7 @@
 #include <fcntl.h>    //open()
 #include <sys/mman.h> //mmap()
 
-#define HPS_RESERVED_ADDRESS    0x00000000 
+#define HPS_RESERVED_ADDRESS    1073741824 
 #define HPS_RESERVED_SPAN       (524288000)     //500Megabytes
 
 #define STEP_32b_RAM            131072

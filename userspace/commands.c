@@ -106,10 +106,10 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
  	if (  ram_id == 0  ||     //func
 		  ram_id == 49 ||    //timer
 		  ram_id == 1  ||      //ttl
-		  ram_id == 28       //tx_shape1
-		  //ram_id == 3 || //orders
-		  //ram_id == 4 || //c1
-		  //ram_id == 25
+		  ram_id == 28 ||      //tx_shape1
+		  ram_id == 3 || //orders
+		  ram_id == 4 || //c1
+		  ram_id == 25
    
 	) {
 		void *reserved_mem_base;

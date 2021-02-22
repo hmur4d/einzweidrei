@@ -5,7 +5,7 @@
 //#define HPS_OCR_ADDRESS           0xFFE00000 
 //#define HPS_OCR_SPAN              2097152            //span in bytes
 
-#define DDR_EVENTS_ADDRESS			524288000          //use upper portion of the 1GB
+#define DDR_EVENTS_ADDRESS			1598029824          //use upper portion of the 1GB
 #define DDR_EVENTS_SPAN			    65536                //span in bytes
 
 #define LW_BASE                     0xff200000
