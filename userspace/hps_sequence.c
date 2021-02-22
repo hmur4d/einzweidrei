@@ -41,7 +41,7 @@ uint32_t loopa_counters[2] = { 0,0 };
 
 uint32_t nb_elements_per_counter[16]; 
 
-uint32_t static get_addr(uint32_t* scan_counter, uint32_t base_address, uint32_t order, uint32_t nb_of_values) {
+uint32_t static inline get_addr(uint32_t* scan_counter, uint32_t base_address, uint32_t order, uint32_t nb_of_values) {
     return (scan_counter[(order==0? 0:order+1)] % nb_of_values) + base_address ;
 }
 
@@ -207,6 +207,8 @@ uint32_t create_events(void) {
                         uint32_t timer_addr         = get_addr(scan_counters, timer_base_addr, timer_order, nb_elements_per_counter[timer_order]);
 
                         //get the tx address
+                        //ench1
+                        uint8_t   tx1_en                 = ((0x1 << 14) & *ram_func_ptr) >> 14;
                         //freq
                         uint32_t  tx1_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c1_ptr) >> 0;
                         uint32_t  tx1_freq_order         = ((0xF   << 0 ) & *ram_orders_ptr) >> 0;
@@ -274,7 +276,7 @@ uint32_t create_events(void) {
                         *events_base_ptr = ram_freq1_ptr[tx1_freq_addr];
                         events_base_ptr++;
                         //phase + amplitude
-                        *events_base_ptr = (ram_amp1_ptr[tx1_amp_addr]&0xffff)<<16 | (ram_phase1_ptr[tx1_phase_addr]&0xffff);
+                        *events_base_ptr = tx1_en << 28 | (ram_amp1_ptr[tx1_amp_addr]&0xfff)<<16 | (ram_phase1_ptr[tx1_phase_addr]&0xffff);
                         events_base_ptr++;
                         //TX2
                         *events_base_ptr = ram_freq2_ptr[tx2_freq_addr];

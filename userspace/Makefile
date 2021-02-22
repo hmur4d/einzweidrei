@@ -7,12 +7,12 @@ else
 endif
 
 # allows selecting Debug/Release configurations from Visual Studio
-ifeq '$(VS_CONFIG)' 'Debug'
-	CFLAGS += -g
-	LDFLAGS += -g
-else
+#ifeq '$(VS_CONFIG)' 'Debug'
+#	CFLAGS += -g
+#	LDFLAGS += -g
+#else
 	CFLAGS += -O3
-endif
+#endif
 
 
 TARGET := cameleon
