@@ -56,7 +56,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 	}
  
 	//stupid registers......
-	if (ram_id >= 100 && ram_id <= 100+299) {
+	if (ram_id >= 100 && ram_id <= 100+299 &&nbytes==4) {
 		//reg offset 
 		uint32_t regs_offset = 131072 * 87;
 		uint32_t current_reg = ram_id - 100;
@@ -103,13 +103,27 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 	}
 
  
- 	if (  ram_id == 0  ||     //func
+ 	if (  (ram_id == 0  ||     //func
 		  ram_id == 49 ||    //timer
 		  ram_id == 1  ||      //ttl
 		  ram_id == 28 ||      //tx_shape1
-		  ram_id == 3 || //orders
-		  ram_id == 4 || //c1
-		  ram_id == 25
+		  ram_id == 3  ||     //orders
+		  ram_id == 4  ||     //c1
+		  ram_id == 5 ||     //c2
+		  ram_id == 6 ||     //c3
+		  ram_id == 7 ||     //c4
+		  ram_id == 25 ||   //freq1
+		  ram_id == 26 ||   //phse1
+		  ram_id == 27 ||   //amp1
+		  ram_id == 29 ||   //freq1
+		  ram_id == 33 ||   //freq1
+		  ram_id == 37 ||   //freq1
+		 ram_id == 111 ||
+		 ram_id == 112 ||
+		 ram_id == 113 ||
+		 ram_id == 114 
+
+		) && nbytes > 4
    
 	) {
 		void *reserved_mem_base;
