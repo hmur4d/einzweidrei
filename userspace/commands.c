@@ -118,10 +118,18 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		  ram_id == 29 ||   //freq1
 		  ram_id == 33 ||   //freq1
 		  ram_id == 37 ||   //freq1
-		 ram_id == 111 ||
+		 ram_id == 111 || //C1b
 		 ram_id == 112 ||
 		 ram_id == 113 ||
-		 ram_id == 114 
+		 ram_id == 114 ||
+		ram_id == 41 || //nb_of_points
+		ram_id == 42 ||
+		ram_id == 43 ||
+		ram_id == 44 ||
+		ram_id == 45 ||
+		ram_id == 46 ||
+		ram_id == 47 ||
+		ram_id == 48 
 
 		) && nbytes > 4
    

@@ -104,19 +104,28 @@ uint32_t create_events(void) {
 
 
     //RAMS
-    uint32_t* base_rams         = (uint32_t*)reserved_mem_base;
+    uint32_t* base_rams            = (uint32_t*)reserved_mem_base;
     //event ram
-    uint32_t* ram_func_ptr      = base_rams + 0  * STEP_32b_RAM;
-    uint32_t* ram_ttl_ptr       = base_rams + 1  * STEP_32b_RAM;
-    uint32_t* ram_orders_ptr    = base_rams + 3  * STEP_32b_RAM;
-    uint32_t* ram_adr_c1_ptr    = base_rams + 4  * STEP_32b_RAM;
-    uint32_t* ram_adr_c2_ptr    = base_rams + 5  * STEP_32b_RAM;
-    uint32_t* ram_adr_c3_ptr    = base_rams + 6  * STEP_32b_RAM;
-    uint32_t* ram_adr_c4_ptr    = base_rams + 7  * STEP_32b_RAM;
-    uint32_t* ram_adr_c1b_ptr   = base_rams + 111 * STEP_32b_RAM;
-    uint32_t* ram_adr_c2b_ptr   = base_rams + 112 * STEP_32b_RAM;
-    uint32_t* ram_adr_c3b_ptr   = base_rams + 113 * STEP_32b_RAM;
-    uint32_t* ram_adr_c4b_ptr   = base_rams + 114 * STEP_32b_RAM;
+    uint32_t* ram_func_ptr          = base_rams + 0  * STEP_32b_RAM;
+    uint32_t* ram_ttl_ptr           = base_rams + 1  * STEP_32b_RAM;
+    uint32_t* ram_orders_ptr        = base_rams + 3  * STEP_32b_RAM;
+    uint32_t* ram_adr_c1_ptr        = base_rams + 4  * STEP_32b_RAM;
+    uint32_t* ram_adr_c2_ptr        = base_rams + 5  * STEP_32b_RAM;
+    uint32_t* ram_adr_c3_ptr        = base_rams + 6  * STEP_32b_RAM;
+    uint32_t* ram_adr_c4_ptr        = base_rams + 7  * STEP_32b_RAM;
+    uint32_t* ram_adr_c1b_ptr       = base_rams + 111 * STEP_32b_RAM;
+    uint32_t* ram_adr_c2b_ptr       = base_rams + 112 * STEP_32b_RAM;
+    uint32_t* ram_adr_c3b_ptr       = base_rams + 113 * STEP_32b_RAM;
+    uint32_t* ram_adr_c4b_ptr       = base_rams + 114 * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points0_ptr = base_rams + 41  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points1_ptr = base_rams + 42  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points2_ptr = base_rams + 43  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points3_ptr = base_rams + 44  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points4_ptr = base_rams + 45  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points5_ptr = base_rams + 46  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points6_ptr = base_rams + 47  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points7_ptr = base_rams + 48  * STEP_32b_RAM;
+    
 
 
     //element ram
@@ -255,9 +264,11 @@ uint32_t create_events(void) {
                         //save the timer
                         *events_base_ptr = ram_timer_ptr[timer_addr];
                         events_base_ptr++;
+                        
                         //the ttl
                         *events_base_ptr = 0xFFFF & *ram_ttl_ptr;
                         events_base_ptr++;
+
                         //TX1
                         //freq
                         *events_base_ptr = ram_freq1_ptr[tx1_freq_addr];
@@ -281,23 +292,24 @@ uint32_t create_events(void) {
                         *events_base_ptr = (ram_amp4_ptr[tx4_amp_addr]&0xffff)<<16 | (ram_phase4_ptr[tx4_phase_addr]&0xffff);
                         events_base_ptr++;
 
-                        *events_base_ptr = nb_of_all_events;
+                        //RX
+                        *events_base_ptr = *ram_nb_of_points0_ptr;
                         events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
+                        *events_base_ptr = *ram_nb_of_points1_ptr;
                         events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
+                        *events_base_ptr = *ram_nb_of_points2_ptr;
                         events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
+                        *events_base_ptr = *ram_nb_of_points3_ptr;
                         events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
+                        *events_base_ptr = *ram_nb_of_points4_ptr;
                         events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
+                        *events_base_ptr = *ram_nb_of_points5_ptr;
                         events_base_ptr++;
-
-                        *events_base_ptr = nb_of_all_events;
+                        *events_base_ptr = *ram_nb_of_points6_ptr;
                         events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
+                        *events_base_ptr = *ram_nb_of_points7_ptr;
                         events_base_ptr++;
+                        
                         *events_base_ptr = nb_of_all_events;
                         events_base_ptr++;
                         *events_base_ptr = nb_of_all_events;
@@ -435,13 +447,29 @@ uint32_t create_events(void) {
                         
 
                         if ((*ram_func_ptr & 0xff) == 0x08) {
-                            ram_func_ptr = base_rams + 0  * STEP_32b_RAM;
-                            ram_ttl_ptr  = base_rams + 1  * STEP_32b_RAM;
+                            ram_func_ptr          = base_rams + 0  * STEP_32b_RAM;
+                            ram_ttl_ptr           = base_rams + 1  * STEP_32b_RAM;
+                            ram_nb_of_points0_ptr = base_rams + 41  * STEP_32b_RAM;
+                            ram_nb_of_points1_ptr = base_rams + 42  * STEP_32b_RAM;
+                            ram_nb_of_points2_ptr = base_rams + 43  * STEP_32b_RAM;
+                            ram_nb_of_points3_ptr = base_rams + 44  * STEP_32b_RAM;
+                            ram_nb_of_points4_ptr = base_rams + 45  * STEP_32b_RAM;
+                            ram_nb_of_points5_ptr = base_rams + 46  * STEP_32b_RAM;
+                            ram_nb_of_points6_ptr = base_rams + 47  * STEP_32b_RAM;
+                            ram_nb_of_points7_ptr = base_rams + 48  * STEP_32b_RAM;
                             break;
                         }
                         else {
                             ram_func_ptr++;
                             ram_ttl_ptr++;
+                            ram_nb_of_points0_ptr++;
+                            ram_nb_of_points1_ptr++;
+                            ram_nb_of_points2_ptr++;
+                            ram_nb_of_points3_ptr++;
+                            ram_nb_of_points4_ptr++;
+                            ram_nb_of_points5_ptr++;
+                            ram_nb_of_points6_ptr++;
+                            ram_nb_of_points7_ptr++;
                         }
 
 
