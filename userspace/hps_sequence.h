@@ -9,7 +9,7 @@
 #include <sys/mman.h> //mmap()
 
 #define HPS_RESERVED_ADDRESS    0x00000000 
-#define HPS_RESERVED_SPAN       0x20000000     //span in bytes
+#define HPS_RESERVED_SPAN       (524288000)     //500Megabytes
 
 #define STEP_32b_RAM            131072
 

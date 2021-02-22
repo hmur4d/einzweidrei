@@ -3,10 +3,10 @@
 
 
 //#define HPS_OCR_ADDRESS           0xFFE00000 
-//#define HPS_OCR_SPAN              0x200000            //span in bytes
+//#define HPS_OCR_SPAN              2097152            //span in bytes
 
-#define HPS_OCR_ADDRESS			    0x20000000 
-#define HPS_OCR_SPAN			    0x20000000     //span in bytes
+#define DDR_EVENTS_ADDRESS			524288000          //use upper portion of the 1GB
+#define DDR_EVENTS_SPAN			    65536                //span in bytes
 
 #define LW_BASE                     0xff200000
 #define LW_SPAN                     1048576
@@ -16,8 +16,8 @@
 //fifo is connected directly to dma
 #define DMA_TRANSFER_DST_DMAC       0x0
 #define DMA_FULL_BURST_IN_BYTES     16384 //1024*16 this is 128 event
-#define DMA_TRANSFER_1_SRC_DMAC     (HPS_OCR_ADDRESS)
-#define DMA_TRANSFER_2_SRC_DMAC     (HPS_OCR_ADDRESS+DMA_FULL_BURST_IN_BYTES)
+#define DMA_TRANSFER_1_SRC_DMAC     (DDR_EVENTS_ADDRESS)
+#define DMA_TRANSFER_2_SRC_DMAC     (DDR_EVENTS_ADDRESS+DMA_FULL_BURST_IN_BYTES)
 
 //counters
 #define _PS 0
@@ -52,18 +52,17 @@ uint32_t create_events(void) {
         return(1);
     }
     
-    //access onchip hps
-    void* ocr_base;
-    //mmap from HPS OCR to end HPS OCR
-    ocr_base = mmap(NULL, HPS_OCR_SPAN, (PROT_READ | PROT_WRITE),
-        MAP_SHARED, fd, HPS_OCR_ADDRESS);
+    //access events space
+    
+    void* events_base    = mmap( NULL, DDR_EVENTS_SPAN, (PROT_READ | PROT_WRITE),
+                            MAP_SHARED, fd, DDR_EVENTS_ADDRESS);
 
-    if (ocr_base == MAP_FAILED) {
-        printf("ERROR: mmap() ocr_base failed...\n");
+    if (events_base == MAP_FAILED) {
+        printf("ERROR: mmap() events_base failed...\n");
         close(fd);
         return(1);
     }
-    uint32_t* ocr_base_ptr = (uint32_t*)ocr_base;
+    uint32_t* events_base_ptr = (uint32_t*)events_base;
     
 
     //access reserved ddr
@@ -212,90 +211,90 @@ uint32_t create_events(void) {
 
                         //save the event
                         //save the timer
-                        *ocr_base_ptr = ram_timer_ptr[timer_addr];
-                        ocr_base_ptr++;
+                        *events_base_ptr = ram_timer_ptr[timer_addr];
+                        events_base_ptr++;
                         //the ttl
-                        *ocr_base_ptr = 0xFFFF & *ram_ttl_ptr;
-                        ocr_base_ptr++;
+                        *events_base_ptr = 0xFFFF & *ram_ttl_ptr;
+                        events_base_ptr++;
                         //TX1
                         //freq
-                        *ocr_base_ptr = 0;//ram_freq1_ptr[tx1_freq_addr];
-                        ocr_base_ptr++;
+                        *events_base_ptr = 0;//ram_freq1_ptr[tx1_freq_addr];
+                        events_base_ptr++;
                         //phase + amplitude
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
                         //TX2
-                        *ocr_base_ptr = 0;//ram_freq2_ptr[tx2_freq_addr];
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
+                        *events_base_ptr = 0;//ram_freq2_ptr[tx2_freq_addr];
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
                         //TX3
-                        *ocr_base_ptr = 0;//ram_freq3_ptr[tx3_freq_addr];
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
+                        *events_base_ptr = 0;//ram_freq3_ptr[tx3_freq_addr];
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
                         //TX4
-                        *ocr_base_ptr = 0;//ram_freq4_ptr[tx4_freq_addr];
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
+                        *events_base_ptr = 0;//ram_freq4_ptr[tx4_freq_addr];
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
 
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
 
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr++;
                         //next place is byte 128 (80h)
-                        ///ocr_base_ptr += 29;
+                        ///events_base_ptr += 29;
                         
                         /*
-                        *ocr_base_ptr = event_buffer[0];
-                        *ocr_base_ptr = nb_of_all_events;
-                        ocr_base_ptr += 1;
-                        *ocr_base_ptr = 0;
-                        ocr_base_ptr += 1;
+                        *events_base_ptr = event_buffer[0];
+                        *events_base_ptr = nb_of_all_events;
+                        events_base_ptr += 1;
+                        *events_base_ptr = 0;
+                        events_base_ptr += 1;
                         */
-                        //printf("event %p : %lx \n", ram_func_ptr, *ocr_base_ptr);
+                        //printf("event %p : %lx \n", ram_func_ptr, *events_base_ptr);
                         //prepare to the next addr in the ocr
 
 
@@ -344,7 +343,7 @@ uint32_t create_events(void) {
                                 FPGA_DMA_GO,
                                 1);
 
-                            printf("1 sending  %d events \n", nb_of_events_treated);
+                            //printf("1 sending  %d events \n", nb_of_events_treated);
                             is_second_trans = true;
 
                             
@@ -380,13 +379,13 @@ uint32_t create_events(void) {
                                 FPGA_DMA_GO,
                                 1);
 
-                            printf("2 sending  %d events\n", nb_of_events_treated);
+                            //printf("2 sending  %d events\n", nb_of_events_treated);
 
                             //reset the nb_events_treated
                             nb_of_events_treated = 0;
 
                             //reset the pointer
-                            ocr_base_ptr = (uint32_t*)ocr_base;
+                            events_base_ptr = (uint32_t*)events_base;
                             
                         }
 
@@ -421,8 +420,8 @@ uint32_t create_events(void) {
     */
 
     // --------------clean up our memory mapping and exit -----------------//
-    if (munmap(ocr_base, HPS_OCR_SPAN) != 0) {
-        printf("ERROR: munmap() ocr_base failed...\n");
+    if (munmap(events_base, DDR_EVENTS_SPAN) != 0) {
+        printf("ERROR: munmap() events_base failed...\n");
         close(fd);
         return(1);
     }
