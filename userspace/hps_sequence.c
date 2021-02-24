@@ -62,7 +62,7 @@ uint32_t create_events(void) {
         close(fd);
         return(1);
     }
-    uint32_t* events_base_ptr = (uint32_t*)events_base;
+    int_fast32_t* events_base_ptr = (int_fast32_t*)events_base;
     
 
     //access reserved ddr
@@ -106,27 +106,42 @@ uint32_t create_events(void) {
     //RAMS
     uint32_t* base_rams            = (uint32_t*)reserved_mem_base;
     //event ram
-    uint32_t* ram_func_ptr          = base_rams + 0  * STEP_32b_RAM;
-    uint32_t* ram_ttl_ptr           = base_rams + 1  * STEP_32b_RAM;
-    uint32_t* ram_orders_ptr        = base_rams + 3  * STEP_32b_RAM;
-    uint32_t* ram_adr_c1_ptr        = base_rams + 4  * STEP_32b_RAM;
-    uint32_t* ram_adr_c2_ptr        = base_rams + 5  * STEP_32b_RAM;
-    uint32_t* ram_adr_c3_ptr        = base_rams + 6  * STEP_32b_RAM;
-    uint32_t* ram_adr_c4_ptr        = base_rams + 7  * STEP_32b_RAM;
-    uint32_t* ram_adr_c1b_ptr       = base_rams + 111 * STEP_32b_RAM;
-    uint32_t* ram_adr_c2b_ptr       = base_rams + 112 * STEP_32b_RAM;
-    uint32_t* ram_adr_c3b_ptr       = base_rams + 113 * STEP_32b_RAM;
-    uint32_t* ram_adr_c4b_ptr       = base_rams + 114 * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points0_ptr = base_rams + 41  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points1_ptr = base_rams + 42  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points2_ptr = base_rams + 43  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points3_ptr = base_rams + 44  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points4_ptr = base_rams + 45  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points5_ptr = base_rams + 46  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points6_ptr = base_rams + 47  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points7_ptr = base_rams + 48  * STEP_32b_RAM;
-    
-
+    uint32_t* ram_func_ptr                  = base_rams + 0  * STEP_32b_RAM;
+    uint32_t* ram_ttl_ptr                   = base_rams + 1  * STEP_32b_RAM;
+    uint32_t* ram_orders_ptr                = base_rams + 3  * STEP_32b_RAM;
+    uint32_t* ram_adr_c1_ptr                = base_rams + 4  * STEP_32b_RAM;
+    uint32_t* ram_adr_c2_ptr                = base_rams + 5  * STEP_32b_RAM;
+    uint32_t* ram_adr_c3_ptr                = base_rams + 6  * STEP_32b_RAM;
+    uint32_t* ram_adr_c4_ptr                = base_rams + 7  * STEP_32b_RAM;
+    uint32_t* ram_adr_c1b_ptr               = base_rams + 111 * STEP_32b_RAM;
+    uint32_t* ram_adr_c2b_ptr               = base_rams + 112 * STEP_32b_RAM;
+    uint32_t* ram_adr_c3b_ptr               = base_rams + 113 * STEP_32b_RAM;
+    uint32_t* ram_adr_c4b_ptr               = base_rams + 114 * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points0_ptr         = base_rams + 41  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points1_ptr         = base_rams + 42  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points2_ptr         = base_rams + 43  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points3_ptr         = base_rams + 44  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points4_ptr         = base_rams + 45  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points5_ptr         = base_rams + 46  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points6_ptr         = base_rams + 47  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points7_ptr         = base_rams + 48  * STEP_32b_RAM;
+    uint32_t* ram_smart_ttl_adr_att_ptr     = base_rams + 90  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param1b_ptr      = base_rams + 95  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param2b_ptr      = base_rams + 96  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param3b_ptr      = base_rams + 97  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param4b_ptr      = base_rams + 98  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param1_ptr       = base_rams + 8   * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param2_ptr       = base_rams + 9   * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param3_ptr       = base_rams + 10  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param4_ptr       = base_rams + 11  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param1_ptr = base_rams + 74  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param2_ptr = base_rams + 75  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param3_ptr = base_rams + 76  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param4_ptr = base_rams + 77  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param1b_ptr = base_rams + 103  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param2b_ptr = base_rams + 104  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param3b_ptr = base_rams + 105  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param4b_ptr = base_rams + 106  * STEP_32b_RAM;
 
     //element ram
     uint32_t* ram_timer_ptr     = base_rams + 49 * STEP_32b_RAM;
@@ -201,100 +216,136 @@ uint32_t create_events(void) {
 
                         //get the current event
                         //get the timer address : look at the timer addr and timer order
-                        uint32_t timer_base_addr    = ((0x3FF   << 22) & *ram_func_ptr) >> 22;
-                        uint32_t timer_order        = ((0xF     << 18) & *ram_func_ptr) >> 18;
+                        int_fast32_t timer_base_addr             = ((0x3FF   << 22) & *ram_func_ptr) >> 22;
+                        int_fast32_t timer_order                 = ((0xF     << 18) & *ram_func_ptr) >> 18;
 
-                        uint32_t timer_addr         = get_addr(modded_scan_counters, timer_base_addr, timer_order);
+                        int_fast32_t timer_addr                  = get_addr(modded_scan_counters, timer_base_addr, timer_order);
 
                         //get the tx address
-                        //ench1
-                        uint8_t   tx1_en                 = ((0x1 << 14) & *ram_func_ptr) >> 14;
+                        //enables
+                        int_fast8_t   tx1_en                 = ((0x1     << 14) & *ram_func_ptr) >> 14;
+                        int_fast8_t   tx2_en                 = ((0x1     << 15) & *ram_func_ptr) >> 15;
+                        int_fast8_t   tx3_en                 = ((0x1     << 16) & *ram_func_ptr) >> 16;
+                        int_fast8_t   tx4_en                 = ((0x1     << 17) & *ram_func_ptr) >> 17;
+                        int_fast8_t   ph_reset               = ((0x1     <<  6) & *ram_func_ptr) >> 6;
+                        int_fast8_t   tx1_sw_att             = ((0x1     << 13) & *ram_smart_ttl_adr_att_ptr) >> 13;
+                        int_fast8_t   tx2_sw_att             = ((0x1     << 14) & *ram_smart_ttl_adr_att_ptr) >> 14;
+                        int_fast8_t   tx3_sw_att             = ((0x1     << 15) & *ram_smart_ttl_adr_att_ptr) >> 15;
+                        int_fast8_t   tx4_sw_att             = ((0x1     << 16) & *ram_smart_ttl_adr_att_ptr) >> 16;
+
                         //freq
-                        uint32_t  tx1_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c1_ptr) >> 0;
-                        uint32_t  tx1_freq_order         = ((0xF   << 0 ) & *ram_orders_ptr) >> 0;
-                        uint32_t  tx1_freq_addr          = get_addr(modded_scan_counters, tx1_freq_base_addr, tx1_freq_order);
+                        int_fast32_t  tx1_freq_base_addr         = ((0x3FF   << 0 ) & *ram_adr_c1_ptr) >> 0;
+                        int_fast32_t  tx1_freq_order             = ((0xF     << 0 ) & *ram_orders_ptr) >> 0;
+                        int_fast32_t  tx1_freq_addr              = get_addr(modded_scan_counters, tx1_freq_base_addr, tx1_freq_order);
                         //phase
-                        uint32_t  tx1_phase_base_addr    = ((0x3FF << 0) & *ram_adr_c1b_ptr) >> 0;
-                        uint32_t  tx1_phase_order        = ((0xF   << 16) & *ram_orders_ptr) >> 16;
-                        uint32_t  tx1_phase_addr         = get_addr(modded_scan_counters, tx1_phase_base_addr, tx1_phase_order);
+                        int_fast32_t  tx1_phase_base_addr        = ((0x3FF   << 0)  & *ram_adr_c1b_ptr) >> 0;
+                        int_fast32_t  tx1_phase_order            = ((0xF     << 16) & *ram_orders_ptr) >> 16;
+                        int_fast32_t  tx1_phase_addr             = get_addr(modded_scan_counters, tx1_phase_base_addr, tx1_phase_order);
                         //amp
-                        uint32_t  tx1_amp_base_addr      = ((0x3FF << 11) & *ram_adr_c1b_ptr) >> 11;
-                        uint32_t  tx1_amp_order          = ((0xF   << 22) & *ram_adr_c1b_ptr) >> 22;
-                        uint32_t  tx1_amp_addr           = get_addr(modded_scan_counters, tx1_amp_base_addr, tx1_amp_order);
+                        int_fast32_t  tx1_amp_base_addr          = ((0x3FF   << 11) & *ram_adr_c1b_ptr) >> 11;
+                        int_fast32_t  tx1_amp_order              = ((0xF     << 22) & *ram_adr_c1b_ptr) >> 22;
+                        int_fast32_t  tx1_amp_addr               = get_addr(modded_scan_counters, tx1_amp_base_addr, tx1_amp_order);
 
 
-                        uint32_t  tx2_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c2_ptr) >> 0;
-                        uint32_t  tx2_freq_order         = ((0xF   << 4 ) & *ram_orders_ptr) >> 4;
-                        uint32_t  tx2_freq_addr          = get_addr(modded_scan_counters, tx2_freq_base_addr, tx2_freq_order);
+                        int_fast32_t  tx2_freq_base_addr         = ((0x3FF   << 0 ) & *ram_adr_c2_ptr) >> 0;
+                        int_fast32_t  tx2_freq_order             = ((0xF     << 4 ) & *ram_orders_ptr) >> 4;
+                        int_fast32_t  tx2_freq_addr              = get_addr(modded_scan_counters, tx2_freq_base_addr, tx2_freq_order);
                         //phase
-                        uint32_t  tx2_phase_base_addr    = ((0x3FF << 0) & *ram_adr_c2b_ptr) >> 0;
-                        uint32_t  tx2_phase_order        = ((0xF   << 16) & *ram_orders_ptr) >> 16;
-                        uint32_t  tx2_phase_addr         = get_addr(modded_scan_counters, tx2_phase_base_addr, tx2_phase_order);
+                        int_fast32_t  tx2_phase_base_addr        = ((0x3FF   << 0)  & *ram_adr_c2b_ptr) >> 0;
+                        int_fast32_t  tx2_phase_order            = ((0xF     << 16) & *ram_orders_ptr) >> 16;
+                        int_fast32_t  tx2_phase_addr             = get_addr(modded_scan_counters, tx2_phase_base_addr, tx2_phase_order);
                         //amp
-                        uint32_t  tx2_amp_base_addr      = ((0x3FF << 11) & *ram_adr_c2b_ptr) >> 11;
-                        uint32_t  tx2_amp_order          = ((0xF   << 22) & *ram_adr_c2b_ptr) >> 22;
-                        uint32_t  tx2_amp_addr           = get_addr(modded_scan_counters, tx2_amp_base_addr, tx2_amp_order);
+                        int_fast32_t  tx2_amp_base_addr          = ((0x3FF   << 11) & *ram_adr_c2b_ptr) >> 11;
+                        int_fast32_t  tx2_amp_order              = ((0xF     << 22) & *ram_adr_c2b_ptr) >> 22;
+                        int_fast32_t  tx2_amp_addr               = get_addr(modded_scan_counters, tx2_amp_base_addr, tx2_amp_order);
                         
                         //    
-                        uint32_t  tx3_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c3_ptr) >> 0;
-                        uint32_t  tx3_freq_order         = ((0xF   << 8 ) & *ram_orders_ptr) >> 8;
-                        uint32_t  tx3_freq_addr          = get_addr(modded_scan_counters, tx3_freq_base_addr, tx3_freq_order);
+                        int_fast32_t  tx3_freq_base_addr         = ((0x3FF   << 0 ) & *ram_adr_c3_ptr) >> 0;
+                        int_fast32_t  tx3_freq_order             = ((0xF     << 8 ) & *ram_orders_ptr) >> 8;
+                        int_fast32_t  tx3_freq_addr              = get_addr(modded_scan_counters, tx3_freq_base_addr, tx3_freq_order);
                         //phase
-                        uint32_t  tx3_phase_base_addr    = ((0x3FF << 0) & *ram_adr_c3b_ptr) >> 0;
-                        uint32_t  tx3_phase_order        = ((0xF   << 16) & *ram_orders_ptr) >> 16;
-                        uint32_t  tx3_phase_addr         = get_addr(modded_scan_counters, tx3_phase_base_addr, tx3_phase_order);
+                        int_fast32_t  tx3_phase_base_addr        = ((0x3FF   << 0)  & *ram_adr_c3b_ptr) >> 0;
+                        int_fast32_t  tx3_phase_order            = ((0xF     << 16) & *ram_orders_ptr) >> 16;
+                        int_fast32_t  tx3_phase_addr             = get_addr(modded_scan_counters, tx3_phase_base_addr, tx3_phase_order);
                         //amp
-                        uint32_t  tx3_amp_base_addr      = ((0x3FF << 11) & *ram_adr_c3b_ptr) >> 11;
-                        uint32_t  tx3_amp_order          = ((0xF   << 22) & *ram_adr_c3b_ptr) >> 22;
-                        uint32_t  tx3_amp_addr           = get_addr(modded_scan_counters, tx3_amp_base_addr, tx3_amp_order);
+                        int_fast32_t  tx3_amp_base_addr          = ((0x3FF   << 11) & *ram_adr_c3b_ptr) >> 11;
+                        int_fast32_t  tx3_amp_order              = ((0xF     << 22) & *ram_adr_c3b_ptr) >> 22;
+                        int_fast32_t  tx3_amp_addr               = get_addr(modded_scan_counters, tx3_amp_base_addr, tx3_amp_order);
                         
                         //    
-                        uint32_t  tx4_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c4_ptr) >> 0;
-                        uint32_t  tx4_freq_order         = ((0xF   << 12) & *ram_orders_ptr) >> 12;
-                        uint32_t  tx4_freq_addr          = get_addr(modded_scan_counters, tx4_freq_base_addr, tx4_freq_order);
+                        int_fast32_t  tx4_freq_base_addr         = ((0x3FF   << 0 ) & *ram_adr_c4_ptr) >> 0;
+                        int_fast32_t  tx4_freq_order             = ((0xF     << 12) & *ram_orders_ptr) >> 12;
+                        int_fast32_t  tx4_freq_addr              = get_addr(modded_scan_counters, tx4_freq_base_addr, tx4_freq_order);
                         //phase
-                        uint32_t  tx4_phase_base_addr    = ((0x3FF << 0) & *ram_adr_c4b_ptr) >> 0;
-                        uint32_t  tx4_phase_order        = ((0xF   << 16) & *ram_orders_ptr) >> 16;
-                        uint32_t  tx4_phase_addr         = get_addr(modded_scan_counters, tx4_phase_base_addr, tx4_phase_order);
+                        int_fast32_t  tx4_phase_base_addr        = ((0x3FF   << 0)  & *ram_adr_c4b_ptr) >> 0;
+                        int_fast32_t  tx4_phase_order            = ((0xF     << 16) & *ram_orders_ptr) >> 16;
+                        int_fast32_t  tx4_phase_addr             = get_addr(modded_scan_counters, tx4_phase_base_addr, tx4_phase_order);
                         //amp
-                        uint32_t  tx4_amp_base_addr      = ((0x3FF << 11) & *ram_adr_c4b_ptr) >> 11;
-                        uint32_t  tx4_amp_order          = ((0xF   << 22) & *ram_adr_c4b_ptr) >> 22;
-                        uint32_t  tx4_amp_addr           = get_addr(modded_scan_counters, tx4_amp_base_addr, tx4_amp_order);
+                        int_fast32_t  tx4_amp_base_addr          = ((0x3FF   << 11) & *ram_adr_c4b_ptr) >> 11;
+                        int_fast32_t  tx4_amp_order              = ((0xF     << 22) & *ram_adr_c4b_ptr) >> 22;
+                        int_fast32_t  tx4_amp_addr               = get_addr(modded_scan_counters, tx4_amp_base_addr, tx4_amp_order);
 
 
                         //save the event
-                        //save the timer
+
+                        //0
                         *events_base_ptr = ram_timer_ptr[timer_addr];
                         events_base_ptr++;
-                        
-                        //the ttl
-                        *events_base_ptr = 0xFFFF & *ram_ttl_ptr;
+                        //32
+                        *events_base_ptr = *ram_ttl_ptr;
                         events_base_ptr++;
-
-                        //TX1
-                        //freq
+                        //64
                         *events_base_ptr = ram_freq1_ptr[tx1_freq_addr];
                         events_base_ptr++;
-                        //phase + amplitude
-                        *events_base_ptr = 1 << 29 |tx1_en << 28 | (ram_amp1_ptr[tx1_amp_addr]&0xfff)<<16 | (ram_phase1_ptr[tx1_phase_addr]&0xffff);
+                        //96
+                        *events_base_ptr = (ph_reset&0x1) << 30 | tx1_sw_att << 29 |tx1_en << 28 | (ram_amp1_ptr[tx1_amp_addr]&0xfff)<<16 | (ram_phase1_ptr[tx1_phase_addr]&0xffff);
                         events_base_ptr++;
-                        //TX2
+                        //128
+                        *events_base_ptr = (*ram_tx_shape_param1b_ptr&0x7FFF) << 17 | (*ram_tx_shape_param1_ptr&0x1FFFF);
+                        events_base_ptr++;
+                        //160
+                        *events_base_ptr = (*ram_tx_phase_shape_param1b_ptr&0x7FFF) << 17 | (*ram_tx_phase_shape_param1_ptr&0x1FFFF);
+                        events_base_ptr++;
+                        //192
                         *events_base_ptr = ram_freq2_ptr[tx2_freq_addr];
                         events_base_ptr++;
-                        *events_base_ptr = (ram_amp2_ptr[tx2_amp_addr]&0xffff)<<16 | (ram_phase2_ptr[tx2_phase_addr]&0xffff);
+                        //224
+                        *events_base_ptr = tx2_sw_att << 29 | tx2_en << 28 | (ram_amp2_ptr[tx2_amp_addr]&0xffff)<<16 | (ram_phase2_ptr[tx2_phase_addr]&0xffff);
                         events_base_ptr++;
-                        //TX3
+                        //256
+                        *events_base_ptr = (*ram_tx_shape_param2b_ptr&0x7FFF) << 17 | (*ram_tx_shape_param2_ptr&0x1FFFF);
+                        events_base_ptr++; 
+                        //288              
+                        *events_base_ptr = (*ram_tx_phase_shape_param2b_ptr&0x7FFF) << 17 | (*ram_tx_phase_shape_param2_ptr&0x1FFFF);
+                        events_base_ptr++;
+                        //320
                         *events_base_ptr = ram_freq3_ptr[tx3_freq_addr];
                         events_base_ptr++;
-                        *events_base_ptr = (ram_amp3_ptr[tx3_amp_addr]&0xffff)<<16 | (ram_phase3_ptr[tx3_phase_addr]&0xffff);
+                        //352
+                        *events_base_ptr = tx3_sw_att << 29 | tx3_en << 28 | (ram_amp3_ptr[tx3_amp_addr]&0xffff)<<16 | (ram_phase3_ptr[tx3_phase_addr]&0xffff);
                         events_base_ptr++;
-                        //TX4
+                        //384
+                        *events_base_ptr = (*ram_tx_shape_param3b_ptr&0x7FFF) << 17 | (*ram_tx_shape_param3_ptr&0x1FFFF);
+                        events_base_ptr++; 
+                        //416              
+                        *events_base_ptr = (*ram_tx_phase_shape_param3b_ptr&0x7FFF) << 17 | (*ram_tx_phase_shape_param3_ptr&0x1FFFF);
+                        events_base_ptr++;
+                        //448
                         *events_base_ptr = ram_freq4_ptr[tx4_freq_addr];
                         events_base_ptr++;
-                        *events_base_ptr = (ram_amp4_ptr[tx4_amp_addr]&0xffff)<<16 | (ram_phase4_ptr[tx4_phase_addr]&0xffff);
+                        //480
+                        *events_base_ptr = tx4_sw_att << 29 | tx4_en << 28 | (ram_amp4_ptr[tx4_amp_addr]&0xffff)<<16 | (ram_phase4_ptr[tx4_phase_addr]&0xffff);
                         events_base_ptr++;
-
-                        //RX
+                        //512
+                        *events_base_ptr = (*ram_tx_shape_param4b_ptr&0x7FFF) << 17 | (*ram_tx_shape_param4_ptr&0x1FFFF);
+                        events_base_ptr++; 
+                         //544             
+                        *events_base_ptr = (*ram_tx_phase_shape_param4b_ptr&0x7FFF) << 17 | (*ram_tx_phase_shape_param4_ptr&0x1FFFF);
+                        events_base_ptr++;
+                        
+                        // next assignments must be optimized
+                       
+                        //576
                         *events_base_ptr = *ram_nb_of_points0_ptr;
                         events_base_ptr++;
                         *events_base_ptr = *ram_nb_of_points1_ptr;
@@ -310,23 +361,6 @@ uint32_t create_events(void) {
                         *events_base_ptr = *ram_nb_of_points6_ptr;
                         events_base_ptr++;
                         *events_base_ptr = *ram_nb_of_points7_ptr;
-                        events_base_ptr++;
-                        
-                        *events_base_ptr = nb_of_all_events;
-                        events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
-                        events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
-                        events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
-                        events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
-                        events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
-                        events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
-                        events_base_ptr++;
-                        *events_base_ptr = nb_of_all_events;
                         events_base_ptr++;
                         *events_base_ptr = nb_of_all_events;
                         events_base_ptr++;
@@ -441,7 +475,7 @@ uint32_t create_events(void) {
                             nb_of_events_treated = 0;
 
                             //reset the pointer
-                            events_base_ptr = (uint32_t*)events_base;
+                            events_base_ptr = (int_fast32_t*)events_base;
                             
                         }
 
