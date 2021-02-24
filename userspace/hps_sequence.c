@@ -508,6 +508,71 @@ uint32_t create_events(void) {
         }
     }
 
+    printf("events treated left  : %d \n", nb_of_events_treated);
+
+    //maybe we have something to transfer still
+    if (nb_of_events_treated != 0){
+        if (nb_of_events_treated < 128) {
+            //go again
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                FPGA_DMA_READADDRESS,
+                (uint32_t)DMA_TRANSFER_1_SRC_DMAC);
+
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                FPGA_DMA_LENGTH,
+                nb_of_events_treated * 128);
+
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                FPGA_DMA_CONTROL,
+                FPGA_DMA_GO,
+                1);
+        }
+        else {
+            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
+            }
+
+            //reset the controls
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
+                FPGA_DMA_CONTROL,
+                FPGA_DMA_GO,
+                0);
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
+                FPGA_DMA_STATUS,
+                FPGA_DMA_DONE,
+                0);
+            //go again
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                FPGA_DMA_READADDRESS,
+                (uint32_t)DMA_TRANSFER_1_SRC_DMAC);
+
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                FPGA_DMA_LENGTH,
+                nb_of_events_treated * 128);
+
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                FPGA_DMA_CONTROL,
+                FPGA_DMA_GO,
+                1);
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /*
     for (int i = 0; i < _4D; i++) {
         printf("counters %d at %x \n", i, scan_counters[i]);
