@@ -19,14 +19,13 @@
 #define DMA_TRANSFER_1_SRC_DMAC     (DDR_EVENTS_ADDRESS)
 #define DMA_TRANSFER_2_SRC_DMAC     (DDR_EVENTS_ADDRESS+DMA_FULL_BURST_IN_BYTES)
 
-//counters
+//scan counters
 #define _PS 0
 #define _DS 1
 #define _1D 2
 #define _2D 3
 #define _3D 4
 #define _4D 5
-
 
 uint32_t scan_counters[6] = { 0,0,0,0,0,0 };
 uint32_t loopa_counters[2] = { 0,0 };
@@ -38,11 +37,12 @@ uint32_t loopa_counters[2] = { 0,0 };
 #define O_3D 3
 #define O_4D 4
 
-
+//orders pegged counters  
+uint32_t modded_scan_counters[16] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 uint32_t nb_elements_per_counter[16]; 
 
-uint32_t static inline get_addr(uint32_t* scan_counter, uint32_t base_address, uint32_t order, uint32_t nb_of_values) {
-    return (scan_counter[(order==0? 0:order+1)] % nb_of_values) + base_address ;
+uint32_t static inline get_addr(uint32_t* modded_scan_counter, uint32_t base_address, uint32_t order) {
+    return (modded_scan_counter[order] + base_address );
 }
 
 uint32_t create_events(void) {
@@ -204,7 +204,7 @@ uint32_t create_events(void) {
                         uint32_t timer_base_addr    = ((0x3FF   << 22) & *ram_func_ptr) >> 22;
                         uint32_t timer_order        = ((0xF     << 18) & *ram_func_ptr) >> 18;
 
-                        uint32_t timer_addr         = get_addr(scan_counters, timer_base_addr, timer_order, nb_elements_per_counter[timer_order]);
+                        uint32_t timer_addr         = get_addr(modded_scan_counters, timer_base_addr, timer_order);
 
                         //get the tx address
                         //ench1
@@ -212,54 +212,54 @@ uint32_t create_events(void) {
                         //freq
                         uint32_t  tx1_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c1_ptr) >> 0;
                         uint32_t  tx1_freq_order         = ((0xF   << 0 ) & *ram_orders_ptr) >> 0;
-                        uint32_t  tx1_freq_addr          = get_addr(scan_counters, tx1_freq_base_addr, tx1_freq_order, nb_elements_per_counter[tx1_freq_order]);
+                        uint32_t  tx1_freq_addr          = get_addr(modded_scan_counters, tx1_freq_base_addr, tx1_freq_order);
                         //phase
                         uint32_t  tx1_phase_base_addr    = ((0x3FF << 0) & *ram_adr_c1b_ptr) >> 0;
                         uint32_t  tx1_phase_order        = ((0xF   << 16) & *ram_orders_ptr) >> 16;
-                        uint32_t  tx1_phase_addr         = get_addr(scan_counters, tx1_phase_base_addr, tx1_phase_order, nb_elements_per_counter[tx1_phase_order]);
+                        uint32_t  tx1_phase_addr         = get_addr(modded_scan_counters, tx1_phase_base_addr, tx1_phase_order);
                         //amp
                         uint32_t  tx1_amp_base_addr      = ((0x3FF << 11) & *ram_adr_c1b_ptr) >> 11;
                         uint32_t  tx1_amp_order          = ((0xF   << 22) & *ram_adr_c1b_ptr) >> 22;
-                        uint32_t  tx1_amp_addr           = get_addr(scan_counters, tx1_amp_base_addr, tx1_amp_order, nb_elements_per_counter[tx1_amp_order]);
+                        uint32_t  tx1_amp_addr           = get_addr(modded_scan_counters, tx1_amp_base_addr, tx1_amp_order);
 
 
                         uint32_t  tx2_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c2_ptr) >> 0;
                         uint32_t  tx2_freq_order         = ((0xF   << 4 ) & *ram_orders_ptr) >> 4;
-                        uint32_t  tx2_freq_addr          = get_addr(scan_counters, tx2_freq_base_addr, tx2_freq_order, nb_elements_per_counter[tx2_freq_order]);
+                        uint32_t  tx2_freq_addr          = get_addr(modded_scan_counters, tx2_freq_base_addr, tx2_freq_order);
                         //phase
                         uint32_t  tx2_phase_base_addr    = ((0x3FF << 0) & *ram_adr_c2b_ptr) >> 0;
                         uint32_t  tx2_phase_order        = ((0xF   << 16) & *ram_orders_ptr) >> 16;
-                        uint32_t  tx2_phase_addr         = get_addr(scan_counters, tx2_phase_base_addr, tx2_phase_order, nb_elements_per_counter[tx2_phase_order]);
+                        uint32_t  tx2_phase_addr         = get_addr(modded_scan_counters, tx2_phase_base_addr, tx2_phase_order);
                         //amp
                         uint32_t  tx2_amp_base_addr      = ((0x3FF << 11) & *ram_adr_c2b_ptr) >> 11;
                         uint32_t  tx2_amp_order          = ((0xF   << 22) & *ram_adr_c2b_ptr) >> 22;
-                        uint32_t  tx2_amp_addr           = get_addr(scan_counters, tx2_amp_base_addr, tx2_amp_order, nb_elements_per_counter[tx2_amp_order]);
+                        uint32_t  tx2_amp_addr           = get_addr(modded_scan_counters, tx2_amp_base_addr, tx2_amp_order);
                         
                         //    
                         uint32_t  tx3_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c3_ptr) >> 0;
                         uint32_t  tx3_freq_order         = ((0xF   << 8 ) & *ram_orders_ptr) >> 8;
-                        uint32_t  tx3_freq_addr          = get_addr(scan_counters, tx3_freq_base_addr, tx3_freq_order, nb_elements_per_counter[tx3_freq_order]);
+                        uint32_t  tx3_freq_addr          = get_addr(modded_scan_counters, tx3_freq_base_addr, tx3_freq_order);
                         //phase
                         uint32_t  tx3_phase_base_addr    = ((0x3FF << 0) & *ram_adr_c3b_ptr) >> 0;
                         uint32_t  tx3_phase_order        = ((0xF   << 16) & *ram_orders_ptr) >> 16;
-                        uint32_t  tx3_phase_addr         = get_addr(scan_counters, tx3_phase_base_addr, tx3_phase_order, nb_elements_per_counter[tx3_phase_order]);
+                        uint32_t  tx3_phase_addr         = get_addr(modded_scan_counters, tx3_phase_base_addr, tx3_phase_order);
                         //amp
                         uint32_t  tx3_amp_base_addr      = ((0x3FF << 11) & *ram_adr_c3b_ptr) >> 11;
                         uint32_t  tx3_amp_order          = ((0xF   << 22) & *ram_adr_c3b_ptr) >> 22;
-                        uint32_t  tx3_amp_addr           = get_addr(scan_counters, tx3_amp_base_addr, tx3_amp_order, nb_elements_per_counter[tx3_amp_order]);
+                        uint32_t  tx3_amp_addr           = get_addr(modded_scan_counters, tx3_amp_base_addr, tx3_amp_order);
                         
                         //    
                         uint32_t  tx4_freq_base_addr     = ((0x3FF << 0 ) & *ram_adr_c4_ptr) >> 0;
                         uint32_t  tx4_freq_order         = ((0xF   << 12) & *ram_orders_ptr) >> 12;
-                        uint32_t  tx4_freq_addr          = get_addr(scan_counters, tx4_freq_base_addr, tx4_freq_order, nb_elements_per_counter[tx4_freq_order]);
+                        uint32_t  tx4_freq_addr          = get_addr(modded_scan_counters, tx4_freq_base_addr, tx4_freq_order);
                         //phase
                         uint32_t  tx4_phase_base_addr    = ((0x3FF << 0) & *ram_adr_c4b_ptr) >> 0;
                         uint32_t  tx4_phase_order        = ((0xF   << 16) & *ram_orders_ptr) >> 16;
-                        uint32_t  tx4_phase_addr         = get_addr(scan_counters, tx4_phase_base_addr, tx4_phase_order, nb_elements_per_counter[tx4_phase_order]);
+                        uint32_t  tx4_phase_addr         = get_addr(modded_scan_counters, tx4_phase_base_addr, tx4_phase_order);
                         //amp
                         uint32_t  tx4_amp_base_addr      = ((0x3FF << 11) & *ram_adr_c4b_ptr) >> 11;
                         uint32_t  tx4_amp_order          = ((0xF   << 22) & *ram_adr_c4b_ptr) >> 22;
-                        uint32_t  tx4_amp_addr           = get_addr(scan_counters, tx4_amp_base_addr, tx4_amp_order, nb_elements_per_counter[tx4_amp_order]);
+                        uint32_t  tx4_amp_addr           = get_addr(modded_scan_counters, tx4_amp_base_addr, tx4_amp_order);
 
 
                         //save the event
@@ -445,6 +445,12 @@ uint32_t create_events(void) {
                             
                         }
 
+
+                        //update mod counters
+                        modded_scan_counters[O_1D] = scan_counters[_1D] % nb_elements_per_counter[O_1D];
+                        modded_scan_counters[O_2D] = scan_counters[_2D] % nb_elements_per_counter[O_2D];
+                        modded_scan_counters[O_3D] = scan_counters[_3D] % nb_elements_per_counter[O_3D];
+                        modded_scan_counters[O_4D] = scan_counters[_4D] % nb_elements_per_counter[O_4D];
 
                         
 
