@@ -106,38 +106,38 @@ uint32_t create_events(void) {
     //RAMS
     uint32_t* base_rams            = (uint32_t*)reserved_mem_base;
     //event ram
-    uint32_t* ram_func_ptr                  = base_rams + 0  * STEP_32b_RAM;
-    uint32_t* ram_ttl_ptr                   = base_rams + 1  * STEP_32b_RAM;
-    uint32_t* ram_orders_ptr                = base_rams + 3  * STEP_32b_RAM;
-    uint32_t* ram_adr_c1_ptr                = base_rams + 4  * STEP_32b_RAM;
-    uint32_t* ram_adr_c2_ptr                = base_rams + 5  * STEP_32b_RAM;
-    uint32_t* ram_adr_c3_ptr                = base_rams + 6  * STEP_32b_RAM;
-    uint32_t* ram_adr_c4_ptr                = base_rams + 7  * STEP_32b_RAM;
-    uint32_t* ram_adr_c1b_ptr               = base_rams + 111 * STEP_32b_RAM;
-    uint32_t* ram_adr_c2b_ptr               = base_rams + 112 * STEP_32b_RAM;
-    uint32_t* ram_adr_c3b_ptr               = base_rams + 113 * STEP_32b_RAM;
-    uint32_t* ram_adr_c4b_ptr               = base_rams + 114 * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points0_ptr         = base_rams + 41  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points1_ptr         = base_rams + 42  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points2_ptr         = base_rams + 43  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points3_ptr         = base_rams + 44  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points4_ptr         = base_rams + 45  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points5_ptr         = base_rams + 46  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points6_ptr         = base_rams + 47  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points7_ptr         = base_rams + 48  * STEP_32b_RAM;
-    uint32_t* ram_smart_ttl_adr_att_ptr     = base_rams + 90  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param1b_ptr      = base_rams + 95  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param2b_ptr      = base_rams + 96  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param3b_ptr      = base_rams + 97  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param4b_ptr      = base_rams + 98  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param1_ptr       = base_rams + 8   * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param2_ptr       = base_rams + 9   * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param3_ptr       = base_rams + 10  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param4_ptr       = base_rams + 11  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param1_ptr = base_rams + 74  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param2_ptr = base_rams + 75  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param3_ptr = base_rams + 76  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param4_ptr = base_rams + 77  * STEP_32b_RAM;
+    uint32_t* ram_func_ptr                  = base_rams  + 0  * STEP_32b_RAM;
+    uint32_t* ram_ttl_ptr                   = base_rams  + 1  * STEP_32b_RAM;
+    uint32_t* ram_orders_ptr                = base_rams  + 3  * STEP_32b_RAM;
+    uint32_t* ram_adr_c1_ptr                = base_rams  + 4  * STEP_32b_RAM;
+    uint32_t* ram_adr_c2_ptr                = base_rams  + 5  * STEP_32b_RAM;
+    uint32_t* ram_adr_c3_ptr                = base_rams  + 6  * STEP_32b_RAM;
+    uint32_t* ram_adr_c4_ptr                = base_rams  + 7  * STEP_32b_RAM;
+    uint32_t* ram_adr_c1b_ptr               = base_rams  + 111 * STEP_32b_RAM;
+    uint32_t* ram_adr_c2b_ptr               = base_rams  + 112 * STEP_32b_RAM;
+    uint32_t* ram_adr_c3b_ptr               = base_rams  + 113 * STEP_32b_RAM;
+    uint32_t* ram_adr_c4b_ptr               = base_rams  + 114 * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points0_ptr         = base_rams  + 41  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points1_ptr         = base_rams  + 42  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points2_ptr         = base_rams  + 43  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points3_ptr         = base_rams  + 44  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points4_ptr         = base_rams  + 45  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points5_ptr         = base_rams  + 46  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points6_ptr         = base_rams  + 47  * STEP_32b_RAM;
+    uint32_t* ram_nb_of_points7_ptr         = base_rams  + 48  * STEP_32b_RAM;
+    uint32_t* ram_smart_ttl_adr_att_ptr     = base_rams  + 90  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param1b_ptr      = base_rams  + 95  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param2b_ptr      = base_rams  + 96  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param3b_ptr      = base_rams  + 97  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param4b_ptr      = base_rams  + 98  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param1_ptr       = base_rams  + 8   * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param2_ptr       = base_rams  + 9   * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param3_ptr       = base_rams  + 10  * STEP_32b_RAM;
+    uint32_t* ram_tx_shape_param4_ptr       = base_rams  + 11  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param1_ptr = base_rams  + 74  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param2_ptr = base_rams  + 75  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param3_ptr = base_rams  + 76  * STEP_32b_RAM;
+    uint32_t* ram_tx_phase_shape_param4_ptr = base_rams  + 77  * STEP_32b_RAM;
     uint32_t* ram_tx_phase_shape_param1b_ptr = base_rams + 103  * STEP_32b_RAM;
     uint32_t* ram_tx_phase_shape_param2b_ptr = base_rams + 104  * STEP_32b_RAM;
     uint32_t* ram_tx_phase_shape_param3b_ptr = base_rams + 105  * STEP_32b_RAM;
@@ -489,25 +489,51 @@ uint32_t create_events(void) {
                         
 
                         if ((*ram_func_ptr & 0xff) == 0x08) {
-                            ram_func_ptr          = base_rams + 0  * STEP_32b_RAM;
-                            ram_ttl_ptr           = base_rams + 1  * STEP_32b_RAM;
-                            ram_orders_ptr        = base_rams + 3  * STEP_32b_RAM;
-                            ram_adr_c1_ptr        = base_rams + 4  * STEP_32b_RAM;
-                            ram_adr_c2_ptr        = base_rams + 5  * STEP_32b_RAM;
-                            ram_adr_c3_ptr        = base_rams + 6  * STEP_32b_RAM;
-                            ram_adr_c4_ptr        = base_rams + 7  * STEP_32b_RAM;
-                            ram_adr_c1b_ptr       = base_rams + 111 * STEP_32b_RAM;
-                            ram_adr_c2b_ptr       = base_rams + 112 * STEP_32b_RAM;
-                            ram_adr_c3b_ptr       = base_rams + 113 * STEP_32b_RAM;
-                            ram_adr_c4b_ptr       = base_rams + 114 * STEP_32b_RAM;
-                            ram_nb_of_points0_ptr = base_rams + 41  * STEP_32b_RAM;
-                            ram_nb_of_points1_ptr = base_rams + 42  * STEP_32b_RAM;
-                            ram_nb_of_points2_ptr = base_rams + 43  * STEP_32b_RAM;
-                            ram_nb_of_points3_ptr = base_rams + 44  * STEP_32b_RAM;
-                            ram_nb_of_points4_ptr = base_rams + 45  * STEP_32b_RAM;
-                            ram_nb_of_points5_ptr = base_rams + 46  * STEP_32b_RAM;
-                            ram_nb_of_points6_ptr = base_rams + 47  * STEP_32b_RAM;
-                            ram_nb_of_points7_ptr = base_rams + 48  * STEP_32b_RAM;
+                            ram_func_ptr                  = base_rams + 0  * STEP_32b_RAM;
+                            ram_ttl_ptr                   = base_rams + 1  * STEP_32b_RAM;
+                            ram_orders_ptr                = base_rams + 3  * STEP_32b_RAM;
+                            ram_adr_c1_ptr                = base_rams + 4  * STEP_32b_RAM;
+                            ram_adr_c2_ptr                = base_rams + 5  * STEP_32b_RAM;
+                            ram_adr_c3_ptr                = base_rams + 6  * STEP_32b_RAM;
+                            ram_adr_c4_ptr                = base_rams + 7  * STEP_32b_RAM;
+                            ram_adr_c1b_ptr               = base_rams + 111 * STEP_32b_RAM;
+                            ram_adr_c2b_ptr               = base_rams + 112 * STEP_32b_RAM;
+                            ram_adr_c3b_ptr               = base_rams + 113 * STEP_32b_RAM;
+                            ram_adr_c4b_ptr               = base_rams + 114 * STEP_32b_RAM;
+                            ram_nb_of_points0_ptr         = base_rams + 41  * STEP_32b_RAM;
+                            ram_nb_of_points1_ptr         = base_rams + 42  * STEP_32b_RAM;
+                            ram_nb_of_points2_ptr         = base_rams + 43  * STEP_32b_RAM;
+                            ram_nb_of_points3_ptr         = base_rams + 44  * STEP_32b_RAM;
+                            ram_nb_of_points4_ptr         = base_rams + 45  * STEP_32b_RAM;
+                            ram_nb_of_points5_ptr         = base_rams + 46  * STEP_32b_RAM;
+                            ram_nb_of_points6_ptr         = base_rams + 47  * STEP_32b_RAM;
+                            ram_nb_of_points7_ptr         = base_rams + 48  * STEP_32b_RAM;
+                            ram_smart_ttl_adr_att_ptr     = base_rams + 90  * STEP_32b_RAM;
+                            ram_tx_shape_param1b_ptr      = base_rams + 95  * STEP_32b_RAM;
+                            ram_tx_shape_param2b_ptr      = base_rams + 96  * STEP_32b_RAM;
+                            ram_tx_shape_param3b_ptr      = base_rams + 97  * STEP_32b_RAM;
+                            ram_tx_shape_param4b_ptr      = base_rams + 98  * STEP_32b_RAM;
+                            ram_tx_shape_param1_ptr       = base_rams + 8   * STEP_32b_RAM;
+                            ram_tx_shape_param2_ptr       = base_rams + 9   * STEP_32b_RAM;
+                            ram_tx_shape_param3_ptr       = base_rams + 10  * STEP_32b_RAM;
+                            ram_tx_shape_param4_ptr       = base_rams + 11  * STEP_32b_RAM;
+                            ram_tx_phase_shape_param1_ptr = base_rams + 74  * STEP_32b_RAM;
+                            ram_tx_phase_shape_param2_ptr = base_rams + 75  * STEP_32b_RAM;
+                            ram_tx_phase_shape_param3_ptr = base_rams + 76  * STEP_32b_RAM;
+                            ram_tx_phase_shape_param4_ptr = base_rams + 77  * STEP_32b_RAM;
+                            ram_tx_phase_shape_param1b_ptr = base_rams + 103  * STEP_32b_RAM;
+                            ram_tx_phase_shape_param2b_ptr = base_rams + 104  * STEP_32b_RAM;
+                            ram_tx_phase_shape_param3b_ptr = base_rams + 105  * STEP_32b_RAM;
+                            ram_tx_phase_shape_param4b_ptr = base_rams + 106  * STEP_32b_RAM;
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
                             
                             
                             break;
@@ -532,6 +558,23 @@ uint32_t create_events(void) {
                             ram_nb_of_points5_ptr++;
                             ram_nb_of_points6_ptr++;
                             ram_nb_of_points7_ptr++;
+                            ram_smart_ttl_adr_att_ptr++;
+                            ram_tx_shape_param1b_ptr++;
+                            ram_tx_shape_param2b_ptr++;
+                            ram_tx_shape_param3b_ptr++;
+                            ram_tx_shape_param4b_ptr++;
+                            ram_tx_shape_param1_ptr++;
+                            ram_tx_shape_param2_ptr++;
+                            ram_tx_shape_param3_ptr++;
+                            ram_tx_shape_param4_ptr++;
+                            ram_tx_phase_shape_param1_ptr++;
+                            ram_tx_phase_shape_param2_ptr++;
+                            ram_tx_phase_shape_param3_ptr++;
+                            ram_tx_phase_shape_param4_ptr++;
+                            ram_tx_phase_shape_param1b_ptr++;
+                            ram_tx_phase_shape_param2b_ptr++;
+                            ram_tx_phase_shape_param3b_ptr++;
+                            ram_tx_phase_shape_param4b_ptr++;
                         }
 
 

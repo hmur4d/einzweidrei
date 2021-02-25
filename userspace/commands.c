@@ -88,7 +88,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		}
 
 
-		printf("\n\n write reg %d , %d bytes to  %p mem base \n\n", ram_id, nbytes, base_of_regs);
+		//printf("\n\n write reg %d , %d bytes to  %p mem base \n\n", ram_id, nbytes, base_of_regs);
 
 		memcpy(base_of_regs, body, nbytes);
 
@@ -104,7 +104,6 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 
  
  	if (  (ram_id == 0  ||     //func
-		  ram_id == 49 ||    //timer
 		  ram_id == 1  ||      //ttl
 		  ram_id == 28 ||      //tx_shape1
 		  ram_id == 3  ||     //orders
@@ -112,16 +111,10 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		  ram_id == 5 ||     //c2
 		  ram_id == 6 ||     //c3
 		  ram_id == 7 ||     //c4
-		  ram_id == 25 ||   //freq1
-		  ram_id == 26 ||   //phse1
-		  ram_id == 27 ||   //amp1
-		  ram_id == 29 ||   //freq1
-		  ram_id == 33 ||   //freq1
-		  ram_id == 37 ||   //freq1
-		 ram_id == 111 || //C1b
-		 ram_id == 112 ||
-		 ram_id == 113 ||
-		 ram_id == 114 ||
+		  ram_id == 111 || //C1b
+		  ram_id == 112 ||
+		  ram_id == 113 ||
+		  ram_id == 114 ||
 		ram_id == 41 || //nb_of_points
 		ram_id == 42 ||
 		ram_id == 43 ||
@@ -129,8 +122,37 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		ram_id == 45 ||
 		ram_id == 46 ||
 		ram_id == 47 ||
-		ram_id == 48 
-
+		ram_id == 48 ||
+        ram_id ==90  ||
+        ram_id ==95  ||
+        ram_id ==96  ||
+        ram_id ==97  ||
+        ram_id ==98  ||
+        ram_id ==8   ||
+        ram_id ==9   ||
+        ram_id ==10  ||
+        ram_id ==11  ||
+        ram_id ==74  ||
+        ram_id ==75  ||
+        ram_id ==76  ||
+        ram_id ==77  ||
+        ram_id ==103 ||
+        ram_id ==104 ||
+        ram_id ==105 ||
+        ram_id ==106 ||
+        ram_id == 49 ||    //timer
+        ram_id == 25 ||   //freq1
+		ram_id == 26 ||   //phse1
+		ram_id == 27 ||   //amp1
+        ram_id == 29 ||   //freq1
+        ram_id == 30 ||   //freq1
+        ram_id == 31 ||   //freq1
+		ram_id == 33 ||   //freq1
+        ram_id == 34 ||   //freq1
+        ram_id == 35 ||   //freq1
+		ram_id == 37 ||   //freq1
+        ram_id == 38 ||   //freq1
+        ram_id == 39    //freq1
 		) && nbytes > 4
    
 	) {
@@ -161,7 +183,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		}
 
      
-		printf("\n\n write ram %d , %d bytes to  %p mem base \n\n",ram_id, nbytes, base_of_ram );
+		//printf("\n\n write ram %d , %d bytes to  %p mem base \n\n",ram_id, nbytes, base_of_ram );
 		memcpy(base_of_ram, body, nbytes);
      
      
