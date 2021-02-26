@@ -14,5 +14,6 @@
 #define STEP_32b_RAM            131072
 
 uint32_t create_events(void);
+uint32_t printjer(void);
 
 #endif

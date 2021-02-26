@@ -16,6 +16,8 @@
 
 #include "hps_sequence.h"
 #include "fpga_dma.h"
+#include "hps_rxtx_seq.h"
+
 
 //probably not the correct place to define this, but not used anywhere else
 #define MOTHER_BOARD_ADDRESS 0x0
@@ -462,11 +464,14 @@ static void read_pio(clientsocket_t* client, header_t* header, const void* body)
 	}
 }
 
+bool zg_clicked=false;
+
 static void cmd_zg(clientsocket_t* client, header_t* header, const void* body) {
-	 printf("done : %d \n",create_events());
+	zg_clicked = true;
+	start_rxtx_seq();
 	//wait until fifo is written
-	//usleep(1000);
-	//start_sequence(false);
+	usleep(1000);
+	start_sequence(false);
 }
 
 static void cmd_rs(clientsocket_t* client, header_t* header, const void* body) {
@@ -508,6 +513,7 @@ static void cmd_cam_init(clientsocket_t* client, header_t* header, const void* b
 }
 
 static void cmd_stop_sequence(clientsocket_t* client, header_t* header, const void* body) {
+	if(zg_clicked==true) stop_rxtx_seq();
 	stop_sequence();
 }
 

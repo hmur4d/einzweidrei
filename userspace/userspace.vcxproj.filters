@@ -38,6 +38,7 @@
     <ClCompile Include="hps_sequence.c" />
     <ClCompile Include="fpga_dma.c" />
     <ClCompile Include="fpga_dmac_api.c" />
+    <ClCompile Include="hps_rxtx_seq.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log.h" />
@@ -87,6 +88,7 @@
     <ClInclude Include="hps_sequence.h" />
     <ClInclude Include="fpga_dma.h" />
     <ClInclude Include="fpga_dmac_api.h" />
+    <ClInclude Include="hps_rxtx_seq.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

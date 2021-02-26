@@ -43,6 +43,11 @@ uint32_t loopa_counters[2] = { 0,0 };
 uint32_t modded_scan_counters[16] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 uint32_t nb_elements_per_counter[16]; 
 
+uint32_t printjer(void) {
+    printf("HAHAHAHAHA \n");
+    return 10;
+}
+
 uint32_t static inline get_addr(uint32_t* modded_scan_counter, uint32_t base_address, uint32_t order) {
     return (modded_scan_counter[order] + base_address );
 }
@@ -405,8 +410,7 @@ uint32_t create_events(void) {
 
                         //printf("event treated : %d \n", nb_of_events_treated);
 
-                        
-                        uint32_t wait; 
+                       
 
                         //if the number of events treated is sufficient, send the 1st part of events.
                         if (nb_of_events_treated == 128) {
@@ -416,7 +420,6 @@ uint32_t create_events(void) {
                             //ongoing transfer needs to finish first
                             if (is_second_trans){
                                 while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0){
-                                    printf("on hold 1 %d \n", wait++);
                                 }
 
                                 //reset the controls
@@ -455,7 +458,6 @@ uint32_t create_events(void) {
                         if (nb_of_events_treated == 256){
                             //ongoing transfer needs to finish first
                             while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
-                                printf("on hold 2 %d \n", wait++);
                             }
                             
                             //reset the controls
