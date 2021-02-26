@@ -406,6 +406,7 @@ uint32_t create_events(void) {
                         //printf("event treated : %d \n", nb_of_events_treated);
 
                         
+                        uint32_t wait; 
 
                         //if the number of events treated is sufficient, send the 1st part of events.
                         if (nb_of_events_treated == 128) {
@@ -415,6 +416,7 @@ uint32_t create_events(void) {
                             //ongoing transfer needs to finish first
                             if (is_second_trans){
                                 while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0){
+                                    printf("on hold 1 %d \n", wait++);
                                 }
 
                                 //reset the controls
@@ -450,7 +452,12 @@ uint32_t create_events(void) {
 
 
                         //if there are still more events, send using 2nd part
-                        if ((nb_of_events_treated == 256) &&(fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 1)) {
+                        if (nb_of_events_treated == 256){
+                            //ongoing transfer needs to finish first
+                            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
+                                printf("on hold 2 %d \n", wait++);
+                            }
+                            
                             //reset the controls
                             fpga_dma_write_bit(FPGA_DMA_vaddr_void,
                                 FPGA_DMA_CONTROL,
@@ -474,7 +481,7 @@ uint32_t create_events(void) {
                                 FPGA_DMA_CONTROL,
                                 FPGA_DMA_GO,
                                 1);
-                            /*
+                            
                             //printf("2 sending  %d events\n", nb_of_events_treated);
 
                             //reset the nb_events_treated
@@ -482,78 +489,78 @@ uint32_t create_events(void) {
 
                             //reset the pointer
                             events_base_ptr = (int_fast32_t*)events_base;
-                            */
+                            
                         }
+        
+                        // //if there are still more events, send using 3rd part
+                        // if (nb_of_events_treated == 384) {
+                            // //ongoing transfer needs to finish first
+                            // while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
+                            // }
+                            // //reset the controls
+                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void,
+                                // FPGA_DMA_CONTROL,
+                                // FPGA_DMA_GO,
+                                // 0);
+                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
+                                // FPGA_DMA_STATUS,
+                                // FPGA_DMA_DONE,
+                                // 0);
+                            // //printf("3 src : %x\n", DMA_TRANSFER_3_SRC_DMAC);
+                            // //go again
+                            // fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                                // FPGA_DMA_READADDRESS,
+                                // (uint32_t)DMA_TRANSFER_3_SRC_DMAC);
 
-                        //if there are still more events, send using 3rd part
-                        if (nb_of_events_treated == 384) {
-                            //ongoing transfer needs to finish first
-                            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
-                            }
-                            //reset the controls
-                            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
-                                FPGA_DMA_CONTROL,
-                                FPGA_DMA_GO,
-                                0);
-                            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
-                                FPGA_DMA_STATUS,
-                                FPGA_DMA_DONE,
-                                0);
-                            //printf("3 src : %x\n", DMA_TRANSFER_3_SRC_DMAC);
-                            //go again
-                            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
-                                FPGA_DMA_READADDRESS,
-                                (uint32_t)DMA_TRANSFER_3_SRC_DMAC);
+                            // fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                                // FPGA_DMA_LENGTH,
+                                // DMA_FULL_BURST_IN_BYTES);
 
-                            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
-                                FPGA_DMA_LENGTH,
-                                DMA_FULL_BURST_IN_BYTES);
+                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                                // FPGA_DMA_CONTROL,
+                                // FPGA_DMA_GO,
+                                // 1);
 
-                            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
-                                FPGA_DMA_CONTROL,
-                                FPGA_DMA_GO,
-                                1);
+                        // }
 
-                        }
+                        // //if there are still more events, send using 4th part
+                        // if (nb_of_events_treated == 512) {
+                            // //ongoing transfer needs to finish first
+                            // while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
+                            // }
+                            // //reset the controls
+                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void,
+                                // FPGA_DMA_CONTROL,
+                                // FPGA_DMA_GO,
+                                // 0);
+                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
+                                // FPGA_DMA_STATUS,
+                                // FPGA_DMA_DONE,
+                                // 0);
+                            // //printf("4 src : %x\n", DMA_TRANSFER_4_SRC_DMAC);
+                            // //go again
+                            // fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                                // FPGA_DMA_READADDRESS,
+                                // (uint32_t)DMA_TRANSFER_4_SRC_DMAC);
 
-                        //if there are still more events, send using 4th part
-                        if (nb_of_events_treated == 512) {
-                            //ongoing transfer needs to finish first
-                            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
-                            }
-                            //reset the controls
-                            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
-                                FPGA_DMA_CONTROL,
-                                FPGA_DMA_GO,
-                                0);
-                            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
-                                FPGA_DMA_STATUS,
-                                FPGA_DMA_DONE,
-                                0);
-                            //printf("4 src : %x\n", DMA_TRANSFER_4_SRC_DMAC);
-                            //go again
-                            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
-                                FPGA_DMA_READADDRESS,
-                                (uint32_t)DMA_TRANSFER_4_SRC_DMAC);
+                            // fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                                // FPGA_DMA_LENGTH,
+                                // DMA_FULL_BURST_IN_BYTES);
 
-                            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
-                                FPGA_DMA_LENGTH,
-                                DMA_FULL_BURST_IN_BYTES);
+                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                                // FPGA_DMA_CONTROL,
+                                // FPGA_DMA_GO,
+                                // 1);
 
-                            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
-                                FPGA_DMA_CONTROL,
-                                FPGA_DMA_GO,
-                                1);
+                            // //printf("2 sending  %d events\n", nb_of_events_treated);
 
-                            //printf("2 sending  %d events\n", nb_of_events_treated);
+                            // //reset the nb_events_treated
+                            // nb_of_events_treated = 0;
 
-                            //reset the nb_events_treated
-                            nb_of_events_treated = 0;
+                            // //reset the pointer
+                            // events_base_ptr = (int_fast32_t*)events_base;
 
-                            //reset the pointer
-                            events_base_ptr = (int_fast32_t*)events_base;
-
-                        }
+                        // }
 
                         //update mod counters
                         modded_scan_counters[O_1D] = scan_counters[_1D] % nb_elements_per_counter[O_1D];
