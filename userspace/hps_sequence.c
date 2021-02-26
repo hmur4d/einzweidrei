@@ -18,6 +18,8 @@
 #define DMA_FULL_BURST_IN_BYTES     16384 //1024*16 this is 128 event
 #define DMA_TRANSFER_1_SRC_DMAC     (DDR_EVENTS_ADDRESS)
 #define DMA_TRANSFER_2_SRC_DMAC     (DDR_EVENTS_ADDRESS+DMA_FULL_BURST_IN_BYTES)
+#define DMA_TRANSFER_3_SRC_DMAC     (DDR_EVENTS_ADDRESS+(2*DMA_FULL_BURST_IN_BYTES))
+#define DMA_TRANSFER_4_SRC_DMAC     (DDR_EVENTS_ADDRESS+(3*DMA_FULL_BURST_IN_BYTES))
 
 //scan counters
 #define _PS 0
@@ -104,44 +106,82 @@ uint32_t create_events(void) {
 
 
     //RAMS
-    uint32_t* base_rams            = (uint32_t*)reserved_mem_base;
+   uint32_t* base_rams                          = (uint32_t*)reserved_mem_base;
+   uint32_t* ram_func_base                      = base_rams  + 0  * STEP_32b_RAM;
+   uint32_t* ram_ttl_base                       = base_rams  + 1  * STEP_32b_RAM;
+   uint32_t* ram_orders_base                    = base_rams  + 3  * STEP_32b_RAM;
+   uint32_t* ram_adr_c1_base                    = base_rams  + 4  * STEP_32b_RAM;
+   uint32_t* ram_adr_c2_base                    = base_rams  + 5  * STEP_32b_RAM;
+   uint32_t* ram_adr_c3_base                    = base_rams  + 6  * STEP_32b_RAM;
+   uint32_t* ram_adr_c4_base                    = base_rams  + 7  * STEP_32b_RAM;
+   uint32_t* ram_adr_c1b_base                   = base_rams  + 111 * STEP_32b_RAM;
+   uint32_t* ram_adr_c2b_base                   = base_rams  + 112 * STEP_32b_RAM;
+   uint32_t* ram_adr_c3b_base                   = base_rams  + 113 * STEP_32b_RAM;
+   uint32_t* ram_adr_c4b_base                   = base_rams  + 114 * STEP_32b_RAM;
+   uint32_t* ram_nb_of_points0_base             = base_rams  + 41  * STEP_32b_RAM;
+   uint32_t* ram_nb_of_points1_base             = base_rams  + 42  * STEP_32b_RAM;
+   uint32_t* ram_nb_of_points2_base             = base_rams  + 43  * STEP_32b_RAM;
+   uint32_t* ram_nb_of_points3_base             = base_rams  + 44  * STEP_32b_RAM;
+   uint32_t* ram_nb_of_points4_base             = base_rams  + 45  * STEP_32b_RAM;
+   uint32_t* ram_nb_of_points5_base             = base_rams  + 46  * STEP_32b_RAM;
+   uint32_t* ram_nb_of_points6_base             = base_rams  + 47  * STEP_32b_RAM;
+   uint32_t* ram_nb_of_points7_base             = base_rams  + 48  * STEP_32b_RAM;
+   uint32_t* ram_smart_ttl_adr_att_base         = base_rams  + 90  * STEP_32b_RAM;
+   uint32_t* ram_tx_shape_param1b_base          = base_rams  + 95  * STEP_32b_RAM;
+   uint32_t* ram_tx_shape_param2b_base          = base_rams  + 96  * STEP_32b_RAM;
+   uint32_t* ram_tx_shape_param3b_base          = base_rams  + 97  * STEP_32b_RAM;
+   uint32_t* ram_tx_shape_param4b_base          = base_rams  + 98  * STEP_32b_RAM;
+   uint32_t* ram_tx_shape_param1_base           = base_rams  + 8   * STEP_32b_RAM;
+   uint32_t* ram_tx_shape_param2_base           = base_rams  + 9   * STEP_32b_RAM;
+   uint32_t* ram_tx_shape_param3_base           = base_rams  + 10  * STEP_32b_RAM;
+   uint32_t* ram_tx_shape_param4_base           = base_rams  + 11  * STEP_32b_RAM;
+   uint32_t* ram_tx_phase_shape_param1_base     = base_rams  + 74  * STEP_32b_RAM;
+   uint32_t* ram_tx_phase_shape_param2_base     = base_rams  + 75  * STEP_32b_RAM;
+   uint32_t* ram_tx_phase_shape_param3_base     = base_rams  + 76  * STEP_32b_RAM;
+   uint32_t* ram_tx_phase_shape_param4_base     = base_rams  + 77  * STEP_32b_RAM;
+   uint32_t* ram_tx_phase_shape_param1b_base    = base_rams  + 103  * STEP_32b_RAM;
+   uint32_t* ram_tx_phase_shape_param2b_base    = base_rams  + 104  * STEP_32b_RAM;
+   uint32_t* ram_tx_phase_shape_param3b_base    = base_rams  + 105  * STEP_32b_RAM;
+   uint32_t* ram_tx_phase_shape_param4b_base    = base_rams  + 106  * STEP_32b_RAM;
+    
+
     //event ram
-    uint32_t* ram_func_ptr                  = base_rams  + 0  * STEP_32b_RAM;
-    uint32_t* ram_ttl_ptr                   = base_rams  + 1  * STEP_32b_RAM;
-    uint32_t* ram_orders_ptr                = base_rams  + 3  * STEP_32b_RAM;
-    uint32_t* ram_adr_c1_ptr                = base_rams  + 4  * STEP_32b_RAM;
-    uint32_t* ram_adr_c2_ptr                = base_rams  + 5  * STEP_32b_RAM;
-    uint32_t* ram_adr_c3_ptr                = base_rams  + 6  * STEP_32b_RAM;
-    uint32_t* ram_adr_c4_ptr                = base_rams  + 7  * STEP_32b_RAM;
-    uint32_t* ram_adr_c1b_ptr               = base_rams  + 111 * STEP_32b_RAM;
-    uint32_t* ram_adr_c2b_ptr               = base_rams  + 112 * STEP_32b_RAM;
-    uint32_t* ram_adr_c3b_ptr               = base_rams  + 113 * STEP_32b_RAM;
-    uint32_t* ram_adr_c4b_ptr               = base_rams  + 114 * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points0_ptr         = base_rams  + 41  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points1_ptr         = base_rams  + 42  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points2_ptr         = base_rams  + 43  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points3_ptr         = base_rams  + 44  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points4_ptr         = base_rams  + 45  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points5_ptr         = base_rams  + 46  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points6_ptr         = base_rams  + 47  * STEP_32b_RAM;
-    uint32_t* ram_nb_of_points7_ptr         = base_rams  + 48  * STEP_32b_RAM;
-    uint32_t* ram_smart_ttl_adr_att_ptr     = base_rams  + 90  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param1b_ptr      = base_rams  + 95  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param2b_ptr      = base_rams  + 96  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param3b_ptr      = base_rams  + 97  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param4b_ptr      = base_rams  + 98  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param1_ptr       = base_rams  + 8   * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param2_ptr       = base_rams  + 9   * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param3_ptr       = base_rams  + 10  * STEP_32b_RAM;
-    uint32_t* ram_tx_shape_param4_ptr       = base_rams  + 11  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param1_ptr = base_rams  + 74  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param2_ptr = base_rams  + 75  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param3_ptr = base_rams  + 76  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param4_ptr = base_rams  + 77  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param1b_ptr = base_rams + 103  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param2b_ptr = base_rams + 104  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param3b_ptr = base_rams + 105  * STEP_32b_RAM;
-    uint32_t* ram_tx_phase_shape_param4b_ptr = base_rams + 106  * STEP_32b_RAM;
+    uint32_t* ram_func_ptr                        =  ram_func_base                   ;
+    uint32_t* ram_ttl_ptr                         =  ram_ttl_base                    ;
+    uint32_t* ram_orders_ptr                      =  ram_orders_base                 ;
+    uint32_t* ram_adr_c1_ptr                      =  ram_adr_c1_base                 ;
+    uint32_t* ram_adr_c2_ptr                      =  ram_adr_c2_base                 ;
+    uint32_t* ram_adr_c3_ptr                      =  ram_adr_c3_base                 ;
+    uint32_t* ram_adr_c4_ptr                      =  ram_adr_c4_base                 ;
+    uint32_t* ram_adr_c1b_ptr                     =  ram_adr_c1b_base                ;
+    uint32_t* ram_adr_c2b_ptr                     =  ram_adr_c2b_base                ;
+    uint32_t* ram_adr_c3b_ptr                     =  ram_adr_c3b_base                ;
+    uint32_t* ram_adr_c4b_ptr                     =  ram_adr_c4b_base                ;
+    uint32_t* ram_nb_of_points0_ptr               =  ram_nb_of_points0_base          ;
+    uint32_t* ram_nb_of_points1_ptr               =  ram_nb_of_points1_base          ;
+    uint32_t* ram_nb_of_points2_ptr               =  ram_nb_of_points2_base          ;
+    uint32_t* ram_nb_of_points3_ptr               =  ram_nb_of_points3_base          ;
+    uint32_t* ram_nb_of_points4_ptr               =  ram_nb_of_points4_base          ;
+    uint32_t* ram_nb_of_points5_ptr               =  ram_nb_of_points5_base          ;
+    uint32_t* ram_nb_of_points6_ptr               =  ram_nb_of_points6_base          ;
+    uint32_t* ram_nb_of_points7_ptr               =  ram_nb_of_points7_base          ;
+    uint32_t* ram_smart_ttl_adr_att_ptr           =  ram_smart_ttl_adr_att_base      ;
+    uint32_t* ram_tx_shape_param1b_ptr            =  ram_tx_shape_param1b_base       ;
+    uint32_t* ram_tx_shape_param2b_ptr            =  ram_tx_shape_param2b_base       ;
+    uint32_t* ram_tx_shape_param3b_ptr            =  ram_tx_shape_param3b_base       ;
+    uint32_t* ram_tx_shape_param4b_ptr            =  ram_tx_shape_param4b_base       ;
+    uint32_t* ram_tx_shape_param1_ptr             =  ram_tx_shape_param1_base        ;
+    uint32_t* ram_tx_shape_param2_ptr             =  ram_tx_shape_param2_base        ;
+    uint32_t* ram_tx_shape_param3_ptr             =  ram_tx_shape_param3_base        ;
+    uint32_t* ram_tx_shape_param4_ptr             =  ram_tx_shape_param4_base        ;
+    uint32_t* ram_tx_phase_shape_param1_ptr       =  ram_tx_phase_shape_param1_base  ;
+    uint32_t* ram_tx_phase_shape_param2_ptr       =  ram_tx_phase_shape_param2_base  ;
+    uint32_t* ram_tx_phase_shape_param3_ptr       =  ram_tx_phase_shape_param3_base  ;
+    uint32_t* ram_tx_phase_shape_param4_ptr       =  ram_tx_phase_shape_param4_base  ;
+    uint32_t* ram_tx_phase_shape_param1b_ptr      =  ram_tx_phase_shape_param1b_base ;
+    uint32_t* ram_tx_phase_shape_param2b_ptr      =  ram_tx_phase_shape_param2b_base ;
+    uint32_t* ram_tx_phase_shape_param3b_ptr      =  ram_tx_phase_shape_param3b_base ;
+    uint32_t* ram_tx_phase_shape_param4b_ptr      =  ram_tx_phase_shape_param4b_base ;
 
     //element ram
     uint32_t* ram_timer_ptr     = base_rams + 49 * STEP_32b_RAM;
@@ -227,7 +267,8 @@ uint32_t create_events(void) {
                         int_fast8_t   tx2_en                 = ((0x1     << 15) & *ram_func_ptr) >> 15;
                         int_fast8_t   tx3_en                 = ((0x1     << 16) & *ram_func_ptr) >> 16;
                         int_fast8_t   tx4_en                 = ((0x1     << 17) & *ram_func_ptr) >> 17;
-                        int_fast8_t   ph_reset               = ((0x1     <<  6) & *ram_func_ptr) >> 6;
+                        //int_fast8_t   ph_reset               = ((0x1     <<  6) & *ram_func_ptr) >> 6;
+                        int_fast8_t   ph_reset               = ((0x1 << 6) & *ram_func_ptr) >> 6;
                         int_fast8_t   tx1_sw_att             = ((0x1     << 13) & *ram_smart_ttl_adr_att_ptr) >> 13;
                         int_fast8_t   tx2_sw_att             = ((0x1     << 14) & *ram_smart_ttl_adr_att_ptr) >> 14;
                         int_fast8_t   tx3_sw_att             = ((0x1     << 15) & *ram_smart_ttl_adr_att_ptr) >> 15;
@@ -346,8 +387,9 @@ uint32_t create_events(void) {
                         // next assignments must be optimized
                        
                         //576
-                        *events_base_ptr = *ram_nb_of_points0_ptr;
+                        *events_base_ptr = 1<<23|(*ram_nb_of_points0_ptr&0x7FFFFF);
                         events_base_ptr++;
+                        //608
                         *events_base_ptr = *ram_nb_of_points1_ptr;
                         events_base_ptr++;
                         *events_base_ptr = *ram_nb_of_points2_ptr;
@@ -454,11 +496,81 @@ uint32_t create_events(void) {
                                 FPGA_DMA_STATUS,
                                 FPGA_DMA_DONE,
                                 0);
-
+                            //printf("2 src : %x\n", DMA_TRANSFER_2_SRC_DMAC);
                             //go again
                             fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
                                 FPGA_DMA_READADDRESS,
                                 (uint32_t)DMA_TRANSFER_2_SRC_DMAC);
+
+                            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                                FPGA_DMA_LENGTH,
+                                DMA_FULL_BURST_IN_BYTES);
+
+                            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                                FPGA_DMA_CONTROL,
+                                FPGA_DMA_GO,
+                                1);
+                            /*
+                            //printf("2 sending  %d events\n", nb_of_events_treated);
+
+                            //reset the nb_events_treated
+                            nb_of_events_treated = 0;
+
+                            //reset the pointer
+                            events_base_ptr = (int_fast32_t*)events_base;
+                            */
+                        }
+
+                        //if there are still more events, send using 3rd part
+                        if (nb_of_events_treated == 384) {
+                            //ongoing transfer needs to finish first
+                            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
+                            }
+                            //reset the controls
+                            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
+                                FPGA_DMA_CONTROL,
+                                FPGA_DMA_GO,
+                                0);
+                            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
+                                FPGA_DMA_STATUS,
+                                FPGA_DMA_DONE,
+                                0);
+                            //printf("3 src : %x\n", DMA_TRANSFER_3_SRC_DMAC);
+                            //go again
+                            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                                FPGA_DMA_READADDRESS,
+                                (uint32_t)DMA_TRANSFER_3_SRC_DMAC);
+
+                            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                                FPGA_DMA_LENGTH,
+                                DMA_FULL_BURST_IN_BYTES);
+
+                            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                                FPGA_DMA_CONTROL,
+                                FPGA_DMA_GO,
+                                1);
+
+                        }
+
+                        //if there are still more events, send using 4th part
+                        if (nb_of_events_treated == 512) {
+                            //ongoing transfer needs to finish first
+                            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
+                            }
+                            //reset the controls
+                            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
+                                FPGA_DMA_CONTROL,
+                                FPGA_DMA_GO,
+                                0);
+                            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
+                                FPGA_DMA_STATUS,
+                                FPGA_DMA_DONE,
+                                0);
+                            //printf("4 src : %x\n", DMA_TRANSFER_4_SRC_DMAC);
+                            //go again
+                            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                                FPGA_DMA_READADDRESS,
+                                (uint32_t)DMA_TRANSFER_4_SRC_DMAC);
 
                             fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
                                 FPGA_DMA_LENGTH,
@@ -476,9 +588,8 @@ uint32_t create_events(void) {
 
                             //reset the pointer
                             events_base_ptr = (int_fast32_t*)events_base;
-                            
-                        }
 
+                        }
 
                         //update mod counters
                         modded_scan_counters[O_1D] = scan_counters[_1D] % nb_elements_per_counter[O_1D];
@@ -489,42 +600,42 @@ uint32_t create_events(void) {
                         
 
                         if ((*ram_func_ptr & 0xff) == 0x08) {
-                            ram_func_ptr                  = base_rams + 0  * STEP_32b_RAM;
-                            ram_ttl_ptr                   = base_rams + 1  * STEP_32b_RAM;
-                            ram_orders_ptr                = base_rams + 3  * STEP_32b_RAM;
-                            ram_adr_c1_ptr                = base_rams + 4  * STEP_32b_RAM;
-                            ram_adr_c2_ptr                = base_rams + 5  * STEP_32b_RAM;
-                            ram_adr_c3_ptr                = base_rams + 6  * STEP_32b_RAM;
-                            ram_adr_c4_ptr                = base_rams + 7  * STEP_32b_RAM;
-                            ram_adr_c1b_ptr               = base_rams + 111 * STEP_32b_RAM;
-                            ram_adr_c2b_ptr               = base_rams + 112 * STEP_32b_RAM;
-                            ram_adr_c3b_ptr               = base_rams + 113 * STEP_32b_RAM;
-                            ram_adr_c4b_ptr               = base_rams + 114 * STEP_32b_RAM;
-                            ram_nb_of_points0_ptr         = base_rams + 41  * STEP_32b_RAM;
-                            ram_nb_of_points1_ptr         = base_rams + 42  * STEP_32b_RAM;
-                            ram_nb_of_points2_ptr         = base_rams + 43  * STEP_32b_RAM;
-                            ram_nb_of_points3_ptr         = base_rams + 44  * STEP_32b_RAM;
-                            ram_nb_of_points4_ptr         = base_rams + 45  * STEP_32b_RAM;
-                            ram_nb_of_points5_ptr         = base_rams + 46  * STEP_32b_RAM;
-                            ram_nb_of_points6_ptr         = base_rams + 47  * STEP_32b_RAM;
-                            ram_nb_of_points7_ptr         = base_rams + 48  * STEP_32b_RAM;
-                            ram_smart_ttl_adr_att_ptr     = base_rams + 90  * STEP_32b_RAM;
-                            ram_tx_shape_param1b_ptr      = base_rams + 95  * STEP_32b_RAM;
-                            ram_tx_shape_param2b_ptr      = base_rams + 96  * STEP_32b_RAM;
-                            ram_tx_shape_param3b_ptr      = base_rams + 97  * STEP_32b_RAM;
-                            ram_tx_shape_param4b_ptr      = base_rams + 98  * STEP_32b_RAM;
-                            ram_tx_shape_param1_ptr       = base_rams + 8   * STEP_32b_RAM;
-                            ram_tx_shape_param2_ptr       = base_rams + 9   * STEP_32b_RAM;
-                            ram_tx_shape_param3_ptr       = base_rams + 10  * STEP_32b_RAM;
-                            ram_tx_shape_param4_ptr       = base_rams + 11  * STEP_32b_RAM;
-                            ram_tx_phase_shape_param1_ptr = base_rams + 74  * STEP_32b_RAM;
-                            ram_tx_phase_shape_param2_ptr = base_rams + 75  * STEP_32b_RAM;
-                            ram_tx_phase_shape_param3_ptr = base_rams + 76  * STEP_32b_RAM;
-                            ram_tx_phase_shape_param4_ptr = base_rams + 77  * STEP_32b_RAM;
-                            ram_tx_phase_shape_param1b_ptr = base_rams + 103  * STEP_32b_RAM;
-                            ram_tx_phase_shape_param2b_ptr = base_rams + 104  * STEP_32b_RAM;
-                            ram_tx_phase_shape_param3b_ptr = base_rams + 105  * STEP_32b_RAM;
-                            ram_tx_phase_shape_param4b_ptr = base_rams + 106  * STEP_32b_RAM;
+                            ram_func_ptr                   = ram_func_base                   ;
+                            ram_ttl_ptr                    = ram_ttl_base                    ;
+                            ram_orders_ptr                 = ram_orders_base                 ;
+                            ram_adr_c1_ptr                 = ram_adr_c1_base                 ;
+                            ram_adr_c2_ptr                 = ram_adr_c2_base                 ;
+                            ram_adr_c3_ptr                 = ram_adr_c3_base                 ;
+                            ram_adr_c4_ptr                 = ram_adr_c4_base                 ;
+                            ram_adr_c1b_ptr                = ram_adr_c1b_base                ;
+                            ram_adr_c2b_ptr                = ram_adr_c2b_base                ;
+                            ram_adr_c3b_ptr                = ram_adr_c3b_base                ;
+                            ram_adr_c4b_ptr                = ram_adr_c4b_base                ;
+                            ram_nb_of_points0_ptr          = ram_nb_of_points0_base          ;
+                            ram_nb_of_points1_ptr          = ram_nb_of_points1_base          ;
+                            ram_nb_of_points2_ptr          = ram_nb_of_points2_base          ;
+                            ram_nb_of_points3_ptr          = ram_nb_of_points3_base          ;
+                            ram_nb_of_points4_ptr          = ram_nb_of_points4_base          ;
+                            ram_nb_of_points5_ptr          = ram_nb_of_points5_base          ;
+                            ram_nb_of_points6_ptr          = ram_nb_of_points6_base          ;
+                            ram_nb_of_points7_ptr          = ram_nb_of_points7_base          ;
+                            ram_smart_ttl_adr_att_ptr      = ram_smart_ttl_adr_att_base      ;
+                            ram_tx_shape_param1b_ptr       = ram_tx_shape_param1b_base       ;
+                            ram_tx_shape_param2b_ptr       = ram_tx_shape_param2b_base       ;
+                            ram_tx_shape_param3b_ptr       = ram_tx_shape_param3b_base       ;
+                            ram_tx_shape_param4b_ptr       = ram_tx_shape_param4b_base       ;
+                            ram_tx_shape_param1_ptr        = ram_tx_shape_param1_base        ;
+                            ram_tx_shape_param2_ptr        = ram_tx_shape_param2_base        ;
+                            ram_tx_shape_param3_ptr        = ram_tx_shape_param3_base        ;
+                            ram_tx_shape_param4_ptr        = ram_tx_shape_param4_base        ;
+                            ram_tx_phase_shape_param1_ptr  = ram_tx_phase_shape_param1_base  ;
+                            ram_tx_phase_shape_param2_ptr  = ram_tx_phase_shape_param2_base  ;
+                            ram_tx_phase_shape_param3_ptr  = ram_tx_phase_shape_param3_base  ;
+                            ram_tx_phase_shape_param4_ptr  = ram_tx_phase_shape_param4_base  ;
+                            ram_tx_phase_shape_param1b_ptr = ram_tx_phase_shape_param1b_base ;
+                            ram_tx_phase_shape_param2b_ptr = ram_tx_phase_shape_param2b_base ;
+                            ram_tx_phase_shape_param3b_ptr = ram_tx_phase_shape_param3b_base ;
+                            ram_tx_phase_shape_param4b_ptr = ram_tx_phase_shape_param4b_base ;
                             
                             
                             
@@ -589,22 +700,8 @@ uint32_t create_events(void) {
 
     //maybe we have something to transfer still
     if (nb_of_events_treated != 0){
-        if (nb_of_events_treated < 128) {
-            //go again
-            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
-                FPGA_DMA_READADDRESS,
-                (uint32_t)DMA_TRANSFER_1_SRC_DMAC);
-
-            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
-                FPGA_DMA_LENGTH,
-                nb_of_events_treated * 128);
-
-            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
-                FPGA_DMA_CONTROL,
-                FPGA_DMA_GO,
-                1);
-        }
-        else {
+        //if the last one is bigger than 384 but less than 512 = 3rd zone
+        if (nb_of_events_treated > 384) {
             while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
             }
 
@@ -620,6 +717,76 @@ uint32_t create_events(void) {
             //go again
             fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
                 FPGA_DMA_READADDRESS,
+                (uint32_t)DMA_TRANSFER_4_SRC_DMAC);
+
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                FPGA_DMA_LENGTH,
+                (nb_of_events_treated-384) * 128);
+
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                FPGA_DMA_CONTROL,
+                FPGA_DMA_GO,
+                1);
+
+        }
+        else if (nb_of_events_treated > 256) {
+            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
+            }
+
+            //reset the controls
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
+                FPGA_DMA_CONTROL,
+                FPGA_DMA_GO,
+                0);
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
+                FPGA_DMA_STATUS,
+                FPGA_DMA_DONE,
+                0);
+            //go again
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                FPGA_DMA_READADDRESS,
+                (uint32_t)DMA_TRANSFER_3_SRC_DMAC);
+
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                FPGA_DMA_LENGTH,
+                (nb_of_events_treated-256) * 128);
+
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                FPGA_DMA_CONTROL,
+                FPGA_DMA_GO,
+                1);
+        }
+        else if (nb_of_events_treated > 128) {
+            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
+            }
+
+            //reset the controls
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
+                FPGA_DMA_CONTROL,
+                FPGA_DMA_GO,
+                0);
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
+                FPGA_DMA_STATUS,
+                FPGA_DMA_DONE,
+                0);
+            //go again
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                FPGA_DMA_READADDRESS,
+                (uint32_t)DMA_TRANSFER_2_SRC_DMAC);
+
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
+                FPGA_DMA_LENGTH,
+                (nb_of_events_treated-128) * 128);
+
+            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
+                FPGA_DMA_CONTROL,
+                FPGA_DMA_GO,
+                1);
+        }
+        else {
+            //go again
+            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
+                FPGA_DMA_READADDRESS,
                 (uint32_t)DMA_TRANSFER_1_SRC_DMAC);
 
             fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
@@ -630,7 +797,6 @@ uint32_t create_events(void) {
                 FPGA_DMA_CONTROL,
                 FPGA_DMA_GO,
                 1);
-
         }
     }
 
