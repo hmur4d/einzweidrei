@@ -135,6 +135,7 @@
     <ClInclude Include="hardware.h" />
     <ClInclude Include="hps_rxtx_seq.h" />
     <ClInclude Include="hps_sequence.h" />
+    <ClInclude Include="hps_sequence_grad.h" />
     <ClInclude Include="hw_amps.h" />
     <ClInclude Include="hw_clock.h" />
     <ClInclude Include="hw_fieldlock_ads1261.h" />
@@ -175,6 +176,7 @@
     <ClCompile Include="hardware.c" />
     <ClCompile Include="hps_rxtx_seq.c" />
     <ClCompile Include="hps_sequence.c" />
+    <ClCompile Include="hps_sequence_grad.c" />
     <ClCompile Include="hw_amps.c" />
     <ClCompile Include="hw_clock.c" />
     <ClCompile Include="hw_fieldlock_ads1261.c" />

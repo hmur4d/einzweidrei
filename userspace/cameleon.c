@@ -17,6 +17,9 @@
 #include "sequence_params.h"
 #include "udp_broadcaster.h"
 #include "hardware.h"
+#include "hps_sequence.h"
+
+void* reserved_mem_base;
 
 //-- network handlers
 
@@ -167,6 +170,27 @@ int cameleon_main(int argc, char ** argv) {
 		return 1;
 	}
 
+
+	int fd;
+	if ((fd = open("/dev/mem", (O_RDWR | O_SYNC))) == -1) {
+		printf("ERROR: could not open \"/dev/mem\"...\n");
+		return 1;
+	}
+
+	//reserve space for seq
+	//use reserved mem
+	reserved_mem_base = mmap(NULL, HPS_RESERVED_SPAN, (PROT_READ | PROT_WRITE),
+		MAP_SHARED, fd, HPS_RESERVED_ADDRESS);
+	if (reserved_mem_base == MAP_FAILED) {
+		printf("reg cannot reserved mem \n");
+		return 1;
+	}
+
+
+
+
+
+
 	log_info("Cameleon is ready!");
 
 	serversocket_wait(&monitoringserver);
@@ -192,6 +216,15 @@ int cameleon_main(int argc, char ** argv) {
 	destroy_interrupt_handlers();
 
 	shared_memory_close();
+
+	if (munmap(reserved_mem_base, HPS_RESERVED_SPAN) != 0) {
+		printf("ERROR: munmap() failed...\n");
+		close(fd);
+		return 1;
+	}
+
+	close(fd);
+
 
 	log_close();
 	return 0;

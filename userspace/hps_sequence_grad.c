@@ -1,22 +1,21 @@
-#include "hps_sequence.h"
+#include "hps_sequence_grad.h"
 #include "fpga_dmac_api.h"
 
-extern void* reserved_mem_base;
 
 //#define HPS_OCR_ADDRESS           0xFFE00000 
 //#define HPS_OCR_SPAN              2097152            //span in bytes
 
-#define DDR_EVENTS_ADDRESS			1598029824          //use upper portion of the 1GB
-#define DDR_EVENTS_SPAN			    65536                //span in bytes
+#define DDR_EVENTS_ADDRESS			(1598029824+ 65536)         //use upper portion of the 1GB
+#define DDR_EVENTS_SPAN			      65536             //span in bytes
 
 #define LW_BASE                     0xff200000
 #define LW_SPAN                     1048576
-#define FPGA_DMAC_QSYS_ADDRESS      0x00020080
+#define FPGA_DMAC_QSYS_ADDRESS      0x000200a0
 #define FPGA_DMAC_ADDRESS           ((uint8_t*)LW_BASE+FPGA_DMAC_QSYS_ADDRESS)
 
 //fifo is connected directly to dma
 #define DMA_TRANSFER_DST_DMAC       0x0
-#define DMA_FULL_BURST_IN_BYTES     16384 //1024*16 this is 128 event
+#define DMA_FULL_BURST_IN_BYTES     16384 //*16 this is 256 event
 #define DMA_TRANSFER_1_SRC_DMAC     (DDR_EVENTS_ADDRESS)
 #define DMA_TRANSFER_2_SRC_DMAC     (DDR_EVENTS_ADDRESS+DMA_FULL_BURST_IN_BYTES)
 #define DMA_TRANSFER_3_SRC_DMAC     (DDR_EVENTS_ADDRESS+(2*DMA_FULL_BURST_IN_BYTES))
@@ -44,7 +43,7 @@ static uint32_t loopa_counters[2] = { 0,0 };
 static uint32_t modded_scan_counters[16] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 static uint32_t nb_elements_per_counter[16]; 
 
-uint32_t printjer(void) {
+static uint32_t printjer(void) {
     printf("HAHAHAHAHA \n");
     return 10;
 }
@@ -53,7 +52,7 @@ uint32_t static inline get_addr(uint32_t* modded_scan_counter, uint32_t base_add
     return (modded_scan_counter[order] + base_address );
 }
 
-uint32_t create_events(void) {
+uint32_t create_events_grad(void) {
     int fd;
     if ((fd = open("/dev/mem", (O_RDWR | O_SYNC))) == -1) {
         printf("ERROR: could not open \"/dev/mem\"...\n");
@@ -72,6 +71,17 @@ uint32_t create_events(void) {
     }
     int_fast32_t* events_base_ptr = (int_fast32_t*)events_base;
     
+
+    //access reserved ddr
+    void* reserved_mem_base;
+    reserved_mem_base = mmap(NULL, HPS_RESERVED_SPAN, (PROT_READ | PROT_WRITE),
+        MAP_SHARED, fd, HPS_RESERVED_ADDRESS);
+
+    if (reserved_mem_base == MAP_FAILED) {
+        printf("ERROR: mmap() reserved_mem_base failed...\n");
+        close(fd);
+        return(1);
+    }
 
     //mmap dmac addr
     void* lw_vaddr;
@@ -217,27 +227,12 @@ uint32_t create_events(void) {
 
     uint32_t nb_of_all_events = 0;
     
-    /*
-    for (int i = 0; i < 5; i++) {
-        printf("ram ttl %d at %x \n", i, ram_ttl_ptr[i]);
-    }
-    */
-
-
-    for (int i = 0; i < 5; i++) {
-        printf("ram_adr_c1b %d at %x \n", i, ram_adr_c1b_ptr[i]);
-    }
-
-    for (int i = 0; i < 5; i++) {
-        printf("ram_amp1 %d at %x \n", i, ram_amp1_ptr[i]);
-    }
-    
     for (int i = 0; i < _4D; i++) {
-        printf("NB scans %d at %x \n", i, nb_dimensions[i]);
+        printf("grad NB scans %d at %x \n", i, nb_dimensions[i]);
     }
     
     for (int i = 0; i < O_4D; i++) {
-        printf("NB elements %d at %x \n", i, nb_elements_per_counter[i]);
+        printf("grad NB elements %d at %x \n", i, nb_elements_per_counter[i]);
     }
 
     uint32_t nb_of_events_treated = 0; 
@@ -328,82 +323,42 @@ uint32_t create_events(void) {
                         //32
                         events_base_ptr[1] = *ram_ttl_ptr;
                         //64
-                        events_base_ptr[2] = ram_freq1_ptr[tx1_freq_addr];
+                        events_base_ptr[2] = 0;
                         //96
-                        events_base_ptr[3] = (ph_reset&0x1) << 30 | tx1_sw_att << 29 |tx1_en << 28 | (ram_amp1_ptr[tx1_amp_addr]&0xfff)<<16 | (ram_phase1_ptr[tx1_phase_addr]&0xffff);
+                        events_base_ptr[3] = 0;
                         //128
-                        events_base_ptr[4] = (*ram_tx_shape_param1b_ptr&0x7FFF) << 17 | (*ram_tx_shape_param1_ptr&0x1FFFF);
+                        events_base_ptr[4] = 0;
                         //160
-                        events_base_ptr[5] = (*ram_tx_phase_shape_param1b_ptr&0x7FFF) << 17 | (*ram_tx_phase_shape_param1_ptr&0x1FFFF);
+                        events_base_ptr[5] = 0;
                         //192
-                        events_base_ptr[6] = ram_freq2_ptr[tx2_freq_addr];
+                        events_base_ptr[6] = 0;
                         //224
-                        events_base_ptr[7] = tx2_sw_att << 29 | tx2_en << 28 | (ram_amp2_ptr[tx2_amp_addr]&0xffff)<<16 | (ram_phase2_ptr[tx2_phase_addr]&0xffff);
+                        events_base_ptr[7] = 0;
                         //256
-                        events_base_ptr[8] = (*ram_tx_shape_param2b_ptr&0x7FFF) << 17 | (*ram_tx_shape_param2_ptr&0x1FFFF);
+                        events_base_ptr[8] = 0;
                         //288              
-                        events_base_ptr[9] = (*ram_tx_phase_shape_param2b_ptr&0x7FFF) << 17 | (*ram_tx_phase_shape_param2_ptr&0x1FFFF);
+                        events_base_ptr[9] = 0;
                         //320
-                        events_base_ptr[10] = ram_freq3_ptr[tx3_freq_addr];
+                        events_base_ptr[10] = 0;
                         //352
-                        events_base_ptr[11] = tx3_sw_att << 29 | tx3_en << 28 | (ram_amp3_ptr[tx3_amp_addr]&0xffff)<<16 | (ram_phase3_ptr[tx3_phase_addr]&0xffff);
+                        events_base_ptr[11] = 0;
                         //384
-                        events_base_ptr[12] = (*ram_tx_shape_param3b_ptr&0x7FFF) << 17 | (*ram_tx_shape_param3_ptr&0x1FFFF);
+                        events_base_ptr[12] = 0;
                         //416              
-                        events_base_ptr[13] = (*ram_tx_phase_shape_param3b_ptr&0x7FFF) << 17 | (*ram_tx_phase_shape_param3_ptr&0x1FFFF);
+                        events_base_ptr[13] = 0;
                         //448
-                        events_base_ptr[14] = ram_freq4_ptr[tx4_freq_addr];
+                        events_base_ptr[14] = 0;
                         //480
-                        events_base_ptr[15] = tx4_sw_att << 29 | tx4_en << 28 | (ram_amp4_ptr[tx4_amp_addr]&0xffff)<<16 | (ram_phase4_ptr[tx4_phase_addr]&0xffff);
-                        //512
-                        events_base_ptr[16] = (*ram_tx_shape_param4b_ptr&0x7FFF) << 17 | (*ram_tx_shape_param4_ptr&0x1FFFF);
-                         //544             
-                        events_base_ptr[17] = (*ram_tx_phase_shape_param4b_ptr&0x7FFF) << 17 | (*ram_tx_phase_shape_param4_ptr&0x1FFFF);
-                        
-                        // next assignments must be optimized
-                       
-                        //576
-                        events_base_ptr[18] = 1<<23|(*ram_nb_of_points0_ptr&0x7FFFFF);
-                        //608
-                        events_base_ptr[19] = *ram_nb_of_points1_ptr;
-                        events_base_ptr[20] = *ram_nb_of_points2_ptr;
-                        events_base_ptr[21] = *ram_nb_of_points3_ptr;
-                        events_base_ptr[22] = *ram_nb_of_points4_ptr;
-                        events_base_ptr[23] = *ram_nb_of_points5_ptr;
-                        events_base_ptr[24] = *ram_nb_of_points6_ptr;
-                        events_base_ptr[25] = *ram_nb_of_points7_ptr;
-                        events_base_ptr[26] = nb_of_all_events;
-                        events_base_ptr[27] = nb_of_all_events;
-                        events_base_ptr[28] = nb_of_all_events;
-                        events_base_ptr[29] = nb_of_all_events;
-                        events_base_ptr[30] = nb_of_all_events;
-                        events_base_ptr[31] = nb_of_all_events;
-                        //next place is byte 128 (80h)
-                        events_base_ptr += 32;
-                        
-                        /*
-                        *events_base_ptr = event_buffer[0];
-                        *events_base_ptr = nb_of_all_events;
-                        events_base_ptr += 1;
-                        *events_base_ptr = 0;
-                        events_base_ptr += 1;
-                        */
-                        //printf("event %p : %lx \n", ram_func_ptr, *events_base_ptr);
-                        //prepare to the next addr in the ocr
+                        events_base_ptr[15] = 0;
 
-
-
-
-
+                        //next place is byte 64 
+                        events_base_ptr += 16;
                         nb_of_events_treated++; 
                         nb_of_all_events++;
-
-                        //printf("event treated : %d \n", nb_of_events_treated);
-
                        
 
                         //if the number of events treated is sufficient, send the 1st part of events.
-                        if (nb_of_events_treated == 128) {
+                        if (nb_of_events_treated == 256) {
                             //nb_bytes_to_send = 128 * 128; //bytes per event * nb_event
                             //nb_dma_transfer = 1;
                                                         
@@ -445,7 +400,7 @@ uint32_t create_events(void) {
 
 
                         //if there are still more events, send using 2nd part
-                        if (nb_of_events_treated == 256){
+                        if (nb_of_events_treated == 512){
                             //ongoing transfer needs to finish first
                             while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
                             }
@@ -483,76 +438,7 @@ uint32_t create_events(void) {
                             events_base_ptr = (int_fast32_t*)events_base;
                             
                         }
-        
-                        // //if there are still more events, send using 3rd part
-                        // if (nb_of_events_treated == 384) {
-                            // //ongoing transfer needs to finish first
-                            // while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
-                            // }
-                            // //reset the controls
-                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void,
-                                // FPGA_DMA_CONTROL,
-                                // FPGA_DMA_GO,
-                                // 0);
-                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
-                                // FPGA_DMA_STATUS,
-                                // FPGA_DMA_DONE,
-                                // 0);
-                            // //printf("3 src : %x\n", DMA_TRANSFER_3_SRC_DMAC);
-                            // //go again
-                            // fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
-                                // FPGA_DMA_READADDRESS,
-                                // (uint32_t)DMA_TRANSFER_3_SRC_DMAC);
 
-                            // fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
-                                // FPGA_DMA_LENGTH,
-                                // DMA_FULL_BURST_IN_BYTES);
-
-                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
-                                // FPGA_DMA_CONTROL,
-                                // FPGA_DMA_GO,
-                                // 1);
-
-                        // }
-
-                        // //if there are still more events, send using 4th part
-                        // if (nb_of_events_treated == 512) {
-                            // //ongoing transfer needs to finish first
-                            // while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
-                            // }
-                            // //reset the controls
-                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void,
-                                // FPGA_DMA_CONTROL,
-                                // FPGA_DMA_GO,
-                                // 0);
-                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
-                                // FPGA_DMA_STATUS,
-                                // FPGA_DMA_DONE,
-                                // 0);
-                            // //printf("4 src : %x\n", DMA_TRANSFER_4_SRC_DMAC);
-                            // //go again
-                            // fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
-                                // FPGA_DMA_READADDRESS,
-                                // (uint32_t)DMA_TRANSFER_4_SRC_DMAC);
-
-                            // fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
-                                // FPGA_DMA_LENGTH,
-                                // DMA_FULL_BURST_IN_BYTES);
-
-                            // fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
-                                // FPGA_DMA_CONTROL,
-                                // FPGA_DMA_GO,
-                                // 1);
-
-                            // //printf("2 sending  %d events\n", nb_of_events_treated);
-
-                            // //reset the nb_events_treated
-                            // nb_of_events_treated = 0;
-
-                            // //reset the pointer
-                            // events_base_ptr = (int_fast32_t*)events_base;
-
-                        // }
 
                         //update mod counters
                         modded_scan_counters[O_1D] = scan_counters[_1D] % nb_elements_per_counter[O_1D];
@@ -659,67 +545,11 @@ uint32_t create_events(void) {
         }
     }
 
-    printf("events treated left  : %d \n", nb_of_events_treated);
+    printf("grad events treated left  : %d \n", nb_of_events_treated);
 
     //maybe we have something to transfer still
     if (nb_of_events_treated != 0){
-        //if the last one is bigger than 384 but less than 512 = 3rd zone
-        if (nb_of_events_treated > 384) {
-            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
-            }
-
-            //reset the controls
-            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
-                FPGA_DMA_CONTROL,
-                FPGA_DMA_GO,
-                0);
-            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
-                FPGA_DMA_STATUS,
-                FPGA_DMA_DONE,
-                0);
-            //go again
-            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
-                FPGA_DMA_READADDRESS,
-                (uint32_t)DMA_TRANSFER_4_SRC_DMAC);
-
-            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
-                FPGA_DMA_LENGTH,
-                (nb_of_events_treated-384) * 128);
-
-            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
-                FPGA_DMA_CONTROL,
-                FPGA_DMA_GO,
-                1);
-
-        }
-        else if (nb_of_events_treated > 256) {
-            while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
-            }
-
-            //reset the controls
-            fpga_dma_write_bit(FPGA_DMA_vaddr_void,
-                FPGA_DMA_CONTROL,
-                FPGA_DMA_GO,
-                0);
-            fpga_dma_write_bit(FPGA_DMA_vaddr_void, //clean the done bit
-                FPGA_DMA_STATUS,
-                FPGA_DMA_DONE,
-                0);
-            //go again
-            fpga_dma_write_reg(FPGA_DMA_vaddr_void,   //set source address
-                FPGA_DMA_READADDRESS,
-                (uint32_t)DMA_TRANSFER_3_SRC_DMAC);
-
-            fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
-                FPGA_DMA_LENGTH,
-                (nb_of_events_treated-256) * 128);
-
-            fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
-                FPGA_DMA_CONTROL,
-                FPGA_DMA_GO,
-                1);
-        }
-        else if (nb_of_events_treated > 128) {
+        if (nb_of_events_treated > 256) {
             while (fpga_dma_read_bit(FPGA_DMA_vaddr_void, FPGA_DMA_STATUS, FPGA_DMA_DONE) == 0) {
             }
 
@@ -739,7 +569,7 @@ uint32_t create_events(void) {
 
             fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
                 FPGA_DMA_LENGTH,
-                (nb_of_events_treated-128) * 128);
+                (nb_of_events_treated-256) * 64);
 
             fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
                 FPGA_DMA_CONTROL,
@@ -754,7 +584,7 @@ uint32_t create_events(void) {
 
             fpga_dma_write_reg(FPGA_DMA_vaddr_void, //set transfer size
                 FPGA_DMA_LENGTH,
-                nb_of_events_treated * 128);
+                nb_of_events_treated * 64);
 
             fpga_dma_write_bit(FPGA_DMA_vaddr_void,//start transfer
                 FPGA_DMA_CONTROL,
@@ -765,29 +595,6 @@ uint32_t create_events(void) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /*
-    for (int i = 0; i < _4D; i++) {
-        printf("counters %d at %x \n", i, scan_counters[i]);
-    }
-
-
-    printf("\n nb of events to transfer %d \n", nb_of_all_events);
-    */
-
     // --------------clean up our memory mapping and exit -----------------//
     if (munmap(events_base, DDR_EVENTS_SPAN) != 0) {
         printf("ERROR: munmap() events_base failed...\n");
@@ -795,7 +602,14 @@ uint32_t create_events(void) {
         return(1);
     }
 
-    //return 0;
+    if (munmap(reserved_mem_base, HPS_RESERVED_SPAN) != 0) {
+        printf("ERROR: munmap()  reserved_mem_base failed...\n");
+        close(fd);
+        return(1);
+    }
+
+    close(fd);
+
     return nb_of_all_events;
 
 }

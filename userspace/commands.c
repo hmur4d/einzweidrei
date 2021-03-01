@@ -31,7 +31,7 @@
 #define HPS_RESERVED_SPAN    0x40000000      //span in bytes
 */
 
-
+extern void* reserved_mem_base;
 
 extern shim_profile_t shim_profiles[SHIM_PROFILES_COUNT];
 extern shim_value_t shim_values[SHIM_PROFILES_COUNT];
@@ -63,45 +63,15 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		uint32_t regs_offset = 131072 * 87;
 		uint32_t current_reg = ram_id - 100;
 
-		//printf("reg value : %x \n\n", *(uint32_t*)body);
-
-		void* reserved_mem_base;
-		int fd;
-		if ((fd = open("/dev/mem", (O_RDWR | O_SYNC))) == -1) {
-			printf("ERROR: could not open \"/dev/mem\"...\n");
-			return;
-		}
-
-		//use reserved mem
-		reserved_mem_base = mmap(NULL, HPS_RESERVED_SPAN, (PROT_READ | PROT_WRITE),
-			MAP_SHARED, fd, HPS_RESERVED_ADDRESS);
-		if (reserved_mem_base == MAP_FAILED) {
-			printf("reg cannot reserved mem \n");
-			return;
-		}
-
-
-
+		//printf("reg value : %x \n\n", *(uint32_t*)body)
 		uint32_t* base_of_regs = (uint32_t*)reserved_mem_base + regs_offset+ current_reg;
 		//check if it's inside span
 		if ((uint32_t)base_of_regs >= ((uint32_t)reserved_mem_base + (uint32_t)HPS_RESERVED_SPAN)) {
 			printf("reg outside of memory, %d : %d\n", (uint32_t)base_of_regs, (uint32_t)HPS_RESERVED_SPAN);
 			return;
 		}
-
-
 		//printf("\n\n write reg %d , %d bytes to  %p mem base \n\n", ram_id, nbytes, base_of_regs);
-
 		memcpy(base_of_regs, body, nbytes);
-
-
-		if (munmap(reserved_mem_base, HPS_RESERVED_SPAN) != 0) {
-			printf("ERROR: munmap() failed...\n");
-			close(fd);
-			return;
-		}
-
-		close(fd);
 	}
 
  
@@ -158,23 +128,7 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 		) && nbytes > 4
    
 	) {
-		void *reserved_mem_base;
-		int fd;
-		if( ( fd = open( "/dev/mem", ( O_RDWR | O_SYNC ) ) ) == -1 ) {
-  		  printf( "ERROR: could not open \"/dev/mem\"...\n" );
-  		  return;
-		}
-     
-		//use reserved mem
-		reserved_mem_base = mmap( NULL, HPS_RESERVED_SPAN, ( PROT_READ | PROT_WRITE ),
-								MAP_SHARED, fd, HPS_RESERVED_ADDRESS);
-		
-		if (reserved_mem_base == MAP_FAILED) {
-			printf("ram cannot reserved mem \n");
-			return;
-		}
 
-   
 		uint32_t steps_of_ram = ram_id * 524288; //2^17
 		uint8_t* base_of_ram= (uint8_t*)reserved_mem_base + steps_of_ram;
 
@@ -183,20 +137,10 @@ static void cmd_write(clientsocket_t* client, header_t* header, const void* body
 			printf("ram outside of memory\n");
 			return;
 		}
-
      
 		//printf("\n\n write ram %d , %d bytes to  %p mem base \n\n",ram_id, nbytes, base_of_ram );
 		memcpy(base_of_ram, body, nbytes);
-     
-     
-		if( munmap( reserved_mem_base, HPS_RESERVED_SPAN) != 0 ) {
-			printf( "ERROR: munmap() failed...\n" );
-			close( fd );
-			return;
-		}
-  
-		close( fd );
-
+		return;
 	}
  
  
